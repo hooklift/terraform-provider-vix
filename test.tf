@@ -30,6 +30,8 @@ resource "vix_vm" "ubuntu" {
         //"nat"
     ]
 
+    count = 1
+
     provisioner "remote-exec" {
         inline = [
             "sudo apt-get -y update",
