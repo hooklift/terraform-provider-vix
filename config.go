@@ -8,7 +8,8 @@ import (
 )
 
 type Config struct {
-	Product string `mapstructure:"product"`
+	Product   string `mapstructure:"product"`
+	VerifySSL bool   `mapstructure:"verify_ssl"`
 }
 
 // Client() returns a new connection for accesing VMware Fusion, Workstation or
@@ -30,15 +31,21 @@ func (c *Config) Client() (*vix.Host, error) {
 		p = vix.VMWARE_WORKSTATION
 	}
 
+	var options vix.HostOption
+	if c.VerifySSL {
+		options = vix.VERIFY_SSL_CERT
+	}
+
 	host, err := vix.Connect(vix.ConnectConfig{
 		Provider: p,
+		Options:  options,
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("[INFO] VIX Client configured for provider: VMware %s", c.Product)
+	log.Printf("[INFO] VIX Client configured for provider: VMware %s. SSL: %t", c.Product, c.VerifySSL)
 
 	return host, nil
 }

@@ -1,5 +1,6 @@
 provider "vix" {
     product = "fusion"
+    verify_ssl = false
 }
 
 /*
