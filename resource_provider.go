@@ -9,10 +9,6 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-// "github.com/hashicorp/terraform/helper/config"
-// "github.com/hashicorp/terraform/helper/multierror"
-// "github.com/hashicorp/terraform/terraform"
-
 type ResourceProvider struct {
 	Config Config
 
