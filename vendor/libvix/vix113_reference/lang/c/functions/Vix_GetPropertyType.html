@@ -1,0 +1,49 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>Vix_GetPropertyType</b>
+<h1>Description</h1>
+<pre>
+Vix_GetPropertyType(VixHandle handle,
+                    VixPropertyID propertyID,
+                    VixPropertyType *propertyType);
+</pre>
+<p>
+Given a property ID, this
+function
+returns the type of that property.
+<h1>Parameters</h1>
+<dl>
+<dt><i>handle</i></dt>
+<dd>
+Any handle returned by a VIX function.
+</dd>
+<dt><i>propertyID</i></dt>
+<dd>
+A property ID. See below for valid values.
+</dd>
+<dt><i>propertyType</i></dt>
+<dd>
+The type of the data stored by the property.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixError. This function returns VIX_OK if it succeeded.
+<h1>Remarks</h1>
+This
+function
+identifies the data type of a property.
+For a list of property data types, refer to the Types Reference topic.
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

@@ -1,0 +1,91 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMSetSharedFolderState</b>
+<h1>Description</h1>
+<pre>
+$err = VMSetSharedFolderState($vmHandle,
+                              $shareName,
+			      $hostPathName,
+                              $flags);
+</pre>
+<p>
+This function modifies the state of a shared folder mounted in the virtual
+machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>shareName</i></dt>
+<dd>
+Specifies the name of the shared folder.
+</dd>
+<dt><i>hostPathName</i></dt>
+<dd>
+Specifies the host path of the shared folder.
+</dd>
+<dt><i>flags</i></dt>
+<dd>
+The new flag settings.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> This function modifies the state flags of an existing shared folder.
+<li> If the shared folder specified by
+$shareName
+does not exist before calling this function,
+this function will return VIX_E_NOT_FOUND.
+<li> It is not necessary to call
+VMLoginInGuest()
+before calling this function.
+<li> Shared folders are not supported for the following guest operating systems:
+Windows ME, Windows 98, Windows 95, Windows 3.x, and DOS.
+<li> In this release, this function requires the virtual machine to be powered on
+with VMware Tools installed.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+my $err;
+my $numSharedFolders;
+my $folderName;
+my $folderHostPath;
+my $folderFlags;
+my $i;
+
+($err, $numSharedFolders) = VMGetNumSharedFolders($vmHandle);
+die "VMGetNumSharedFolders() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+for ($i = 0; $i &lt; $numSharedFolders; $i++) {
+   ($err, $folderFlags, $folderName, $folderHostPath) = VMGetSharedFolderState($vmHandle, $i);
+   die "VMGetSharedFolderState() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+   #
+   # make all folders writable
+   #
+   ($err) = VMSetSharedFolderState($vmHandle, $folderName, $folderHostPath,
+                                          VIX_SHAREDFOLDER_WRITE_ACCESS);
+   die "VMSetSharedFolderState() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

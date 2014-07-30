@@ -1,0 +1,49 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMDirectoryExistsInGuest</b>
+<h1>Description</h1>
+<pre>
+($err, $exists) = VMDirectoryExistsInGuest($vmHandle,
+                                           $pathName);
+</pre>
+<p>
+This function tests the existence of a directory in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>pathName</i></dt>
+<dd>
+The path to the directory in the guest to be checked.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<p>
+$exists.  Whether the directory exists.
+<h1>Remarks</h1>
+<ul>
+<li> You must call VMLoginInGuest() before calling this function.
+<li> Only absolute paths should be used for files in the guest; the resolution of 
+relative paths is not specified.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br></body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

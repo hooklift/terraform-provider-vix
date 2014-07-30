@@ -1,0 +1,143 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>Clone</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+Clone(ISnapshot* snapshot,
+      LONG cloneType,
+      BSTR destConfigPathName,
+      LONG cloneOptions,
+      IVixHandle* propertyList,
+      ICallback* jobDoneCallback,
+      IJob** cloneJob)
+</pre>
+<p>
+Creates a copy of the virtual machine specified by the 'vmHandle' parameter. 
+<h1>Parameters</h1>
+<dl>
+<dt><i>snapshot</i></dt>
+<dd>
+Optional. A snapshot belonging to this virtual machine. If you pass
+           NULL (C++), null (C#), or Nothing (VB), the clone will be based off the
+           current state of the virtual machine. If you pass a valid snapshot object, the
+           clone will be a copy of the state of the virtual machine at the time the snapshot
+           was taken.
+</dd>
+<dt><i>cloneType</i></dt>
+<dd>
+Must be either VixCOM.Constants.VIX_CLONETYPE_FULL or
+            VixCOM.Constants.VIX_CLONETYPE_LINKED.
+<ul>
+<li> VIX_CLONETYPE_FULL - Creates a full, independent clone of the virtual machine.
+<li> VIX_CLONETYPE_LINKED - Creates a linked clone, which is a copy of a virtual machine
+that shares virtual disks with the parent virtual machine in an ongoing manner.
+This conserves disk space as long as the parent and clone do not change too much
+from their original state.
+</ul>
+</dd>
+<dt><i>destConfigPathName</i></dt>
+<dd>
+The path name of the virtual machine configuration file that will be
+                     created for the virtual machine clone produced by this operation.
+                     This should be a full absolute path name, with directory names delineated
+                     according to host system convention: \ for Windows and / for Linux.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be NULL (C++), null (C#), or Nothing (VB).
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>cloneJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this
+           asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function is asynchronous, and uses a job object to report when the
+operation is complete. The function returns a handle to the job object
+immediately. When the job is signaled, the virtual machine handle of the resulting
+clone is stored as the VIX_PROPERTY_JOB_RESULT_HANDLE property of the job object.
+<li> It is not possible to create a full clone of a powered on virtual machine. You must 
+power off or suspend a virtual machine before creating a full clone of that machine.
+<li> With a suspended virtual machine, requesting a linked clone results in
+error 3007 VIX_E_VM_IS_RUNNING. Suspended virtual machines retain memory state,
+so proceeding with a linked clone could cause loss of data.
+<li> A linked clone must be based on a virtual machine's snapshot. If a clone of this type
+is requested and NULL (C++), null (C#), or Nothing (VB) is passed as the 'snapshot' parameter,
+a new snapshot will be created by the function. This snapshot will reflect the current state
+of the virtual machine and will be used as a basis for the linked clone.
+<li> A linked clone must have access to the parent's virtual disks. Without such access,
+you cannot use a linked clone at all because its file system will likely be incomplete or
+corrupt.
+<li> Deleting a virtual machine that is the parent of a linked clone renders the linked clone
+useless.
+<li> Because a full clone does not share virtual disks with the parent virtual machine, full
+clones generally perform better than linked clones. However, full clones take longer to
+create than linked clones. Creating a full clone can take several minutes if the files
+involved are large.
+<li> This function is not supported when using the 
+VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+</ul>
+<h1>Side Effects</h1>
+If the 'cloneType' parameter is VIX_CLONETYPE_LINKED and the 'snapshotHandle' parameter is
+VIX_INVALID_HANDLE, then the function will create a snapshot of the current virtual machine
+state and use that to created the linked clone.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.5
+(not supported on VMware Server)
+<h1>Example</h1>
+VBScript:
+<pre>
+Set job = host.OpenVM("c:\Virtual Machines\vm1\ubuntu.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+vm = results(0)
+
+' Create a clone of this virtual machine.
+Set job = vm.Clone(Nothing, VixCOM.Constants.VIX_CLONETYPE_LINKED, _
+                   "c:\\Virtual Machines\\vm2\\ubuntuClone.vmx", 0, Nothing, Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+cloneVM = results(0)
+
+' You can use the new virtual machine as you would any other virtual machine. 
+' For example, to power on the new clone:
+cloneVM.PowerOn(VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set results = Nothing
+Set job = Nothing
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

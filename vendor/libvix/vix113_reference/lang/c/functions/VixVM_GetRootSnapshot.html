@@ -1,0 +1,130 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_GetRootSnapshot</b>
+<h1>Description</h1>
+<pre>
+VixError
+VixVM_GetRootSnapshot(VixHandle vmHandle,
+                      int index,
+                      VixHandle *snapshotHandle);
+</pre>
+<p>
+This function returns the handle of the specified snapshot belonging to
+the virtual machine referenced by
+vmHandle.
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>index</i></dt>
+<dd>
+Identifies a root snapshot. See below for range of values.
+</dd>
+<dt><i>snapshotHandle</i></dt>
+<dd>
+(output) A handle to a snapshot.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixError.
+<h1>Remarks</h1>
+<ul>
+<li> This function returns the handle of the specified snapshot belonging to
+the virtual machine referenced by vmHandle.
+<li> Snapshots are indexed from 0 to n-1, where n is the number of root
+snapshots. Use the function 
+VixVM_GetNumRootSnapshots()
+to get the
+value of n.
+<li> VMware Server can manage only a single snapshot
+for each virtual machine. The value of index can only be 0.
+<li> The snapshotHandle returned by this function is reference counted.
+The calling application is responsible for releasing the handle.
+<li> This function is not supported when using the 
+VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0
+<h1>Example</h1>
+<pre>
+VixError err = VIX_OK;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+VixHandle snapshotHandle = VIX_INVALID_HANDLE;
+
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+Vix_ReleaseHandle(jobHandle);
+jobHandle = VixVM_Open(hostHandle,
+                       "c:\\Virtual Machines\\vm1\\win2000.vmx",
+                       NULL, // callbackProc
+                       NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+// No need to release jobHandle here. It's released at bottom.
+
+err = VixVM_GetNumRootSnapshots(vmHandle, &numRootSnapshots);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+for (index = 0; index &lt; numRootSnapshots; index++ ) {
+   err = VixVM_GetRootSnapshot(vmHandle,
+                               index,
+                               &snapshotHandle);
+   if (VIX_OK != err) {
+      // Handle the error...
+      goto abort;
+   }
+
+   // ...Access snapshot properties...
+
+   Vix_ReleaseHandle(snapshotHandle);
+}
+
+abort:
+Vix_ReleaseHandle(jobHandle);
+Vix_ReleaseHandle(snapshotHandle);
+Vix_ReleaseHandle(vmHandle);
+VixHost_Disconnect(hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

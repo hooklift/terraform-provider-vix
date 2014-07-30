@@ -1,0 +1,64 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_CreateDirectoryInGuest</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_CreateDirectoryInGuest(VixHandle vmHandle,
+                             const char *pathName,
+                             VixHandle propertyListHandle,
+                             VixEventProc *callbackProc,
+                             void *clientData);
+</pre>
+<p>
+This function creates a directory in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>pathName</i></dt>
+<dd>
+The path to the directory to be created.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be VIX_INVALID_HANDLE.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+<ul>
+<li> You must call VixVM_LoginInGuest() before calling this function.
+<li> If the parent directories for the specified path do not exist, this function
+will create them.
+<li> If the directory already exists, the error associated with the job handle
+will be set to VIX_E_FILE_ALREADY_EXISTS.
+<li> Only absolute paths should be used for files in the guest; the resolution of 
+relative paths is not specified.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br></body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

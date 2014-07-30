@@ -1,0 +1,133 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_PowerOff</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_PowerOff(VixHandle vmHandle,
+               VixVMPowerOpOptions powerOffOptions,
+               VixEventProc *callbackProc,
+               void *clientData);
+</pre>
+<p>
+This function powers off a virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>powerOffOptions</i></dt>
+<dd>
+Must be VIX_VMPOWEROP_NORMAL or VIX_VMPOWEROP_FROM_GUEST.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the power
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+<ul>
+<li> This function powers off a virtual machine.
+It is an asynchronous operation,
+and the job will be signaled when the operation completes.
+<li> If you call this function while the virtual machine is suspended or powered off,
+the operation returns a VIX_E_VM_NOT_RUNNING error.
+If suspended, the virtual machine remains suspended and is not powered off.
+If powered off, you can safely ignore the error.
+<li> If you pass VIX_VMPOWEROP_NORMAL as an option,
+the virtual machine is powered off at the hardware level.
+Any state of the guest that was not committed to disk will be lost.
+<li> If you pass VIX_VMPOWEROP_FROM_GUEST as an option, the function tries to
+power off the guest OS, ensuring a clean shutdown of the guest. This option
+requires that VMware Tools be installed and running in the guest.
+<li> After VMware Tools begin running in the guest, and
+VixVM_WaitForToolsInGuest
+returns, there is a short delay before VIX_VMPOWEROP_FROM_GUEST becomes available.
+During this time a job may return error 3009, VIX_E_POWEROP_SCRIPTS_NOT_AVAILABLE.
+As a workaround, add a short sleep after the WaitForTools call.
+<li> On a Solaris guest with UFS file system on the root partition, the
+VIX_VMPOWEROP_NORMAL parameter causes an error screen at next power on,
+which requires user intervention to update the Solaris boot archive by
+logging into the failsafe boot session from the GRUB menu. Hence, although UFS
+file systems are supported, VMware recommends using the ZFS file system for
+Solaris guests.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0
+<h1>Example</h1>
+<pre>
+VixError err = VIX_OK;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+Vix_ReleaseHandle(jobHandle);
+jobHandle = VixVM_Open(hostHandle,
+                       "c:\\Virtual Machines\\vm1\\win2000.vmx",
+                       NULL, // callbackProc
+                       NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Assume this virtual machine is already running.
+jobHandle = VixVM_PowerOff(vmHandle,
+                           VIX_VMPOWEROP_FROM_GUEST, // powerOffOptions,
+                           NULL, // callbackProc,
+                           NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_NONE);
+
+abort:
+Vix_ReleaseHandle(jobHandle);
+Vix_ReleaseHandle(vmHandle);
+VixHost_Disconnect(hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

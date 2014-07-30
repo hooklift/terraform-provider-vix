@@ -1,0 +1,110 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMWaitForToolsInGuest</b>
+<h1>Description</h1>
+<pre>
+$err = VMWaitForToolsInGuest($vmHandle,
+                             $timeoutInSeconds);
+</pre>
+<p>
+This function
+returns
+when VMware Tools has successfully started
+in the guest operating system. VMware Tools is a collection of services
+that run in the guest.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>timeoutInSeconds</i></dt>
+<dd>
+The timeout in seconds. If VMware Tools has not started
+                      by this time, the operation completes with an error.
+                      If the value of this argument is zero or negative, then
+                      this operation will wait indefinitely until the
+                      VMware Tools start running in the guest operating
+                      system.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> This function 
+returns
+when VMware Tools has successfully started
+in the guest operating system. VMware Tools is a collection of services
+that run in the guest.
+<li> VMware Tools must be installed and running for some Vix functions to operate
+correctly. If VMware Tools is not installed in the guest operating system,
+or if the virtual machine is not powered on, this function reports an error
+to the job object.
+<li> The VIX_PROPERTY_VM_TOOLS_STATE property of the virtual machine handle is
+undefined until 
+VMWaitForToolsInGuest()
+reports that VMware Tools is running.
+<li> This function should be called after calling any function that resets
+or reboots the state of the guest operating system, but before calling any
+functions that require VMware Tools to be running.  Doing so assures 
+that VMware Tools are once again up and running. Functions that reset
+the guest operating system in this way include:
+<ul>
+<li> VMPowerOn
+<li> VMReset
+<li> VMRevertToSnapshot
+</ul>
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Server 1.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+my $err = VIX_OK;
+my $hostHandle = VIX_INVALID_HANDLE;
+my $vmHandle = VIX_INVALID_HANDLE;
+
+($err, $hostHandle) = HostConnect(VIX_API_VERSION,
+                                  VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                  undef, # hostName
+                                  0, # hostPort
+                                  undef, # userName
+                                  undef, # password
+                                  0, # options
+                                  VIX_INVALID_HANDLE); # propertyListHandle
+
+die "HostConnect() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $vmHandle) = VMOpen($hostHandle,
+                           "c:\\Virtual Machines\\vm1\\win2000.vmx");
+die "VMOpen() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+                       
+$err = VMPowerOn($vmHandle,
+                 0, # powerOnOptions
+                 VIX_INVALID_HANDLE);  # propertyListHandle
+die "VMPowerOn() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+
+$err = VMWaitForToolsInGuest($vmHandle,
+                             300); # timeoutInSeconds
+die "VMWaitForToolsInGuest() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+ReleaseHandle($vmHandle);
+HostDisconnect($hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

@@ -1,0 +1,59 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_GetCurrentSnapshot</b>
+<h1>Description</h1>
+<pre>
+VixError
+VixVM_GetCurrentSnapshot(VixHandle vmHandle,
+                         VixHandle *snapshotHandle);
+</pre>
+<p>
+This function returns the handle of the current active snapshot belonging to
+the virtual machine referenced by
+vmHandle.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>snapshotHandle</i></dt>
+<dd>
+An output parameter that receives a handle to a snapshot.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixError.
+<h1>Remarks</h1>
+<ul>
+<li> This function returns the handle of the current active snapshot belonging to
+the virtual machine referenced by vmHandle.
+<li> The snapshotHandle returned by this function is reference counted.
+The calling application is responsible for releasing the handle.
+<li> This function is not supported when using the 
+VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+VixHandle snapshotHandle;
+VixError err;
+
+err = VixVM_GetCurrentSnapshot(vmHandle, &snapshotHandle);
+
+// remove/revert, otherwise use the snapshot
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

@@ -1,0 +1,53 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>FindRunningVMs</b>
+<h1>Description</h1>
+<pre>
+@vmlist = FindRunningVMs($hostHandle, $timeoutInSeconds);
+</pre>
+<p>
+Returns the virtual machines running on the host associated with hostHandle.
+The first element in the list is an error code.
+<h1>Parameters</h1>
+<dl>
+<dt><i>hostHandle</i></dt>
+<dd>
+The host handle returned by HostConnect().
+<p>
+</dd>
+<dt><i>timeoutInSeconds</i></dt>
+<dd>
+must be -1.
+</dd>
+</dl>
+<h1>Return Value</h1>
+A list, with an error code as the first entry, and running 
+Virtual Machine names following.
+<h1>Remarks</h1>
+FindRunningVMs() is a shortcut to FindItems($hostHandle, VIX_FIND_RUNNING_VMS,
+$timeoutInSeconds)
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+<h1>Example</h1>
+<pre>
+my @vms = FindRunningVMs($hostHandle, 100);
+my $err = shift @vms;
+die "Error $err finding running VMs ", GetErrorText($err),"\n" if $err != VIX_OK;
+
+print "VMs: @vms\n";
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

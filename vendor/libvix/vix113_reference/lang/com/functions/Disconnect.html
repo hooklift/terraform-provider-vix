@@ -1,0 +1,71 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>Disconnect</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+Disconnect(void)
+</pre>
+<p>
+Destroys the state for a particular host handle.
+<h1>Parameters</h1>
+<dl>
+   None.
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> 
+Call this function to disconnect the host. After you call this function
+the handle is no longer valid and you should not use it in any Vix function.
+Similarly, you should not use any handles obtained from the host while it
+was connected.
+<li> Before calling Disconnect, you must call VM.Close() on each open VM.
+For more information, see the documentation for the COM function Close.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0.
+<h1>Example</h1>
+<pre>
+</pre>
+VBScript:
+<pre>
+Dim lib
+Dim job
+Dim err
+Dim host
+Dim results
+
+Set lib = CreateObject("VixCOM.VixLib")
+
+Set results = Nothing
+
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_VI_SERVER, "https://viserver/sdk", 0, "Administrator", "adminpass", 0, Nothing, Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set host = results(0)
+
+
+' ...Do everything in your program...
+
+Set results = Nothing
+Set job = Nothing
+
+host.Disconnect()
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

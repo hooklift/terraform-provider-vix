@@ -1,0 +1,749 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<META NAME="GENERATOR" CONTENT="Adobe FrameMaker 7.0/HTML Export Filter">
+<TITLE>Getting Started</TITLE>
+<link rel="stylesheet" href="foundrydoc.css" charset="ISO-8859-1" type="text/css">
+</HEAD>
+<BODY BGCOLOR="#ffffff">
+<DIV>
+<H6 CLASS="zChapterAnchor">
+&nbsp;</H6>
+<TABLE>
+<TR>
+<TD ROWSPAN="1" COLSPAN="1">
+<H1 CLASS="H0-Title">
+<A NAME="0_10224"></A>Getting Started</H1>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<H6 CLASS="zChapterNumber">
+&nbsp;</H6>
+</TD>
+</TR>
+</TABLE>
+<P CLASS="B-Body">
+The VIX API allows you to automate virtual machine operations on most current VMware platform products.</P>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1"><A NAME="01_59680"></A>About the VIX API</H2>
+<P CLASS="B-Body">
+The VIX API (or &ldquo;Vix&rdquo;) is a library for writing scripts and programs to manipulate virtual machines. It is high-level, easy to use, and practical for both script developers and application programmers. The VIX API is designed for three kinds of users:</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<EM CLASS="bold">Technically Adventurous Users</EM>
+&ndash; For example, dedicated IT personnel in an organization building their own in-house tools.</LI>
+<LI CLASS="BL-BulletList">
+<EM CLASS="bold">Partners</EM>
+&ndash; Software vendors using Vix to integrate VMware products with their own products or to build management products specifically for virtual machines.</LI>
+<LI CLASS="BL-BulletList">
+<EM CLASS="bold">VMware Engineering</EM>
+&ndash; VMware uses Vix in its own products as a general abstraction layer between core virtual machine processes and associated service processes.</LI>
+</UL>
+<DIV>
+<H3 CLASS="H2-Heading2"><A NAME="02_62119"></A>Client and Guest Support</H3>
+<P CLASS="B-Body">
+You can develop VIX API programs on Linux clients or on Microsoft clients (Windows XP and later).</P>
+<P CLASS="B-Body">
+The VIX API supports client programs and scripts written in C, Perl, and COM (Visual Basic, VBscript, C#).
+For C, a recent version of Visual Studio or Linux libraries, especially <tt>libc</tt>, is required.</P>
+<P CLASS="B-Body">
+VIX API scripts and programs can perform guest operations on the following guest operating systems:</P>
+</UL>
+<LI CLASS="BL-BulletList">Linux distributions (kernel 2.4.x or later recommended)</LI>
+<LI CLASS="BL-BulletList">Microsoft Windows (some functions not supported before Windows XP)</LI>
+<LI CLASS="BL-BulletList">Solaris 10 (on Intel or AMD) and OpenSolaris 2009.6</LI>
+</UL>
+<P>
+This VIX API release provides 64-bit libraries for both Windows and Linux,
+and 64-bit Vix Perl.  In the 1.10 release and before,
+64-bit Windows systems had to use 32-bit libraries in emulation mode (WoW64),
+and Vix Perl provided 32-bit support only.</P>
+<P>
+If you want to create a VIX API support request, you first must collect diagnostic information.
+For instructions, see the knowledge base article
+<a href="http://kb.vmware.com/kb/1019561">Collecting VIX Diagnostic Information</a>.</P>
+
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2"><A NAME="02_64119"></A>Platform Compatibility</H3>
+<P CLASS="B-Body">
+This release of the VIX API is compatible with VMware Workstation, VMware Player, VMware Server, ESX/ESXi hosts, and vCenter Server.</P>
+<DIV>
+<TABLE BORDER="1">
+<CAPTION>
+<P CLASS="TH-TableHead">
+<B>Platform Product Compatibility</B></P>
+</CAPTION>
+<TR>
+<TH ROWSPAN="1" COLSPAN="1">
+<P CLASS="TH-TableHead">
+VIX API Version</P>
+</TH>
+<TH ROWSPAN="1" COLSPAN="1">
+<P CLASS="TH-TableHead">
+VMware Platform Products</P>
+</TH>
+<TH ROWSPAN="1" COLSPAN="1">
+<P CLASS="TH-TableHead">
+Library Location</P>
+</TH>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.0.3</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	VMware Server 1.0.3</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	server-1</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.0.9</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	VMware Server 1.0.9</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	server-1.0.9</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.1</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	VMware Workstation 6.0</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	ws-2</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.1.1 - 1.1.2</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	VMware Workstation 6.0.2 or earlier</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	ws-3</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.1.3 - 1.1.5</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	VMware Workstation 6.0.5 or earlier</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	ws-5</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.6.0</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	VMware Server 2.0 or earlier</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	VIServer-2.0.0</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.6.x</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	Workstation 6.5.x or earlier</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	Workstation-6.5.x</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.7</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	Above products and ESX/ESXi in vSphere 4.0</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	VSphere-4.0</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.8</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	Workstation 7.0 and Player 3.0 or earlier</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	Workstation-7.0.0</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.9</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	Workstation 7.1 and Player 3.1 or earlier</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	Workstation-7.1.0</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.10</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	Above products and ESX/ESXi in vSphere 4.1
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	VSphere-4.1</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.11</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	vSphere 5, Workstation 8, Player 4, or earlier</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	Workstation-8.0.0-and-vSphere-5.0.0
+	</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.12</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	vSphere 5.1, Workstation 9, Fusion 5, Player 5, or earlier</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	Workstation-9.0.0-and-vSphere-5.1.0
+	</P>
+	</TD>
+</TR>
+<TR>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	1.13</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	vSphere 5.5, Workstation 10, Fusion 6, Player 6, or earlier</P>
+	</TD>
+	<TD ROWSPAN="1" COLSPAN="1" align="center">
+	<P CLASS="TC-TableCell">
+	Workstation-10.0.0-and-vSphere-5.5.0
+	</P>
+	</TD>
+</TR>
+</TABLE>
+<P CLASS="B-Body">
+The library location is not important if you use the wrapper library as recommended.</P>
+<P CLASS="B-Body">
+Vix version 1.x supports programs written to version 1.x of the VIX API. Exceptions are noted on function reference pages. For example, VMware Server does not support record and replay, while VMware Workstation does not support virtual machine registration.</P>
+<P CLASS="B-Body">
+Vix libraries are installed with VMware Server and VMware Workstation and provide API compatibility corresponding to the product release. Vix libraries are downward compatible in most cases. If you upgrade VMware Server or VMware Workstation, you should also upgrade any separately installed Vix libraries. For instructions, see <A HREF="intro.html#06_47744" CLASS="XRef">Installing the VIX API</A>. You should also upgrade VMware Tools to match the product release.</P>
+<P CLASS="B-Body">
+With vCenter Server, ESX/ESXi hosts, and VMware Server, you run Vix programs remotely. With VMware Workstation, Vix programs usually run on the host.</P>
+<UL>
+</DIV>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2"><A NAME="04_69897"></A>Security Warning</H3>
+<P CLASS="B-Body">
+For security reasons, it is not safe to use the VIX API in a <tt>setuid</tt> root program.</P>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2"><A NAME="05_71523"></A>Redistributable Code and Sample Code</H3>
+<P CLASS="B-Body">
+As noted in the End User License Agreement, the VIX API allows you to build and distribute your own applications. To facilitate this, the following files are designated as redistributable for the purpose of that agreement:</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<tt>VixAllProducts.lib</tt> and <tt>VixAllProductsd.lib</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<tt>vix.lib</tt> and <tt>vix.dll</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<tt>vixCOM.dll</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<tt>gvmomi-vix-1.13.1.dll</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<tt>libvixAllProducts.so</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<tt>libvix.so</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<tt>libgvmomi-vix-1.13.1.so.0</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<tt>vixwrapper-config.txt</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<tt>manifest.txt</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<tt>compiled perl modules resulting from building the contents of vix-perl.tar.gz or vix-perl.zip</tt>
+</LI>
+</UL>
+<P CLASS="B-Body">
+Redistribution of the open source libraries included with the VIX API is governed by their respective open source license agreements.</P>
+<P CLASS="B-Body">
+The VIX API also includes sample code, which you can use as a starting point for your own programs. Code is delivered in the <tt>Samples</tt> directory installed with VMware VIX. A <tt>Makefile</tt> is provided for Linux, and an <tt>nMakefile</tt> for Windows.</P>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1"><A NAME="06_47744"></A>Installing the VIX API</H2>
+<P CLASS="B-Body">
+On VMware Server and Workstation, you do not need to install any additional VIX API components. Vix libraries are installed by default under &ldquo;VMware VIX&rdquo; or <tt>vmware-vix</tt>. To compile programs on these systems, see <A HREF="intro.html#11_53099" CLASS="XRef">Compiling Vix Programs</A>.</LI>
+<P CLASS="B-Body">
+To control ESX/ESXi hosts or VMware Server remotely from another machine, you need header files <tt>vix.h</tt> and <tt>vm_basic_types.h</tt>, as well as one or more library files. You can get these files in one of two ways:
+<UL>
+<LI CLASS="BL1-BulletListIndent1">
+Use the Vix standalone installer to get the files needed to compile a program. See <A HREF="intro.html#07_10349" CLASS="XRef">Using the Windows Standalone Installer</A> or <A HREF="intro.html#08_84125" CLASS="XRef">Using the Linux Standalone Installer</A>.</LI>
+<LI CLASS="BL1-BulletListIndent1">
+Copy these files from a VMware Server host, then use them as described in the section <A HREF="intro.html#11_53099" CLASS="XRef">Compiling Vix Programs</A>.</LI>
+</UL>
+<DIV>
+<H3 CLASS="H2-Heading2"><A NAME="07_10349"></A>Using the Windows Standalone Installer</H3>
+<DIV>
+<P CLASS="P-ProcedureHead">To install the VIX API files on Windows:</P>
+<OL>
+<LI CLASS="L1F-List1First">
+Download the installer program to your Desktop.</LI>
+<P>
+<LI CLASS="L1-List1">
+Double-click the installer icon to run the graphical installer.</LI>
+</OL>
+<P CLASS="B-Body">
+To uninstall the VIX API, go to
+<EM CLASS="Interface">Start</EM> &gt; <EM CLASS="Interface">Settings</EM> &gt; <EM CLASS="Interface">Control Panel</EM>
+and use the Add/Remove Programs control panel.</P>
+</DIV>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2"><A NAME="08_84125"></A>Using the Linux Standalone Installer</H3>
+<DIV>
+<P CLASS="P-ProcedureHead">To install the VIX API files on Linux:</P>
+<OL>
+<LI CLASS="L1F-List1First">
+Download the bundle install package. For example:
+<PRE CLASS="C-Code">wget http://www.vmware.com/downloads/server/VMware-VIX-1.9.0-nnnnnn.i386.bundle</PRE>
+</LI>
+<LI CLASS="L1-List1">
+As superuser, run a shell to install the package:
+<PRE CLASS="C-Code">sudo sh VMware-VIX-1.9.0-nnnnnn.i386.bundle</PRE>
+</LI>
+<LI CLASS="L1-List1">
+Read the EULA and click <b>Next</b> if you agree to its terms.
+Click <b>Install</b> to accept the default bundle installation.
+</LI>
+</OL>
+<P CLASS="B-Body">
+To uninstall the VIX API on Linux, run the following program:</P>
+<PRE CLASS="C-Code">sudo vmware-installer -u vmware-vix</PRE>
+</DIV>
+</DIV>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2"><A NAME="09_96911"></A>Upgrading an Earlier Installation</H3>
+<P CLASS="B-Body">
+If you are using older Vix libraries, VMware recommends that you upgrade those libraries using the standalone installer. The standalone installer provides a current version of the wrapper library, which allows programs to communicate with any Vix library, regardless of version or target architecture. The wrapper library dynamically loads appropriate library files at connection time.</P>
+<P CLASS="B-Body">
+Otherwise you must link your program to a Vix library that matches the server version. This gets inconvenient if your program communicates with more than one version of the server.</P>
+<P CLASS="B-Body">
+VMware Tools in virtual machines should be kept up-to-date with the VMware version on the host. When upgrading, also update VMware Tools in all guest operating systems. The VIX API relies on a current matching version of VMware Tools to perform many operations.</P>
+<P CLASS="B-Body">
+Upgrading the Vix libraries replaces the older header files, <tt>vix.h</tt> and <tt>vm_basic_types.h</tt> with newer header files. The header files are installed at the following locations by default:</P>
+<UL>
+<LI CLASS="BL-BulletList">
+On a Windows system:
+<UL>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>C:\Program Files\VMware\VMware VIX\vix.h</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>C:\Program Files\VMware\VMware VIX\vm_basic_types.h</tt>
+</LI>
+</UL>
+</LI>
+<LI CLASS="BL-BulletList">
+On a Linux system:
+<UL>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>/usr/include/vmware-vix/vix.h</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>/usr/include/vmware-vix/vm_basic_types.h</tt>
+</LI>
+</UL>
+</LI>
+</UL>
+<P CLASS="B-Body">
+Whether or not you use the wrapper library, your programs may call only the functions supported by the host. If you communicate with an older host, you cannot use newer features.</P>
+</DIV>
+</DIV>
+<DIV>
+<DIV>
+<H2 CLASS="H1-Heading1"><A NAME="10_53089"></A>Sample Vix Programs</H2>
+<P CLASS="B-Body">
+On Windows, the sample programs are installed in <tt>C:\Program Files\VMware\VMware VIX\Samples</tt> by default. An <tt>nMakefile</tt> is provided to compile all sample programs using <tt>nmake</tt> and the Visual Studio C compiler.</P>
+<P CLASS="B-Body">
+On Linux, the sample programs are installed in <tt>/usr/share/doc/vmware-vix/VMwareVix/samples/</tt> by default. A <tt>Makefile</tt> is provided to compile all sample programs using <tt>make</tt> and the GNU C compiler.</P>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1"><A NAME="11_53099"></A>Compiling Vix Programs</H2>
+<P CLASS="B-Body">
+Vix includes a wrapper library, which enables Vix programs to work with multiple supported VMware products and versions. If you link your program with this library, it dynamically loads the appropriate Vix library for a VMware product at runtime, during the <tt>VixHost_Connect()</tt> call.
+VMware recommends that you use the wrapper library, although you can compile Vix programs without it.</P>
+<P CLASS="B-Body">
+For Windows, both a static version and a dynamic version of the wrapper library are provided.
+The static version of the wrapper library is built with Visual Studio 2008 SP1,
+and requires use of the same Visual Studio release to build and link your application.
+For Visual Studio 2008 and later releases,
+the dynamic version of the wrapper library can be used to build your application.
+<DIV>
+<H3 CLASS="H2-Heading2"><A NAME="12_38187"></A>Compiling on Windows With the Static Wrapper Library</H3>
+<P CLASS="B-Body">
+To compile code on Windows with Visual Studio 2008 SP1 using the static wrapper library,
+follow this procedure. Files are in the <tt>C:\Program Files\VMware\VMware VIX</tt> folder.
+</P>
+<OL>
+<LI CLASS="L1F-List1First">
+Add the header file to an include statement in your source code:</LI>
+<PRE CLASS="C1-CodeIndent1">#include &quot;vix.h&quot;</PRE>
+<PRE CLASS="C1-CodeIndent1">... program code here ...</PRE>
+<LI CLASS="L1-List1">
+Compile for, and link with, the multithreaded version of the C runtime library. For Workstation 6.0.1 and later, you may use either the debug or the non-debug version of this library. For Workstation 6.0.0 and earlier, you must use the non-debug version.</LI>
+<UL>
+<LI CLASS="BL1-BulletListIndent1">
+To compile and link with the debug version (<tt>libcmtd.lib</tt>) use compiler options <tt>/MTd</tt> <tt>/nodefaultlib:libcmtd.lib</tt>.
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+To compile and link with the non-debug version (<tt>libcmt.lib</tt>) use compiler options <tt>/MT</tt> <tt>/nodefaultlib:libcmt.lib</tt>.
+</LI>
+</UL>
+<LI CLASS="L1F-List1First">
+Compile code to link with these files:</LI>
+<UL>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>VixAllProducts.lib</tt>
+for non-debug, or 
+<tt>VixAllProductsd.lib</tt>
+for debug.
+(For 64-bit Windows, use <tt>Vix64AllProducts.lib</tt> for non-debug,
+or <tt>Vix64AllProductsd.lib</tt> for debug.)
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>kernel32.lib</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>user32.lib</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>advapi32.lib</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>ole32.lib</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>oleaut32.lib</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>ws2_32.lib</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>shell32.lib</tt>
+</LI>
+</UL>
+</LI>
+</OL>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2"><A NAME="12_98187"></A>Compiling on Windows With the Dynamic Wrapper Library</H3>
+<P CLASS="B-Body">
+To compile code on Windows with Visual Studio 2008 or later using the dynamic wrapper library,
+follow this procedure. Files are in the <tt>C:\Program Files\VMware\VMware VIX</tt> folder.
+<OL>
+<LI CLASS="L1F-List1First">
+Add the header file to an include statement in your source code:</LI>
+<PRE CLASS="C1-CodeIndent1">#include &quot;vix.h&quot;</PRE>
+<PRE CLASS="C1-CodeIndent1">... program code here ...</PRE>
+<LI CLASS="L1-List1">
+Compile for, and link with, the multithreaded version of the C runtime library.</LI>
+<LI CLASS="L1F-List1First">
+Unlike the static version step, link <tt>VixAllProductsDyn.lib</tt> with your application code,
+and link the C runtime the usual default way provided by your Visual Studio release.
+For example, to compile and link with the static multithreaded C runtime <tt>libcmt.lib</tt>,
+use compiler option <tt>/MT</tt> but do not specify <tt>/nodefaultlib:libcmt.lib</tt>.</LI>
+<LI CLASS="L1F-List1First">
+Compile code to link with these files:</LI>
+<UL>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>VixAllProductsDyn.lib</tt>
+(For 64-bit Windows, use <tt>Vix64AllProductsDyn.lib</tt>)
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>kernel32.lib</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>user32.lib</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>advapi32.lib</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>ole32.lib</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>oleaut32.lib</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>ws2_32.lib</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>shell32.lib</tt>
+</LI>
+</UL>
+</LI>
+</OL>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2"><A NAME="13_95619"></A>Compiling on Linux With the Wrapper Library</H3>
+<P CLASS="B-Body">
+This procedure assumes that you have installed Vix components in the default directories. If you made different choices during the installation, specify your directory choices instead.</P>
+<OL>
+<LI CLASS="L1F-List1First">
+Add an include statement in your source code for the header file:
+<PRE CLASS="C1-CodeIndent1">#include &quot;vix.h&quot;</PRE>
+<PRE CLASS="C1-CodeIndent1">... program code here ...</PRE>
+</LI>
+<LI CLASS="L1-List1">
+Compile your application, linking to the wrapper library, dynamic load library, and threads library:
+<PRE CLASS="C1-CodeIndent1">$ gcc -I/usr/include/vmware-vix vixapp.c -o vixapp -lvixAllProducts -ldl -lpthread</PRE>
+</LI>
+</OL>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2"><A NAME="14_52460"></A>Compiling on Windows Without the Wrapper Library</H3>
+<P CLASS="B-Body">
+If you do not use the wrapper, you need to link the appropriate Vix libraries for the VMware product to which your Vix program connects. Workstation is able to link a debug version of the C runtime library.</P>
+<DIV>
+<P CLASS="P-ProcedureHead">To compile your code for use with Workstation 7.1:</P>
+<OL>
+<LI CLASS="L1F-List1First">
+Make the required DLL files available to your program, either by placing them in the same directory as your executable, or by placing them in the system directory (<tt>C:\WINDOWS\system32</tt>).
+The easiest option is to copy DLL files from the directory <tt>C:\Program Files\VMware\VMware VIX\Workstation-7.1.0\32bit</tt> or <tt>64bit</tt>.
+<UL>
+<LI CLASS="BL1-BulletListIndent1">
+<A NAME="0_marker-1011733"></A>
+<tt>vix.dll</tt>
+(or 
+<tt>vixd.dll</tt>
+if you are using debug C runtime library)
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>iconv.dll</tt>
+(or
+<tt>inconvd.dll</tt>
+if you are using debug C runtime library)
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>libxml2.dll</tt>
+(or
+<tt>libxml2d.dll</tt>
+if you are using debug C runtime library)
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>libeay32.dll</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>ssleay32.dll</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>vmcryptolib.dll</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>zlib1.dll</tt>
+</LI>
+</UL>
+</LI>
+<LI>
+Add the header file to an include statement in your source code:
+<PRE CLASS="C1-CodeIndent1">#include &quot;vix.h&quot;</PRE>
+<PRE CLASS="C1-CodeIndent1">... program code here ...</PRE>
+</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_marker-1011807"></A>Compile your code to link in <tt>vix.lib</tt> statically.</LI>
+<LI CLASS="L1-List1">
+Compile for, and link with, the multithreaded version of the C runtime library. You may use either the debug or the non-debug version of this library.</LI>
+<UL>
+<LI CLASS="BL1-BulletListIndent1">
+To compile and link with the debug version (<tt>libcmtd.lib</tt>) use compiler option <tt>/MTd</tt> with Microsoft Visual Studio.
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+To compile and link with the non-debug version (<tt>libcmt.lib</tt>) use compiler option <tt>/MT</tt> with Microsoft Visual Studio.
+</LI>
+</UL>
+</OL>
+</DIV>
+<P CLASS="P-ProcedureHead">To compile your code for use with Workstation 6.0.x:</P>
+<OL>
+<LI CLASS="L1F-List1First">
+Make the required DLL files available to your program, either by placing them in the same directory as your executable, or by placing them in the system directory (<tt>C:\WINDOWS\system32</tt>).
+The easiest option is to copy DLL files from the directory <tt>C:\Program Files\VMware\VMware VIX\ws-2\32bit</tt> or <tt>ws-3\32bit</tt>.
+<UL>
+<LI CLASS="BL1-BulletListIndent1">
+<A NAME="0_marker-1011733"></A>
+<tt>vix.dll</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>iconv.dll</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>libxml2.dll</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>libeay32.dll</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>ssleay32.dll</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>vmcryptolib.dll</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>zlib1.dll</tt>
+</LI>
+</UL>
+</LI>
+<LI>
+Add the header file to an include statement in your source code:
+<PRE CLASS="C1-CodeIndent1">#include &quot;vix.h&quot;</PRE>
+<PRE CLASS="C1-CodeIndent1">... program code here ...</PRE>
+</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_marker-1011807"></A>Compile your code to link in <tt>vix.lib</tt> statically.</LI>
+<LI CLASS="L1-List1">
+Compile for, and link with, the multithreaded version of the C runtime library. You must use the non-debug version of this library (<tt>libcmt.lib</tt>) by using compiler option <tt>/MT</tt> with Microsoft Visual Studio.</LI>
+</OL>
+</DIV>
+<DIV>
+<P CLASS="P-ProcedureHead">To compile your code for use with VMware Server 1.0:</P>
+<OL>
+<LI CLASS="L1F-List1First">
+Make the following DLL files available to your program, either by placing them in the same directory as your executable, or by placing them in your system directory (<tt>C:\WINDOWS\system32</tt>).
+The easiest option is to copy DLL files from the directory <tt>C:\Program Files\VMware\VMware VIX\server-1\32bit</tt>.
+<UL>
+<LI CLASS="BL1-BulletListIndent1">
+<A NAME="0_marker-1015665"></A>
+<tt>vix.dll</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>ssleay32.dll</tt>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+<tt>libeay32.dll</tt>
+</LI>
+</UL>
+</LI>
+<LI>
+Add the header file to an include statement in your source code:
+<PRE CLASS="C1-CodeIndent1">#include &quot;vix.h&quot;</PRE>
+<PRE CLASS="C1-CodeIndent1">... program code here ...</PRE>
+</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_marker-1015748"></A>Compile your code to link in <tt>vix.lib</tt> statically.</LI>
+</OL>
+</DIV>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2"><A NAME="15_90680"></A>Compiling on Linux Without the Wrapper Library</H3>
+<DIV>
+<P CLASS="P-ProcedureHead">To compile your code with VMware Server or VMware Workstation installed:</P>
+<OL>
+<LI CLASS="L1F-List1First">
+<A NAME="0_marker-1011109"></A>Add an include statement in your source code for the header file:
+<PRE CLASS="C1-CodeIndent1">#include &quot;vix.h&quot;</PRE>
+<PRE CLASS="C1-CodeIndent1">... program code here ...</PRE>
+</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_marker-1011113"></A>Compile your application, linking statically to <tt>libvix.so</tt>, as in the following examples.
+<UL>
+<LI CLASS="BL1-BulletListIndent1">
+To link the VMware Workstation library on a 32-bit machine:
+<PRE CLASS="C-Code">gcc -I/usr/include/vmware-vix -o vixapp vixapp.c /usr/lib/vmware-vix/Workstation-7.1.0/32bit/libvix.so</PRE>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+To link the VMware Server 2.0 library on a 32-bit machine:
+<PRE CLASS="C-Code">gcc -I/usr/include/vmware-vix -o vixapp vixapp.c /usr/lib/vmware-vix/lib/VIServer-2.0.0/32bit/libvix.so</PRE>
+</LI>
+<LI CLASS="BL1-BulletListIndent1">
+To link the old VMware Server 1.x library:
+<PRE CLASS="C-Code">gcc -I/usr/include/vmware-vix -o vixapp vixapp.c /usr/lib/vmware-vix/lib/server-1/32bit/libvix.so</PRE>
+</LI>
+</UL>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1"><A NAME="16_67744"></A>Installing Vix Perl</H2>
+<P CLASS="B-Body">
+To install the Perl component of Vix, find the <tt>vix-perl.tar.gz</tt> file on Linux or the <tt>vix-perl.zip</tt> file on Windows, and unpack it. The <tt>README</tt> file describes how to install the <tt>vix-perl</tt> module.</P>
+</DIV>
+</DIV>
+</BODY>
+</HTML>

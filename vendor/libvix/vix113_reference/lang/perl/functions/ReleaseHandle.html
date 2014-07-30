@@ -1,0 +1,41 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>ReleaseHandle</b>
+<h1>Description</h1>
+<pre>
+ReleaseHandle($handle);
+</pre>
+<p>
+This function decrements the reference count for a handle and
+destroys the handle when there are no references.
+<h1>Parameters</h1>
+<dl>
+<dt><i>handle</i></dt>
+<dd>
+Any handle returned by a Vix function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+None.
+<h1>Remarks</h1>
+This function decrements the reference count for a handle. You should no
+longer use the handle once it has been released. When the last reference
+to a handle has been released, the runtime state for the handle is destroyed.
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Server 1.0
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

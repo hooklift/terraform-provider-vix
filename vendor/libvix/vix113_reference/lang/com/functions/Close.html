@@ -1,0 +1,160 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>Close</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+Close(void)
+</pre>
+<p>
+Frees resources associated with the COM Object.
+<h1>Parameters</h1>
+<dl>
+None.
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> The Close function is exposed by the IVixHandle2 interface. To use Close with
+VM, Job, or Snapshot objects, typecast the object to IVixHandle2.
+<li> You should no longer use the COM object, or any references to that object,
+after Close has been called. This includes any reference to the object in
+a Job.Wait results array.
+<li> This function decrements the reference count of the object handle to 0.
+This results in resources associated with the Host object being freed.
+For more information, see the documentation for the C function Vix_ReleaseHandle.
+<li> This function should be called on every open VM, Job, and Snapshot object prior to
+Host.Disconnect. While the destructor for the object will automatically decrease
+the object Handle reference count to 0, there are race conditions associated with
+garbage collection  that can cause problems. To ensure none of these race conditions are
+encountered, Close should be called for each VM, Job, and Snapshot object prior
+to Host.Disconnect.
+<li> VBScript cannot access the IVixHandle2 Interface that contains Close. But because
+VBScript's garbage collection occurs immediately when an object goes out of scope,
+there is no race condition. For VBScript, instead of calling Close for each VM, Job, and
+Snapshot object, set each object to Nothing prior to calling Host.Disconnect.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware VIX API 1.6.3.
+<h1>Example</h1>
+VBScript:
+<pre>
+Dim lib
+Dim host
+Dim vm
+Dim err
+Dim results
+Dim job
+
+Set lib = CreateObject("VixCOM.VixLib")
+
+' Connect to the local installation of Workstation. This also initializes the VIX API.
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION, Empty, 0, Empty, Empty, 0, Nothing, Nothing)
+
+' results needs to be initialized before it's used, even if it's just going to be overwritten.
+Set results = Nothing
+
+' Wait waits until the job started by an asynchronous function call has finished. It also
+' can be used to get various properties from the job. The first argument is an array
+' of VIX property IDs that specify the properties requested. When Wait returns, the 
+' second argument will be set to an array that holds the values for those properties,
+' one for each ID requested.
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+' The job result handle will be first element in the results array.
+Set host = results(0)
+
+' Open the virtual machine with the given .vmx file.
+Set job = host.OpenVM("c:\\Virtual Machines\\vm1\\win2000.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set vm = results(0)
+
+'Execute other commands here
+
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+
+host.Disconnect()
+
+</pre>
+C#:
+<pre>
+class Program
+{
+
+   static void Main(string[] args)  
+   {
+      VixCOM.VixLibClass lib = new VixCOM.VixLibClass();
+      UInt64 err;
+      object results = null;
+      
+      VixCOM.IJob job = lib.Connect(VixCOM.Constants.VIX_API_VERSION,
+                                    VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                    null,
+                                    0,
+                                    null,
+                                    null,
+                                    0,
+                                    null,
+                                    null);
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE },
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IHost host = (VixCOM.IHost)((object[])results)[0];
+      CloseVixObject(job);
+
+      job = host.OpenVM("c:\\Virtual Machines\\vm1\\win2000.vmx", null);
+
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE }, 
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IVM2 vm = (VixCOM.IVM2)((object[])results)[0];
+      CloseVixObject(job);
+
+      // ...Do everything in your program...
+
+      CloseVixObject(vm);
+     
+      host.Disconnect();
+   }
+
+   static void CloseVixObject(Object vixObject)
+   {
+      try
+      {
+         ((IVixHandle2)vixObject).Close();
+      }
+      catch(Exception)
+      {
+         //Close is not supported in this version of Vix COM - Ignore
+      }
+   }
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

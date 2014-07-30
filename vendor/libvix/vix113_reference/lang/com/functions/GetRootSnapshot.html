@@ -1,0 +1,114 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>GetRootSnapshot</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+GetRootSnapshot([in] LONG index,
+                [out] ISnapshot** snapshot,
+                [out,retval] ULONGLONG* error);
+</pre>
+<p>
+This function returns the handle of the specified snapshot belonging to
+the virtual machine referenced by
+the IVM object against which this method is invoked.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>index</i></dt>
+<dd>
+Identifies a root snapshot. See below for range of values.
+</dd>
+<dt><i>snapshotHandle</i></dt>
+<dd>
+Returns an ISnapshot object the represents the root snapshot.  
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT]
+<h1>Remarks</h1>
+<ul>
+<li> This function returns the handle of the specified snapshot belonging to
+the virtual machine referenced by vmHandle.
+<li> Snapshots are indexed from 0 to n-1, where n is the number of root
+snapshots. Use the function 
+VM::GetNumRootSnapshots()
+to get the
+value of n.
+<li> VMware Server can manage only a single snapshot
+for each virtual machine. The value of index can only be 0.
+<li> This function is not supported when using the 
+VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+Dim lib
+Dim host
+Dim vm
+Dim job
+Dim err
+Dim results
+
+results = Nothing
+
+Set lib = CreateObject("VixCOM.VixLib")
+
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION, Empty, 0, Empty, Empty, 0, Nothing, Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT), result)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle error...
+End If
+
+Set host = results(0)
+
+Set job = host.OpenVM("c:\Virtual Machines\vm1\win2000.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT), result)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle error...
+End If
+
+Set vm = results(0)
+
+Dim numSnapshots
+
+err = vm.GetNumRootSnapshots(numSnapshots)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle error...
+End If
+
+Dim snapshot
+
+For i=0 to numSnapshots-1
+   err = vm.GetRootSnapshot(i, snapshot)
+   If lib.ErrorIndicatesFailure(err) Then
+      ' Handle error...
+   End If
+   
+   ' ...Access snapshot properties...
+Next
+
+Set snapshot = Nothing
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+
+host.Disconnect()
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

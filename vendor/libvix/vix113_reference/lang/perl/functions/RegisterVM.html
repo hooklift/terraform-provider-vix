@@ -1,0 +1,93 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>RegisterVM</b>
+<h1>Description</h1>
+<pre>
+$err = RegisterVM($hostHandle,
+                  $vmxFilePath);
+</pre>
+<p>
+This
+function
+adds a virtual machine to the host's inventory.
+<h1>Parameters</h1>
+<dl>
+<dt><i>hostHandle</i></dt>
+<dd>
+The host handle returned by HostConnect().
+</dd>
+<dt><i>vmxFilePath</i></dt>
+<dd>
+The path name of the .vmx file on the host.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> This
+function
+registers the virtual machine identified by vmxFilePathName, which is
+a storage path to the configuration file (.vmx) for that virtual machine.
+You can register a virtual machine regardless of its power state.
+<li> The format of the path name depends on the host operating system.
+If the path name includes backslash characters,
+you need to precede each one with an escape character.
+Path to storage [standard] or [storage1] may vary.
+<li> For VMware Server 1.x, supply the full path name instead of storage path,
+and specify VIX_SERVICEPROVIDER_VMWARE_SERVER to connect.
+<li> This
+function
+returns VIX_OK but has no effect on Workstation or Player,
+which lack a virtual machine inventory.
+<li> It is not a Vix error to register an already-registered virtual machine,
+although the VMware Server UI shows an error icon in the Task pane.
+Trying to register a non-existent virtual machine results in error 2000,
+VIX_E_NOT_FOUND.
+<li> With vSphere, this request can generate an error in which will
+be displayed on the vSphere client as it tries to find the appropriate
+resource pool for the Virtual Machine being registered.
+<li> With vSphere, this request will register the Virtual Machine in the
+first matching datastore it finds.  If vSphere is configured with
+more than one Datacenter which contains the same Datastore name,
+the registration may not occur where it is expected.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Server 1.0
+<h1>Example</h1>
+<pre>
+my $err = VIX_OK;
+my $hostHandle = VIX_INVALID_HANDLE;
+
+($err, $hostHandle) = HostConnect(VIX_API_VERSION,
+                                  VIX_SERVICEPROVIDER_VMWARE_VI_SERVER,
+                                  "https://viserver/sdk", # hostName
+                                  0, # hostPort
+                                  "root", # userName
+                                  "rootpasswd", # password
+                                  0, # options
+                                  VIX_INVALID_HANDLE); # propertyListHandle
+
+die "HostConnect() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+$err = RegisterVM($hostHandle,
+                  "[standard] Windows XP\\Windows XP.vmx");
+die "RegisterVM() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+                       
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

@@ -1,0 +1,91 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<div class="deprecated">This function was removed in version 1.11.</div><h1>Name</h1>
+<b>VMBeginRecording</b>
+<h1>Description</h1>
+<pre>
+($err, $snapshotHandle) = VMBeginRecording($vmHandle, $name, $description,
+					   $options, $propertyListHandle)
+</pre>
+<p>
+This function records a virtual machine's activity as a snapshot object.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen()
+	to create a virtual machine handle.
+</dd>
+<dt><i>name</i></dt>
+<dd>
+A user-defined name for the recording; need not be unique.
+</dd>
+<dt><i>description</i></dt>
+<dd>
+A user-defined description for the recording.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be zero.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be VIX_INVALID_HANDLE.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<p>
+$snapshotHandle.  The handle to the snapshot object.
+<h1>Remarks</h1>
+<ul>
+<li> Record-replay functionality has been deprecated and this function may be removed from future versions of the VIX API.
+<li> The virtual machine must be powered on.  To record the virtual machine
+from the beginning, call VixVM_PowerOn with VIX_VMPOWEROP_START_VM_PAUSED,
+then start recording.
+<li> This function only works on a virtual machine that is not already
+recording or replaying.
+<li> If recording name is NULL, creates a snapshot object with no name.
+<li> This function is not supported when using the 
+VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+</ul>
+<h1>Side Effects</h1>
+<ul>
+<li> This function disrupts communication with VMware Tools.
+Any outstanding Vix related guest operation may be aborted. Users will
+need to call
+VMWaitForToolsInGuest
+before performing additional operations in the guest.
+</ul>
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.5
+<h1>Example</h1>
+<pre>
+my $err;
+my $snapshotHandle;
+my $vmHandle;
+
+($err, $snapshotHandle) = VMBeginRecording($vmHandle, "recording 2",
+                                           "description of recording 2",
+	                                   0, VIX_INVALID_HANDLE);
+die "VMBeginRecording() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+# wait for some activity to happen, then stop recording
+$err = VMEndRecording($vmHandle, 0, VIX_INVALID_HANDLE);
+die "VMEndRecording() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

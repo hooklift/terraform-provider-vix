@@ -1,0 +1,120 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>SetSharedFolderState</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+SetSharedFolderState([in] BSTR shareName,
+                     [in] BSTR hostPathName,
+                     [in] LONG flags,
+                     [in] ICallback* jobDoneCallback,
+                     [out,retval] IJob** setJob);
+</pre>
+<p>
+This function modifies the state of a shared folder mounted in the virtual
+machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>shareName</i></dt>
+<dd>
+Specifies the name of the shared folder.
+</dd>
+<dt><i>hostPathName</i></dt>
+<dd>
+Specifies the host path of the shared folder.
+</dd>
+<dt><i>flags</i></dt>
+<dd>
+The new flag settings.
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>setJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function modifies the state flags of an existing shared folder.
+<li> If the shared folder specified by
+shareName
+does not exist before calling this function,
+the IJob object for
+this function will return VIX_E_NOT_FOUND.
+<li> It is not necessary to call
+VM::LoginInGuest()
+before calling this function.
+<li> Shared folders are not supported for the following guest operating systems:
+Windows ME, Windows 98, Windows 95, Windows 3.x, and DOS.
+<li> In this release, this function requires the virtual machine to be powered on
+with VMware Tools installed.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+Dim job
+Dim err
+Dim numSharedFolders
+Dim results
+Dim folderName
+Dim folderHostPath
+
+results = Nothing
+
+Set job = vm.GetNumSharedFolders(Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_COUNT), results)
+If lib.ErrorIndicatesFailure(err) Then
+      ' Handle the error...
+End If
+
+numSharedFolders = results(0)
+
+Dim propIds
+Redim propIds(2)
+' Build an array of properties to request
+propIds(0) = VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_ITEM_NAME
+propIds(1) = VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_HOST
+propIds(2) = VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_FLAGS
+For i=0 to numSharedFolders-1
+   Set job = vm.GetSharedFolderState(i, Nothing)
+   ' Wait for the result, and get the result properties
+   err = job.Wait(propIds, results)
+   If lib.ErrorIndicatesFailure(err) Then
+      ' Handle the error...
+   End If
+   folderName = results(0)       ' VIX_PROPERTY_JOB_RESULT_ITEM_NAME
+   folderHostPath = results(1)   ' VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_HOST
+   folderFlags = results(2)      ' VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_FLAGS
+
+   ' Make all folders writable.
+ 
+   Set job = vm.SetSharedFolderState(folderName, folderHostPath, VixCOM.Constants.VIX_SHAREDFOLDER_WRITE_ACCESS)
+   err = job.WaitWithoutResults()
+   If lib.ErrorIndicatesFailure(err) Then
+      ' Handle the error...
+   End If
+Next
+
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

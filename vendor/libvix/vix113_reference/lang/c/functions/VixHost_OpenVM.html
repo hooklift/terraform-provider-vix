@@ -1,0 +1,273 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixHost_OpenVM</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixHost_OpenVM(VixHandle hostHandle,
+               const char *vmxFilePathName,
+               VixVMOpenOptions options,
+               VixHandle propertyListHandle,
+               VixEventProc *callbackProc,
+               void *clientData);
+</pre>
+<p>
+This function opens a virtual machine on the host that is identified by the
+hostHandle parameter and returns a context to that machine as a virtual
+machine handle.
+This function supercedes
+VixVM_Open().
+<h1>Parameters</h1>
+<dl>
+<dt><i>hostHandle</i></dt>
+<dd>
+The handle of a host object, typically returned from
+                 VixHost_Connect().
+<p>
+</dd>
+<dt><i>vmxFilePathName</i></dt>
+<dd>
+The path name of the virtual machine configuration
+                     file on the local host.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be VIX_VMOPEN_NORMAL.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+A handle to a property list containing extra
+                        information that might be needed to open the VM.
+                        This parameter is optional; you can pass
+                        VIX_INVALID_HANDLE if no extra information is needed.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when
+                  the operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc procedure.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous call.
+<h1>Remarks</h1>
+<ul>
+<li> This function opens a virtual machine on the host that is identified by the
+hostHandle parameter. The virtual machine is identified by vmxFilePathName,
+which is a path name to the configuration file (.VMX file) for that virtual
+machine.
+<li> The format of the path name depends on the host operating system.
+For example, a path name for a Windows host requires backslash as
+a directory separator, whereas a Linux host requires a forward slash.
+If the path name includes backslash characters, you need to precede each
+one with an escape character.  For VMware Server 2.x, the path
+contains a preceeding data store, for example [storage1] vm/vm.vmx.
+<li> This function is asynchronous, and uses a job object to report when the
+operation is complete. The function returns a handle to the job object
+immediately. When the job is signaled, the virtual machine handle is
+stored as the VIX_PROPERTY_JOB_RESULT_HANDLE property of the job object.
+<li> For VMware Server hosts, a virtual machine must be registered before you
+can open it. You can register a virtual machine by opening it with the
+VMware Server Console, through the vmware-cmd command with the register
+parameter, or with
+VixHost_RegisterVM().
+<li> For vSphere, the virtual machine opened may not be the one desired
+if more than one Datacenter contains vmxFilePathName.
+<li> To open an encrypted virtual machine, pass a handle to a property list
+containing the property VIX_PROPERTY_VM_ENCRYPTION_PASSWORD set to the
+password for the virtual machine.
+<li> To enable SSL certificate checking, refer to the
+VixHost_Connect function.
+HostConnect function.
+If enabled, one must check the boolean property VIX_PROPERTY_VM_SSL_ERROR
+on the resulting Virtual Machine handle to determine if the host machine's
+SSL certificate was signed by a trusted certificate authority.
+<li> For ESX/ESXi hosts and vSphere, the user account specified in the call to
+VixHost_Connect
+must have "System.View" privilege at the level of the Datacenter containing
+the ESX server that hosts the VM to be opened.
+<li> For ESX/ESXi hosts and vSphere, the user account specified in the call to
+VixHost_Connect
+must have sufficient privileges to access guest operations in the virtual
+machine.
+For vSphere 4.1 and later, the privilege is "Virtual
+Machine.Interaction.Acquire Guest Control Ticket".
+For 4.0, the privilege is "Virtual Machine.Interaction.Console Interaction".
+</ul>
+<h1>Requirements</h1>
+vix.h, since VMware Workstation 7.0
+<h1>Example</h1>
+The following sample illustrates how to open a regular virtual machine on a
+VMware Workstation host:
+<pre>
+VixError err;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+
+// Connect to the local host:
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+// Release handle when done:
+Vix_ReleaseHandle(jobHandle);
+
+// Open the virtual machine:
+jobHandle = VixHost_OpenVM(hostHandle,
+                           "c:\\Virtual Machines\\vm1\\win2000.vmx",
+                           VIX_VMOPEN_NORMAL,
+                           VIX_INVALID_HANDLE,
+                           NULL, // callbackProc
+                           NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+// Release handle when done:
+Vix_ReleaseHandle(jobHandle);
+</pre>
+The following sample illustrates how to open a regular virtual machine on a
+VMware ESX host:
+<pre>
+VixError err;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+
+// Connect to the local host:
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_VI_SERVER,
+                            "https://10.20.30.40/sdk", // hostName
+                            0, // hostPort
+                            "username", // userName
+                            "password", // password
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+// Release handle when done:
+Vix_ReleaseHandle(jobHandle);
+
+// Open the virtual machine:
+jobHandle = VixHost_OpenVM(hostHandle,
+                           "[datastore] vm1/vm1.vmx",
+                           VIX_VMOPEN_NORMAL,
+                           VIX_INVALID_HANDLE,
+                           NULL, // callbackProc
+                           NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+// Release handle when done:
+Vix_ReleaseHandle(jobHandle);
+</pre>
+The following sample illustrates how to open an encrypted virtual machine on a
+VMware Workstation host:
+<pre>
+VixError err;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+VixHandle propertyHandle = VIX_INVALID_HANDLE;
+
+// Connect to the local host:
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+// Release handle when done:
+Vix_ReleaseHandle(jobHandle);
+
+err = VixPropertyList_AllocPropertyList(hostHandle,
+                                        &propertyHandle,
+                                        VIX_PROPERTY_VM_ENCRYPTION_PASSWORD,
+                                        "vmPassword",
+                                        VIX_PROPERTY_NONE);
+if (err != VIX_OK) {
+   // Handle the error...
+   goto abort;
+}
+
+// Open the virtual machine:
+jobHandle = VixHost_OpenVM(hostHandle,
+                           "c:\\Virtual Machines\\vm1\\win2000.vmx",
+                           VIX_VMOPEN_NORMAL,
+                           propertyHandle,
+                           NULL, // callbackProc
+                           NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+// Release handle when done:
+Vix_ReleaseHandle(jobHandle);
+Vix_ReleaseHandle(propertyHandle);
+</pre>
+<pre>
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

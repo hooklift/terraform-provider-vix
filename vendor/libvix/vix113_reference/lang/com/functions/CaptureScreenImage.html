@@ -1,0 +1,178 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>CaptureScreenImage</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+CaptureScreenImage([in] LONG captureType,
+                   [in] IVixHandle* additionalProperties,
+                   [in] ICallback* jobDoneCallback,
+                   [out,retval] IJob** loginJob);
+</pre>
+<p>
+This function captures the screen of the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>captureType</i></dt>
+<dd>
+the data format.  Must be VIX_CAPTURESCREENFORMAT_PNG
+</dd>
+<dt><i>additionalProperties</i></dt>
+<dd>
+must be VIX_INVALID_HANDLE
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>loginJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this
+              asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+This function captures the current screen image and returns
+it as a job result property of type 'blob'.
+When a blob is returned as a job property in COM, it is returned as a SAFEARRAY of BYTEs.
+<p>
+The image size is also available as a separate job result property.
+<p>
+These properties are available from the job handle as a result of
+the function call:
+<p>
+<ul>
+<li> VIX_PROPERTY_JOB_RESULT_SCREEN_IMAGE_DATA:
+a blob property containing the bytes making up the image
+<li> VIX_PROPERTY_JOB_RESULT_SCREEN_IMAGE_SIZE:
+an int containing the size of the image, in bytes
+<p>
+</ul>
+For security reasons, this function requires 
+a successful call to
+LoginInGuest
+must be made.
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.5
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+VBScript:
+<pre>
+Dim lib 
+Dim job
+Dim host
+Dim vm
+Dim err
+Dim hostType
+Dim hostName
+Dim hostUsername
+Dim hostPassword
+
+Set lib = CreateObject("VixCom.VixLib")
+
+' Connect to the local installation of Workstation. This also initializes the VIX API.
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION, Empty, 0, Empty, Empty, 0, Nothing, Nothing)
+
+' results needs to be initialized before it's used, even if it's just going to be overwritten.
+Set results = Nothing
+
+' Wait waits until the job started by an asynchronous function call has finished. It also
+' can be used to get various properties from the job. The first argument is an array
+' of VIX property IDs that specify the properties requested. When Wait returns, the 
+' second argument will be set to an array that holds the values for those properties,
+' one for each ID requested.
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+' The job result handle will be first element in the results array.
+Set host = results(0)
+
+' Open the virtual machine with the given .vmx file.
+Set job = host.OpenVM("c:\Virtual Machines\vm1\win2000.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set vm = results(0)
+
+' Power on the virtual machine we just opened. This will launch Workstation if it hasn't
+' already been started.
+Set job = vm.PowerOn(VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI, Nothing, Nothing)
+' WaitWithoutResults is just like Wait, except it does not get any properties. 
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+
+Set job = vm.WaitForToolsInGuest(300, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+' We must first login to the guest before we can take a screenshot
+
+set job = vm.LoginInGuest("vixuser", "secret", VIXCOM.Constants.VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+
+Set job = vm.CaptureScreenImage(VixCOM.Constants.VIX_CAPTURESCREENFORMAT_PNG, Nothing, Nothing)
+
+'Retrieves a SAFEARRAY of BYTEs that contain the binary screenshot data
+Set results = Nothing
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_SCREEN_IMAGE_DATA), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+blobArray = results(0)
+
+'Write the SAFEARRAY of BYTEs to a png file
+
+dim strHDLocation
+strHDLocation = "C:\CaptureScreenImage.png"
+
+'Delete the file if it already exists
+Set objFSO = Createobject("Scripting.FileSystemObject")
+If objFSO.FileExists(strHDLocation) Then objFSO.DeleteFile strHDLocation
+Set objFSO = Nothing
+
+'Use a binary stream to write out the file
+Set objADOStream = CreateObject("ADODB.Stream")
+objADOStream.Open
+objADOStream.Type = 1 'adTypeBinary
+ 
+objADOStream.Write blobArray
+objADOStream.Position = 0    'Set the stream position to the start
+ 
+objADOStream.SaveToFile strHDLocation
+objADOStream.Close
+Set objADOStream = Nothing
+
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+
+host.Disconnect()
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

@@ -1,0 +1,988 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<META NAME="GENERATOR" CONTENT="Adobe FrameMaker 7.0/HTML Export Filter">
+<TITLE>VIX API Concepts</TITLE>
+<link rel="stylesheet" href="foundrydoc.css" charset="ISO-8859-1" type="text/css">
+</HEAD>
+<BODY BGCOLOR="#ffffff">
+<DIV>
+<H6 CLASS="zChapterAnchor">
+<A NAME="0_pgfId-1003015"></A>&nbsp;</H6>
+<TABLE>
+<TR>
+<TD ROWSPAN="1" COLSPAN="1">
+<H1 CLASS="H0-Title">
+<A NAME="0_pgfId-1018253"></A><A NAME="0_11092"></A>VIX API Concepts</H1>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<H6 CLASS="zChapterNumber">
+<A NAME="0_pgfId-1018255"></A>&nbsp;</H6>
+</TD>
+</TR>
+</TABLE>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003373"></A>This chapter contains the following topics:</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005681"></A><A HREF="concepts.html#0_41292" CLASS="XRef">Objects and Handles</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005689"></A><A HREF="concepts.html#0_79806" CLASS="XRef">Reference Counting on Handles</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005694"></A><A HREF="concepts.html#0_67871" CLASS="XRef">Error Codes</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005699"></A><A HREF="concepts.html#0_83603" CLASS="XRef">Multithreading</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005704"></A><A HREF="concepts.html#0_18604" CLASS="XRef">Handle Properties</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005709"></A><A HREF="concepts.html#0_14321" CLASS="XRef">Property Lists</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005714"></A><A HREF="concepts.html#0_88105" CLASS="XRef">Asynchronous Operations and Job Objects</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005719"></A><A HREF="concepts.html#0_74302" CLASS="XRef">Callback Functions</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1006214"></A><A HREF="concepts.html#0_77610" CLASS="XRef">Event Models</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1008010"></A><A HREF="concepts.html#0_92473" CLASS="XRef">Using the Event Pump</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005724"></A><A HREF="concepts.html#0_77829" CLASS="XRef">Local and Remote Host Handles</A></LI>
+</UL>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1003020"></A><A NAME="0_41292"></A><A NAME="0_marker-1006702"></A>Objects and Handles</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003021"></A>The Vix API is object-based. Most API functions either create objects or operate on the properties of existing objects.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005739"></A>Client applications reference Vix objects with handles. Handles are opaque identifiers (actually integers) that can be passed as parameters to functions. Handles are run-time only and are unique only within a client's address space.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005740"></A>Most functions in the C-language API take a handle as a parameter. Because a handle value represents an object to the API, this document uses the terms &quot;handle&quot; and &quot;object&quot; interchangeably.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003022"></A>There are several handle types, but a few of the key types are:<A NAME="0_marker-1008227"></A></P>
+<UL>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003023"></A><EM CLASS="bold">Virtual Machine</EM>
+ &ndash; A single virtual machine, which might or might not be powered on.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003024"></A><EM CLASS="bold">Host</EM>
+ &ndash; A single host computer, either the local host or a remote host.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005921"></A><EM CLASS="bold">Job</EM>
+ &ndash; An object used in managing asynchronous operations.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003025"></A><EM CLASS="bold">Snapshot</EM>
+ &ndash; A snapshot of a virtual machine.</LI>
+</UL>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1003026"></A><A NAME="0_79806"></A><A NAME="0_marker-1006704"></A>Reference Counting on Handles</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005651"></A>Handles are reference counted, so you must call a &quot;<A NAME="0_marker-1008230"></A>release&quot; function on the handle when you are done using it. A handle remains valid until you call the <tt>Vix_ReleaseHandle()</tt> function.
+The <tt>Vix_ReleaseHandle()</tt> function releases any type of handle:</P>
+<PRE CLASS="C1-CodeIndent1"><A NAME="0_pgfId-1027133"></A>void Vix_ReleaseHandle(VixHandle handle);</PRE>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003525"></A>For example, consider the following code to open and release a handle:</P>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1003672"></A>Example 2-1.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1026877"></A>VixHandle handle1;
+<A NAME="0_pgfId-1003032"></A>handle1 = MyOpenVMWrapper(...various parameters...);
+<A NAME="0_pgfId-1003033"></A>// handle1 is assigned a unique integer value.
+<A NAME="0_pgfId-1003034"></A>&nbsp;
+<A NAME="0_pgfId-1011750"></A>// Now you can perform various operations on handle1.
+<A NAME="0_pgfId-1011751"></A>&nbsp;
+<A NAME="0_pgfId-1011752"></A>Vix_ReleaseHandle(handle1);
+<A NAME="0_pgfId-1034219"></A>handle1 = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1011658"></A>// handle1 has been released and should no longer be used.</PRE>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1011661"></A><A NAME="0_marker-1011660"></A>Handle Independence</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005669"></A>Generally, you can have any number of handles active at one time. Each handle represents a different object, and handles can be created and destroyed independently. Consider the following example:</P>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1003040"></A>Example 2-2.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1034170"></A>VixHandle handle1;
+<A NAME="0_pgfId-1034171"></A>VixHandle handle2;
+<A NAME="0_pgfId-1034172"></A>&nbsp;
+<A NAME="0_pgfId-1034173"></A>handle1 = MyOpenVMWrapper(... parameters for virtual machine 1...);
+<A NAME="0_pgfId-1034174"></A>// handle1 is assigned a unique value - for example, 11.
+<A NAME="0_pgfId-1034175"></A>&nbsp;
+<A NAME="0_pgfId-1034176"></A>handle2 = MyOpenVMWrapper(... parameters for virtual machine 2...);
+<A NAME="0_pgfId-1034177"></A>// handle2 is assigned a unique value - for example, 12.
+<A NAME="0_pgfId-1034178"></A>&nbsp;
+<A NAME="0_pgfId-1034179"></A>// Now you can perform various operations on handle1 or handle2.
+<A NAME="0_pgfId-1034180"></A>&nbsp;
+<A NAME="0_pgfId-1034181"></A>Vix_ReleaseHandle(handle1);
+<A NAME="0_pgfId-1034278"></A>handle1 = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1034182"></A>// handle1 has been released and should no longer be used.
+<A NAME="0_pgfId-1034183"></A>&nbsp;
+<A NAME="0_pgfId-1034184"></A>// You can still perform operations on handle 2.
+<A NAME="0_pgfId-1034185"></A>&nbsp;
+<A NAME="0_pgfId-1034186"></A>Vix_ReleaseHandle(handle2);
+<A NAME="0_pgfId-1034288"></A>handle2 = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1034153"></A>// handle2 has been released and should no longer be used.</PRE>
+</DIV>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1003058"></A><A NAME="0_marker-1006734"></A>Deleting Handles</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005673"></A>Clients must still call the <A NAME="0_marker-1008231"></A>release function even when the data stored in that handle has been deleted by another function. For example, to delete a virtual machine, you first call a delete function on the virtual machine's handle, and then you call the release function on the handle itself. This design avoids confusion over which functions do and do not release handles; only the release function can release a handle.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003059"></A>The client application is responsible for calling the release function on every handle. In the case of releasing a handle after deleting a virtual machine, the delete function updates the internal handle state, so most functions except the release function will recognize that the virtual machine has been deleted and will immediately return an error.</P>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1003060"></A><A NAME="0_marker-1006736"></A>Opening Handles</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005677"></A>If you open a handle to the same virtual machine twice, without <A NAME="0_marker-1008232"></A>releasing the first handle, the open function will return the same handle both times. The handle reference count is incremented each time the open function returns, so you must call the release function twice, once for each time you open the handle. Consider the following example:</P>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1003061"></A>Example 2-3.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1034392"></A>VixHandle handle1;
+<A NAME="0_pgfId-1034393"></A>VixHandle handle2;
+<A NAME="0_pgfId-1034394"></A>&nbsp;
+<A NAME="0_pgfId-1034395"></A>handle1 = MyOpenVMWrapper(...various parameters...);
+<A NAME="0_pgfId-1034396"></A>// handle1 is assigned a unique value.
+<A NAME="0_pgfId-1034397"></A>// handle1 has reference count 1.
+<A NAME="0_pgfId-1034398"></A>&nbsp;
+<A NAME="0_pgfId-1034399"></A>// Now you can perform various operations on handle1.
+<A NAME="0_pgfId-1034400"></A>&nbsp;
+<A NAME="0_pgfId-1034401"></A>handle2 = MyOpenVMWrapper(...the SAME parameters identifying the SAME virtual machine...);
+<A NAME="0_pgfId-1034402"></A>// handle2 has the same value as handle1.
+<A NAME="0_pgfId-1034403"></A>// handle1 has reference count 2.
+<A NAME="0_pgfId-1034404"></A>ASSERT(handle1 == handle2);
+<A NAME="0_pgfId-1034405"></A>&nbsp;
+<A NAME="0_pgfId-1034406"></A>Vix_ReleaseHandle(handle1);
+<A NAME="0_pgfId-1034407"></A>// handle1 has reference count 1.
+<A NAME="0_pgfId-1034408"></A>&nbsp;
+<A NAME="0_pgfId-1034409"></A>// The handle still can be safely used here.
+<A NAME="0_pgfId-1034410"></A>&nbsp;
+<A NAME="0_pgfId-1034411"></A>Vix_ReleaseHandle(handle1);
+<A NAME="0_pgfId-1034653"></A>handle1 = handle2 = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1034378"></A>// The handle has been released and should no longer be used.</PRE>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003082"></A>In general, every function that returns a handle increments the handle's reference count. This means a client application should call the <A NAME="0_marker-1008237"></A>release function once for every time the handle has been returned by a Vix function.</P>
+</DIV>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1003083"></A><A NAME="0_marker-1006738"></A>Internal Handle References</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005645"></A>Some handles keep an internal reference to another handle. For example, a device keeps a reference to its virtual machine, and a virtual machine keeps references to all its devices. As a result of these internal references, some handles might not be deleted when the client is done with them. This situation should not impact the client, because the internal reference counting is always correctly maintained. When an internal reference keeps a handle open, the client receives the same handle value when it opens the same object again after releasing its handle.</P>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1003085"></A><A NAME="0_67871"></A><A NAME="0_marker-1006706"></A>Error Codes</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003086"></A>All <A NAME="0_marker-1008243"></A>synchronous Vix functions return an error code, which is an integer value defined by a global type. <A NAME="0_marker-1008242"></A>Asynchronous Vix functions (described below) report an error code when the function eventually completes.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003087"></A>Some Vix functions can return an internally defined error code value, such as an integer value that is not part of the public type. This is unusual; it indicates an internal error that cannot be translated to a public error code.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003088"></A>The error code type is <tt>VixError</tt>.
+It is defined in the public Vix header.
+Error codes are listed in the <EM CLASS="Title">VIX API Reference Guide</EM>.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003089"></A>A Vix error is a 64-bit value. A value of <A NAME="0_marker-1008244"></A><tt>VIX_OK</tt>
+ indicates success, but if there is an error then several bit regions in the 64-bit value might be set. The least significant 16 bits are set to the error code described for Vix errors. More significant bit fields might be set to other values.</P>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1006523"></A><A NAME="0_marker-1006740"></A>Error Code Functions</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1006527"></A>Vix provides the following defines for working with error codes:</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1006528"></A><tt>VIX_ERROR_CODE(err)</tt>
+<P CLASS="B1-BodyIndent">
+<A NAME="0_pgfId-1006536"></A>Use this to <A NAME="0_marker-1008245"></A>mask off bit fields not used by the Vix API.</P>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1006619"></A>Example 2-4.  </H6>
+<PRE CLASS="C1-CodeIndent1"><A NAME="0_pgfId-1026829"></A>VixError err;
+<A NAME="0_pgfId-1006620"></A>err = VixJob_GetError(jobHandle);
+<A NAME="0_pgfId-1006574"></A>if (VIX_E_FILE_NOT_FOUND == VIX_ERROR_CODE(err)) {
+<A NAME="0_pgfId-1006575"></A>   // Handle error case...
+<A NAME="0_pgfId-1006592"></A>}</PRE>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1006532"></A><tt>VIX_SUCCEEDED(err)</tt>
+<P CLASS="B1-BodyIndent">
+<A NAME="0_pgfId-1006540"></A>Use this to test for the absence of an error.</P>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1006614"></A>Example 2-5.  </H6>
+<PRE CLASS="C1-CodeIndent1"><A NAME="0_pgfId-1026933"></A>VixError err;
+<A NAME="0_pgfId-1006615"></A>err = VixJob_GetError(jobHandle);
+<A NAME="0_pgfId-1006550"></A>if (VIX_SUCCEEDED(err)) {
+<A NAME="0_pgfId-1006551"></A>   // Handle success case...
+<A NAME="0_pgfId-1006552"></A>}</PRE>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1006533"></A><tt>VIX_FAILED(err)</tt>
+<P CLASS="B1-BodyIndent">
+<A NAME="0_pgfId-1006544"></A>Use this to <A NAME="0_marker-1008246"></A>test for the presence of an error.</P>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1006594"></A>Example 2-6.  </H6>
+<PRE CLASS="C1-CodeIndent1"><A NAME="0_pgfId-1026945"></A>VixError err;
+<A NAME="0_pgfId-1006595"></A>err = VixJob_GetError(jobHandle);
+<A NAME="0_pgfId-1006563"></A>if (VIX_FAILED(err)) {
+<A NAME="0_pgfId-1006564"></A>   // Handle failure case...
+<A NAME="0_pgfId-1006565"></A>}</PRE>
+</LI>
+</UL>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1003090"></A><A NAME="0_marker-1006742"></A>Error Code Bit Masking</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005638"></A>If you prefer to do your own bit masking on error codes, here are some examples:</P>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1003091"></A>Example 2-7.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1034669"></A>VixError err;
+<A NAME="0_pgfId-1034670"></A>&nbsp;
+<A NAME="0_pgfId-1034671"></A>err = VixJob_GetError(jobHandle);
+<A NAME="0_pgfId-1034672"></A>&nbsp;
+<A NAME="0_pgfId-1034673"></A>// CORRECT!
+<A NAME="0_pgfId-1034674"></A>// This is legal. Success is always indicated with VIX_OK.
+<A NAME="0_pgfId-1034675"></A>if (VIX_OK == err) {
+<A NAME="0_pgfId-1034676"></A>   // Handle success case...
+<A NAME="0_pgfId-1034677"></A>}
+<A NAME="0_pgfId-1034678"></A>&nbsp;
+<A NAME="0_pgfId-1034679"></A>// CORRECT!
+<A NAME="0_pgfId-1034680"></A>// This is legal. Success is always indicated with VIX_OK (all zeroes).
+<A NAME="0_pgfId-1034681"></A>// Anything else is an error.
+<A NAME="0_pgfId-1034682"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1034683"></A>   // Handle error case...
+<A NAME="0_pgfId-1034684"></A>}
+<A NAME="0_pgfId-1034685"></A>&nbsp;
+<A NAME="0_pgfId-1034686"></A>// WRONG!
+<A NAME="0_pgfId-1034687"></A>// If an error code is not VIX_OK, several bit fields may be set.
+<A NAME="0_pgfId-1034688"></A>if (VIX_E_FILE_NOT_FOUND == err) {
+<A NAME="0_pgfId-1034689"></A>   // This will not work...
+<A NAME="0_pgfId-1034690"></A>}
+<A NAME="0_pgfId-1034691"></A>&nbsp;
+<A NAME="0_pgfId-1034692"></A>// CORRECT!
+<A NAME="0_pgfId-1034693"></A>// If an error code is not VIX_OK, the least significant 16 bits
+<A NAME="0_pgfId-1034694"></A>// will be the Vix error code.
+<A NAME="0_pgfId-1034695"></A>if (VIX_E_FILE_NOT_FOUND == (err &amp; 0xFFFF)) {
+<A NAME="0_pgfId-1034696"></A>   // Handle error case...
+<A NAME="0_pgfId-1034667"></A>}</PRE>
+</DIV>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1005936"></A><A NAME="0_83603"></A><A NAME="0_marker-1006708"></A>Multithreading</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005940"></A>The Vix library is intended for use by multi-threaded clients. Vix shared objects are managed by the Vix library to avoid conflicts between threads. Clients need only be responsible for protecting user-defined shared data.</P>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1005944"></A><A NAME="0_marker-1006744"></A>Thread Safety of Handles</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005948"></A>All Vix objects are thread safe so they may be used from several threads at the same time.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005956"></A>The Vix library handles locking of objects when they are modified. As a result, client code does not need to be concerned with the protection of objects when they are used from multiple threads.</P>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1005957"></A><A NAME="0_marker-1006746"></A>Performance Implications</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005958"></A>Locking shared objects implies some performance degradation in certain situations. For example, when you power on a virtual machine, the Vix library needs to modify both the virtual machine handle and the host's list of running virtual machines. If two clients power on two virtual machines at the same time, the Vix library needs to lock the list of running virtual machines on behalf of one client, causing a small delay for the second client.</P>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1003122"></A><A NAME="0_18604"></A><A NAME="0_marker-1006710"></A>Handle Properties</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003123"></A>The Vix API defines a set of properties for each type of handle. A property is a typed name/value pair. A type name is a unique integer ID and the type may be one of the following:</P>
+<UL>
+<LI CLASS="I-ItemList">
+<A NAME="0_pgfId-1003124"></A>32-bit Integer</LI>
+<LI CLASS="I-ItemList">
+<A NAME="0_pgfId-1003125"></A>64-bit Integer</LI>
+<LI CLASS="I-ItemList">
+<A NAME="0_pgfId-1003126"></A>String</LI>
+<LI CLASS="I-ItemList">
+<A NAME="0_pgfId-1003127"></A>Boolean</LI>
+<LI CLASS="I-ItemList">
+<A NAME="0_pgfId-1003128"></A>Handle</LI>
+</UL>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003129"></A>Vix defines a different set of properties for each handle type. For example, a virtual machine handle has a string property that stores the file path name of the virtual machine, but a job handle does not. The complete set of handle properties for each type is defined in the <EM CLASS="Title">VIX API Reference Guide</EM>.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1035108"></A>If a property is defined for a particular handle type, all handles of that type always have some value for that property. For example, every virtual machine has a property that stores its file path name, whether the virtual machine is powered on or not, or whether it is stored on the local host or not.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1034957"></A>Clients can modify handle properties only by invoking functions on the handle. For example, the function <tt>VixVM_PowerOn()</tt>
+ modifies the <tt>VIX_PROPERTY_VM_IS_RUNNING</tt>
+ of the virtual machine handle.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003130"></A>Properties are the main mechanism for reading both the persistent configuration state and the runtime status of handles. Properties allow Vix to be language independent and backward compatible.</P>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1003132"></A><A NAME="0_marker-1006748"></A>GetProperties() Function</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005628"></A>Vix provides one function that can get properties from any handle. This function has a varargs signature, which means you can use it to retrieve any number of properties by passing in sufficient parameters. The argument list must be terminated with a special property, <tt>VIX_PROPERTY_NONE</tt>.</P>
+<DIV>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1027017"></A>VixError Vix_GetProperties(VixHandle handle, 
+<A NAME="0_pgfId-1014350"></A>                           VixPropertyID firstPropertyID,
+<A NAME="0_pgfId-1014424"></A>                           ...);</PRE>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003136"></A>Here is an example of retrieving properties from a virtual machine handle:</P>
+</DIV>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1003137"></A>Example 2-8.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1026985"></A>VixError err;
+<A NAME="0_pgfId-1003138"></A>VixHandle handle1;
+<A NAME="0_pgfId-1003139"></A>int vmPowerState;
+<A NAME="0_pgfId-1003140"></A>char *vmVmxPathName;
+<A NAME="0_pgfId-1003141"></A>&nbsp;
+<A NAME="0_pgfId-1003142"></A>handle1 = MyOpenVMWrapper(...various parameters...);
+<A NAME="0_pgfId-1003145"></A>&nbsp;
+<A NAME="0_pgfId-1006463"></A>err = Vix_GetProperties(handle1, 
+<A NAME="0_pgfId-1014448"></A>                        VIX_PROPERTY_VM_VMX_PATHNAME,
+<A NAME="0_pgfId-1014475"></A>                        &amp;vmVmxPathName,
+<A NAME="0_pgfId-1014505"></A>                        VIX_PROPERTY_VM_POWER_STATE,
+<A NAME="0_pgfId-1014532"></A>                        &amp;vmPowerState,
+<A NAME="0_pgfId-1014559"></A>                        VIX_PROPERTY_NONE);
+</PRE>
+</DIV>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1003155"></A><A NAME="0_14321"></A><A NAME="0_marker-1006712"></A>Property Lists</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003156"></A>Vix defines a special runtime data structure, the property list, as a convenient way to store properties and pass them as arguments. Property lists are runtime-only data structures, and they behave as Vix objects. You can reference a property list with a handle and you can pass the handle to functions such as <tt>Vix_GetProperties()</tt>.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003159"></A>Here is an example of a callback function that retrieves a value from a property list.</P>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1003160"></A>Example 2-9.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1026997"></A>void MyFunction(VixHandle propertyListHandle)
+<A NAME="0_pgfId-1003161"></A>{
+<A NAME="0_pgfId-1003162"></A>   char *url = NULL;
+<A NAME="0_pgfId-1003163"></A>&nbsp;
+<A NAME="0_pgfId-1003164"></A>   err = Vix_GetProperties(propertyListHandle, 
+<A NAME="0_pgfId-1014578"></A>                           VIX_PROPERTY_VM_VMX_PATHNAME,
+<A NAME="0_pgfId-1014594"></A>                           &amp;url,
+<A NAME="0_pgfId-1014613"></A>                           VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1003168"></A>   if (VIX_OK != err) {
+<A NAME="0_pgfId-1014629"></A>      // ...Handle the error...
+<A NAME="0_pgfId-1003170"></A>   }
+<A NAME="0_pgfId-1003171"></A>   // ... Use the url property, then release the buffer ...
+<A NAME="0_pgfId-1003172"></A>   Vix_FreeBuffer(url);            
+<A NAME="0_pgfId-1003173"></A>}</PRE>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1003174"></A><A NAME="0_88105"></A><A NAME="0_marker-1006714"></A>Asynchronous Operations and Job Objects</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003175"></A>Many Vix functions are synchronous, which makes them easy to use. Some functions, however, such as powering on a virtual machine, are asynchronous. These asynchronous functions either implement time-consuming operations or interact with the persistent virtual machine state, which can be on a remote host.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1008279"></A>All asynchronous Vix functions allocate and return a &quot;job&quot; handle, which is a Vix object that represents the execution of an asynchronous operation. A job handle can be used to signal when the asynchronous operation has completed, and also to retrieve the results of a completed asynchronous function. A job has a single &quot;completed&quot; state, which indicates when the job has finished. Additionally, a job may have several result properties that are set when the job has completed. These result properties contain information returned by a completed job. Different kinds of jobs have different return values.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003177"></A>A new job object is created for each active asynchronous call. For example, if you invoke three asynchronous calls, they all might complete at different times and they each have a different job object. Vix always creates a job handle for every asynchronous call. Even if you do not use the handle, you are still responsible for releasing it.</P>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1003178"></A>Monitoring a Job Object</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005571"></A>Currently, a client application can use several mechanisms to detect when a job object has been signaled:</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003179"></A>Poll the job, by calling a non-blocking function that checks whether it has been signaled. This is described in <A HREF="concepts.html#0_85592" CLASS="XRef">Polling the Job Object for Completion</A>.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003180"></A>Block until the job is signaled, by calling the <tt>VixJob_Wait()</tt>
+ function. This is described in <A HREF="concepts.html#0_48559" CLASS="XRef">Using the Job Object to Block Calls</A>.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003181"></A>Register a callback function that is called when the job is signaled. This is described in <A HREF="concepts.html#0_12241" CLASS="XRef">Using a Callback Function</A>.</LI>
+</UL>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1012228"></A>A typical asynchronous call looks similar to <tt>VixVM_Open()</tt>, and there are several common patterns shared by all asynchronous Vix calls.
+For reference, the following code shows the signature of <tt>VixVM_Open()</tt>.</P>
+<DIV>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1027001"></A>VixHandle VixVM_Open(VixHandle hostHandle,
+<A NAME="0_pgfId-1014639"></A>                     const char *vmxFilePathName,
+<A NAME="0_pgfId-1014643"></A>                     VixEventProc *callbackProc,
+<A NAME="0_pgfId-1014647"></A>                     void *clientData);</PRE>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003187"></A>This function creates a Vix job object and returns a <tt>VixHandle</tt>
+ for this new job object. The caller is responsible for releasing this job object, even if the job object is not used for anything else.</P>
+</DIV>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1008262"></A><A NAME="0_85592"></A>Polling the Job Object for Completion</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1008266"></A>The job object tracks the status of an asynchronous operation. You can interrogate the completion status of a job object using the function <tt>VixJob_CheckCompletion()</tt>.
+This is a non-blocking function that returns a Boolean value representing the completion state of the asynchronous operation.
+The following example shows the use of <tt>VixJob_CheckCompletion()</tt> in a polling loop.</P>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1035313"></A>Example 2-10.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1035445"></A>Bool OpenVMWithPolling(const VixHandle hostHandle,
+<A NAME="0_pgfId-1035446"></A>                       const char *vmName,
+<A NAME="0_pgfId-1035447"></A>                       VixHandle *vmHandle)
+<A NAME="0_pgfId-1035448"></A>{
+<A NAME="0_pgfId-1035449"></A>   VixError err = VIX_OK;
+<A NAME="0_pgfId-1035450"></A>   VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1035451"></A>   Bool completed = FALSE;
+<A NAME="0_pgfId-1035452"></A>   
+<A NAME="0_pgfId-1035453"></A>   if (!vmHandle) {
+<A NAME="0_pgfId-1035454"></A>      return FALSE;
+<A NAME="0_pgfId-1035455"></A>   }
+<A NAME="0_pgfId-1035456"></A>   *vmHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1035457"></A>&nbsp;
+<A NAME="0_pgfId-1035458"></A>   // Start asynchronous operation.
+<A NAME="0_pgfId-1035459"></A>   jobHandle = VixVM_Open(hostHandle,
+<A NAME="0_pgfId-1035460"></A>                          vmName,
+<A NAME="0_pgfId-1035461"></A>                          NULL, // callbackProc,
+<A NAME="0_pgfId-1035462"></A>                          NULL); // clientData
+<A NAME="0_pgfId-1035463"></A>         
+<A NAME="0_pgfId-1035464"></A>   // Poll the job object for completion of asynchronous operation.
+<A NAME="0_pgfId-1035465"></A>   while ( !completed ) {
+<A NAME="0_pgfId-1035466"></A>      sleep(1);
+<A NAME="0_pgfId-1035467"></A>      
+<A NAME="0_pgfId-1035468"></A>      err = VixJob_CheckCompletion(jobHandle, &amp;completed);
+<A NAME="0_pgfId-1035469"></A>      if (VIX_OK != err) {
+<A NAME="0_pgfId-1035470"></A>         Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1035471"></A>         return FALSE;
+<A NAME="0_pgfId-1035472"></A>      }
+<A NAME="0_pgfId-1035473"></A>   }
+<A NAME="0_pgfId-1035474"></A>   
+<A NAME="0_pgfId-1035475"></A>   err = Vix_GetProperties(jobHandle,
+<A NAME="0_pgfId-1035476"></A>                           VIX_PROPERTY_JOB_RESULT_HANDLE,
+<A NAME="0_pgfId-1035477"></A>                           vmHandle,
+<A NAME="0_pgfId-1035478"></A>                           VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1035479"></A>   if (VIX_OK != err) {
+<A NAME="0_pgfId-1035480"></A>      Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1035481"></A>      *vmHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1035482"></A>      return FALSE;
+<A NAME="0_pgfId-1035483"></A>   }
+<A NAME="0_pgfId-1035484"></A>   
+<A NAME="0_pgfId-1035485"></A>   Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1035486"></A>   return TRUE;
+<A NAME="0_pgfId-1035487"></A>   // Caller must release vmHandle.
+<A NAME="0_pgfId-1035314"></A>}</PRE>
+</DIV>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1035356"></A><A NAME="0_marker-1035354"></A><A NAME="0_48559"></A>Using the Job Object to Block Calls</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1027078"></A>The job object allows a client to block until an asynchronous call completes. This achieves the same result as if the asynchronous call were a synchronous call. Here is an example of how this can be done, using the <tt>VixJob_Wait()</tt>
+ function.</P>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1027079"></A>Example 2-11.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1035744"></A>VixHandle hostHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1035745"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1035746"></A>VixHandle vmHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1035747"></A>&nbsp;
+<A NAME="0_pgfId-1035748"></A>jobHandle = VixHost_Connect(VIX_API_VERSION,
+<A NAME="0_pgfId-1035749"></A>                            VIX_SERVICEPROVIDER_VMWARE_VI_SERVER,
+<A NAME="0_pgfId-1035750"></A>                            &quot;server2.example.com&quot;, // hostName
+<A NAME="0_pgfId-1035751"></A>                            0, // hostPort
+<A NAME="0_pgfId-1035752"></A>                            &quot;root&quot;, // username
+<A NAME="0_pgfId-1035753"></A>                            &quot;secretpw&quot;, // password
+<A NAME="0_pgfId-1035754"></A>                            0, // options
+<A NAME="0_pgfId-1035755"></A>                            VIX_INVALID_HANDLE, // propertyListHandle
+<A NAME="0_pgfId-1035756"></A>                            NULL, // callbackProc
+<A NAME="0_pgfId-1035757"></A>                            NULL); // clientData
+<A NAME="0_pgfId-1035758"></A>&nbsp;
+<A NAME="0_pgfId-1035759"></A>// Wait for completion of operation.
+<A NAME="0_pgfId-1035760"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1035761"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1035762"></A>   goto abort;
+<A NAME="0_pgfId-1035763"></A>}
+<A NAME="0_pgfId-1035764"></A>&nbsp;
+<A NAME="0_pgfId-1035765"></A>// Release handle when done.
+<A NAME="0_pgfId-1027090"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1035786"></A>jobHandle = VIX_INVALID_HANDLE;</PRE>
+</DIV>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1003225"></A><A NAME="0_marker-1006754"></A>Retrieving Results from Job Object Properties</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005581"></A>The job object can also be used to retrieve results from an asynchronous operation once the asynchronous operation has completed. You can get these properties by calling <tt>Vix_GetProperties()</tt>
+ on the job handle. The following example shows how this is done.</P>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1008861"></A>Example 2-12.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1035825"></A>VixHandle hostHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1035826"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1035827"></A>VixHandle vmHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1035828"></A>&nbsp;
+<A NAME="0_pgfId-1035829"></A>jobHandle = VixHost_Connect(VIX_API_VERSION,
+<A NAME="0_pgfId-1035830"></A>                            VIX_SERVICEPROVIDER_VMWARE_VI_SERVER,
+<A NAME="0_pgfId-1035831"></A>                            &quot;server2.example.com&quot;, // hostName
+<A NAME="0_pgfId-1035832"></A>                            0, // hostPort
+<A NAME="0_pgfId-1035833"></A>                            &quot;root&quot;, // username
+<A NAME="0_pgfId-1035834"></A>                            &quot;secretpw&quot;, // password
+<A NAME="0_pgfId-1035835"></A>                            0, // options
+<A NAME="0_pgfId-1035836"></A>                            VIX_INVALID_HANDLE, // propertyListHandle
+<A NAME="0_pgfId-1035837"></A>                            NULL, // callbackProc
+<A NAME="0_pgfId-1035838"></A>                            NULL); // clientData
+<A NAME="0_pgfId-1035839"></A>&nbsp;
+<A NAME="0_pgfId-1035840"></A>// Wait for completion of operation.
+<A NAME="0_pgfId-1035841"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1035842"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1035843"></A>   goto abort;
+<A NAME="0_pgfId-1035844"></A>}
+<A NAME="0_pgfId-1035845"></A>&nbsp;
+<A NAME="0_pgfId-1035846"></A>// Collect desired result of operation.
+<A NAME="0_pgfId-1035847"></A>err = Vix_GetProperties(jobHandle, 
+<A NAME="0_pgfId-1035848"></A>                        VIX_PROPERTY_JOB_RESULT_HANDLE,
+<A NAME="0_pgfId-1035849"></A>                        &amp;hostHandle,
+<A NAME="0_pgfId-1035850"></A>                        VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1035851"></A>&nbsp;
+<A NAME="0_pgfId-1035852"></A>// Release handle when done.
+<A NAME="0_pgfId-1027094"></A>Vix_ReleaseHandle(jobHandle); 
+<A NAME="0_pgfId-1035940"></A>jobHandle = VIX_INVALID_HANDLE;</PRE>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1008696"></A>For convenience, you can also extract properties from the job object with the <tt>VixJob_Wait()</tt>
+ function. The following example shows how this is done.</P>
+</DIV>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1003229"></A>Example 2-13.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1035964"></A>// Start asynchronous operation.
+<A NAME="0_pgfId-1035965"></A>jobHandle = VixVM_Open(hostHandle,
+<A NAME="0_pgfId-1035966"></A>                       &quot;[standard] WindowsXP/WindowsXP.vmx&quot;,
+<A NAME="0_pgfId-1035967"></A>                       NULL, // callbackProc
+<A NAME="0_pgfId-1035968"></A>                       NULL); // clientData
+<A NAME="0_pgfId-1035969"></A>&nbsp;
+<A NAME="0_pgfId-1035970"></A>// Wait for completion of operation. Collect result handle.
+<A NAME="0_pgfId-1035971"></A>err = VixJob_Wait(jobHandle,
+<A NAME="0_pgfId-1035972"></A>                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+<A NAME="0_pgfId-1035973"></A>                  &amp;vmHandle,
+<A NAME="0_pgfId-1035974"></A>                  VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1035975"></A>&nbsp;
+<A NAME="0_pgfId-1035976"></A>// Release handle when done.
+<A NAME="0_pgfId-1035977"></A>Vix_ReleaseHandle(jobHandle); 
+<A NAME="0_pgfId-1035978"></A>jobHandle = VIX_INVALID_HANDLE;</PRE>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003260"></A>For simplicity, most of the examples in this document use the approach of calling <tt>VixJob_Wait()</tt>
+ and requesting the desired properties at the same time. Some kinds of applications might increase responsiveness by using <A NAME="0_marker-1008254"></A>callback functions in a multithreaded client.</P>
+</DIV>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1003261"></A><A NAME="0_74302"></A><A NAME="0_marker-1006716"></A>Callback Functions</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005616"></A>All asynchronous Vix functions, such as <tt>VixVM_Open()</tt>, include a parameter for a callback procedure and a parameter that is passed to the callback procedure.
+These parameters are optional, so a caller can pass <tt>NULL</tt>
+ for either. The prototype of this callback procedure parameter is:</P>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1027102"></A>typedef void (VixEventProc)(VixHandle handle,
+<A NAME="0_pgfId-1017245"></A>                            VixEventType eventType,
+<A NAME="0_pgfId-1017246"></A>                            VixHandle moreEventInfo,
+<A NAME="0_pgfId-1017247"></A>                            void *clientData);</PRE>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1008191"></A><A NAME="0_marker-1008190"></A><A NAME="0_12241"></A>Using a Callback Function</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1009313"></A>If the caller provides a callback procedure, that procedure is registered with the job object and is invoked when the job object is signaled.
+For example, if a caller passes a callback procedure to <tt>VixVM_Open()</tt>, that callback procedure is invoked when the virtual machine has been opened.
+This situation could happen either before or after <tt>VixVM_Open()</tt> returns.  It also can happen on any thread.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003267"></A>This mechanism allows Vix functions to run asynchronously.
+Asynchronous Vix functions should complete their work quickly and then return from the callback.
+Asynchronous functions must not block, and Vix applications should never call <tt>VixJob_Wait()</tt> while using a callback function.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1009305"></A>When a callback procedure is invoked, it is passed the <tt>clientData</tt> parameter that was passed in the original call to the asynchronous function.
+This allows a callback procedure to associate some context with an outstanding asynchronous call.</P>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1010427"></A>Example 2-14.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1036073"></A>void myCallback(VixHandle jobHandle,
+<A NAME="0_pgfId-1036074"></A>                VixEventType eventType,
+<A NAME="0_pgfId-1036075"></A>                VixHandle moreEventInfo,
+<A NAME="0_pgfId-1036076"></A>                void *clientData)
+<A NAME="0_pgfId-1036077"></A>{
+<A NAME="0_pgfId-1036078"></A>   VixError err;
+<A NAME="0_pgfId-1036079"></A>   VixError asyncErr;
+<A NAME="0_pgfId-1036080"></A>   VixHandle vmHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036081"></A>&nbsp;
+<A NAME="0_pgfId-1036082"></A>   /*
+<A NAME="0_pgfId-1036083"></A>    * Ignore progress callbacks. Check only for final signal.
+<A NAME="0_pgfId-1036084"></A>    */
+<A NAME="0_pgfId-1036085"></A>   if (VIX_EVENTTYPE_JOB_COMPLETED != eventType) {
+<A NAME="0_pgfId-1036086"></A>      return;
+<A NAME="0_pgfId-1036087"></A>   }
+<A NAME="0_pgfId-1036088"></A>    
+<A NAME="0_pgfId-1036089"></A>   err = Vix_GetProperties(jobHandle,
+<A NAME="0_pgfId-1036090"></A>                           VIX_PROPERTY_JOB_RESULT_HANDLE,
+<A NAME="0_pgfId-1036091"></A>                           &amp;vmHandle,
+<A NAME="0_pgfId-1036092"></A>                           VIX_PROPERTY_JOB_RESULT_ERROR_CODE,
+<A NAME="0_pgfId-1036093"></A>                           &amp;asyncErr,
+<A NAME="0_pgfId-1036094"></A>                           VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1036095"></A>    
+<A NAME="0_pgfId-1036096"></A>   if (VIX_OK != asyncErr) {
+<A NAME="0_pgfId-1036097"></A>      /*
+<A NAME="0_pgfId-1036098"></A>       * The open failed.
+<A NAME="0_pgfId-1036099"></A>       */
+<A NAME="0_pgfId-1036100"></A>   }
+<A NAME="0_pgfId-1036101"></A>}
+<A NAME="0_pgfId-1036102"></A> &nbsp;
+<A NAME="0_pgfId-1036103"></A>int main()
+<A NAME="0_pgfId-1036104"></A>{
+<A NAME="0_pgfId-1036105"></A>   VixError err = VIX_OK;
+<A NAME="0_pgfId-1036106"></A>   VixHandle hostHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036107"></A>   VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036108"></A>   VixHandle vmHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036109"></A>   char *contextData = &quot;Hello, Vix&quot;;
+<A NAME="0_pgfId-1036110"></A>&nbsp;
+<A NAME="0_pgfId-1036111"></A>   jobHandle = VixHost_Connect(VIX_API_VERSION,
+<A NAME="0_pgfId-1036112"></A>                               VIX_SERVICEPROVIDER_VMWARE_VI_SERVER,
+<A NAME="0_pgfId-1036113"></A>                               &quot;server2.example.com&quot;, // hostName
+<A NAME="0_pgfId-1036114"></A>                               0, // hostPort
+<A NAME="0_pgfId-1036115"></A>                               &quot;root&quot;, // username
+<A NAME="0_pgfId-1036116"></A>                               &quot;secretpw&quot;, // password
+<A NAME="0_pgfId-1036117"></A>                               0, // options
+<A NAME="0_pgfId-1036118"></A>                               VIX_INVALID_HANDLE, // propertyListHandle
+<A NAME="0_pgfId-1036119"></A>                               NULL, // callbackProc
+<A NAME="0_pgfId-1036120"></A>                               NULL); // clientData
+<A NAME="0_pgfId-1036121"></A>&nbsp;
+<A NAME="0_pgfId-1036122"></A>   // Block for host connection to complete.
+<A NAME="0_pgfId-1036123"></A>   err = VixJob_Wait(jobHandle, 
+<A NAME="0_pgfId-1036124"></A>                     VIX_PROPERTY_JOB_RESULT_HANDLE,
+<A NAME="0_pgfId-1036125"></A>                     &amp;hostHandle,
+<A NAME="0_pgfId-1036126"></A>                     VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1036127"></A>   Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1036269"></A>   jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036128"></A>   if (VIX_OK != err) {
+<A NAME="0_pgfId-1036129"></A>      goto abort;
+<A NAME="0_pgfId-1036130"></A>   }
+<A NAME="0_pgfId-1036131"></A>&nbsp;
+<A NAME="0_pgfId-1036132"></A>   // Use callback function to capture completion of virtual machine open.
+<A NAME="0_pgfId-1036133"></A>   jobHandle = VixVM_Open(hostHandle,
+<A NAME="0_pgfId-1035966"></A>                          &quot;[standard] WindowsXP/WindowsXP.vmx&quot;,
+<A NAME="0_pgfId-1036135"></A>                          myCallback,
+<A NAME="0_pgfId-1036136"></A>                          contextData);
+<A NAME="0_pgfId-1036138"></A>   /*
+<A NAME="0_pgfId-1036139"></A>    * Do something, like pump a message pump. 
+<A NAME="0_pgfId-1036140"></A>    * Later, myCallback will be invoked on another thread.
+<A NAME="0_pgfId-1036141"></A>    */ 
+<A NAME="0_pgfId-1036142"></A>    
+<A NAME="0_pgfId-1036143"></A>abort:
+<A NAME="0_pgfId-1036144"></A>   Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1036291"></A>   jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1027106"></A>}</PRE>
+</DIV>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1003339"></A><A NAME="0_marker-1006758"></A>Callback Events</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1008203"></A>Note that a callback might be called several times, for several different reasons. For example, it might be called for periodic progress updates. The <tt>eventType</tt>
+ parameter indicates why the callback is being called. The supported event types are:</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1008204"></A><tt>VIX_EVENTTYPE_JOB_COMPLETED</tt>
+ &ndash; Indicates that the asynchronous action has completed, whether successfully or not.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003341"></A><tt>VIX_EVENTTYPE_JOB_PROGRESS</tt>
+ &ndash; This event may be passed several times to report progress on an asynchronous action.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003342"></A><tt>VIX_EVENTTYPE_FIND_ITEM</tt>
+ &ndash; This event is used by <tt>VixHost_FindItems()</tt>.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1006029"></A><tt>VIX_EVENTTYPE_HOST_INITIALIZED</tt>
+ &ndash; This event is used by <tt>VixHost_Connect()</tt>.</LI>
+</UL>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1006038"></A><A NAME="0_77610"></A>Event Models</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1009327"></A>The Vix API provides the flexibility to handle events in different ways, depending on the needs of the client. The &quot;event pump&quot; mechanism allows you to process asynchronous operations in single-threaded clients. This section discusses both ways to manage asynchronous operations.</P>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1009328"></A>Multi-Threaded Event Model</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1009332"></A>The multi-threaded event model is the default model for Vix clients. Its use is described in detail in the section above called <A HREF="concepts.html#0_74302" CLASS="XRef">Callback Functions</A>. This model is the easiest to use, if your client code is thread-safe.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1009339"></A>Using this model, the Vix library creates worker threads as needed to process asynchronous operations in parallel. Callback functions are invoked on the worker threads under the control of the Vix library.</P>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1009356"></A>Single-Threaded Event Model</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1009360"></A>Using the single-threaded model, all asynchronous processing and all event reporting is deferred until the thread calls <tt>Vix_PumpEvents()</tt>.
+Each call to <tt>Vix_PumpEvents()</tt> does more work on an asynchronous operation.
+At appropriate times during the operation, control is transferred to the callback routine, if one was specified in the call to the asynchronous function that began the operation.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1009361"></A>The single-threaded event model is useful for clients that are not thread safe, or that depend on libraries that are not thread-safe. All processing is done in a single thread. You have to write extra code for a polling loop, but you need not be concerned with synchronizing multiple threads.</P>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1009326"></A><A NAME="0_92473"></A><A NAME="0_marker-1006718"></A>Using the Event Pump</H2>
+<P CLASS="P-ProcedureHead">
+<A NAME="0_pgfId-1006050"></A>To use the event pump:</P>
+<OL>
+<LI CLASS="L1F-List1First">
+<A NAME="0_pgfId-1006056"></A>Connect to the host with a flag indicating that events are to be triggered by 
+<tt>Vix_PumpEvents()</tt>
+and received by a callback function on the same thread. 
+Otherwise, events are reported asynchronously and callback functions
+ are invoked on a pool of Vix worker threads.
+</p><p>
+The flag is a value of <tt>VIX_HOSTOPTION_USE_EVENT_PUMP</tt>
+ passed in the <tt>options</tt>
+ parameter to the <tt>VixHost_Connect()</tt>
+ function.
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1006114"></A>Example 2-15.  </H6>
+<PRE CLASS="C1-CodeIndent1"><A NAME="0_pgfId-1036488"></A>VixHandle hostHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036489"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036490"></A>VixError err;
+<A NAME="0_pgfId-1036491"></A>&nbsp;
+<A NAME="0_pgfId-1036492"></A>jobHandle = VixHost_Connect(VIX_API_VERSION,
+<A NAME="0_pgfId-1036493"></A>                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+<A NAME="0_pgfId-1036494"></A>                            NULL, // hostName
+<A NAME="0_pgfId-1036495"></A>                            0, // hostPort
+<A NAME="0_pgfId-1036496"></A>                            NULL, // userName
+<A NAME="0_pgfId-1036497"></A>                            NULL, // password,
+<A NAME="0_pgfId-1036498"></A>                            VIX_HOSTOPTION_USE_EVENT_PUMP, // options
+<A NAME="0_pgfId-1036499"></A>                            VIX_INVALID_HANDLE, // propertyListHandle
+<A NAME="0_pgfId-1036500"></A>                            NULL, // callbackProc
+<A NAME="0_pgfId-1036501"></A>                            NULL); // clientData
+<A NAME="0_pgfId-1036502"></A>err = VixJob_Wait(jobHandle,
+<A NAME="0_pgfId-1036503"></A>                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+<A NAME="0_pgfId-1036504"></A>                  &amp;hostHandle,
+<A NAME="0_pgfId-1036505"></A>                  VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1036506"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1036507"></A>   // Handle the error...
+<A NAME="0_pgfId-1036508"></A>   goto abort;
+<A NAME="0_pgfId-1027110"></A>}</PRE>
+</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1007949"></A>Call <tt>Vix_PumpEvents()</tt>
+ at appropriate times to advance processing of the asynchronous operation.
+<PRE CLASS="C1-CodeIndent1"><A NAME="0_pgfId-1010575"></A>Vix_PumpEvents(hostHandle, VIX_PUMPEVENTOPTION_NONE);</PRE>
+<P CLASS="B1-BodyIndent">
+<A NAME="0_pgfId-1036454"></A>If your application is multithreaded, you can call this function from a separate thread. You can never call <tt>VixJob_Wait()</tt>
+on the same thread that also calls <tt>Vix_PumpEvents()</tt>.
+However, you can call <tt>Vix_PumpEvents()</tt> on one thread
+and <tt>VixJob_Wait()</tt> on another thread.</P>
+</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1010572"></A>Check the results of the asynchronous operation, either by polling or by callback. The polling method is explained in <A HREF="concepts.html#0_16890" CLASS="XRef">Polling for Completion in a Single-Threaded Client</A>. The callback method is explained in <A HREF="concepts.html#0_87020" CLASS="XRef">Using a Callback Function in a Single-Threaded Client</A>.
+</LI>
+</OL>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1009428"></A><A NAME="0_16890"></A>Polling for Completion in a Single-Threaded Client</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1009441"></A>Single-threaded clients must share the thread between the main logic of the program and the processing that takes place as a result of calling an asynchronous function. In a single-threaded client, the processing can only take place during a call to <tt>Vix_PumpEvents()</tt>.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1009484"></A>That fact implies that the single-threaded client cannot call <tt>VixJob_Wait()</tt>.
+In a multi-threaded client, a call to <tt>VixJob_Wait()</tt>
+ returns when the asynchronous operation is completed by another thread. However, in a single-threaded client, <tt>VixJob_Wait()</tt>
+never returns because there is no processing happening on any thread during the call to <tt>VixJob_Wait()</tt>.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1007049"></A>One solution is to poll for completion using <tt>VixJob_CheckCompletion()</tt>
+instead of calling <tt>VixJob_Wait()</tt>.
+You alternate pumping with polling, as in the following example.</P>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1015521"></A>Example 2-16.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1036548"></A>// Function to poll for completion.
+<A NAME="0_pgfId-1036549"></A>// Returns TRUE if successful; otherwise returns FALSE.
+<A NAME="0_pgfId-1036550"></A>Bool CheckCompletion(VixHandle hostHandle,
+<A NAME="0_pgfId-1036551"></A>                     VixHandle jobHandle,
+<A NAME="0_pgfId-1036552"></A>                     int timeOut)
+<A NAME="0_pgfId-1036553"></A>{
+<A NAME="0_pgfId-1036554"></A>   Bool completed = FALSE;
+<A NAME="0_pgfId-1036555"></A>   VixError err = VIX_OK;
+<A NAME="0_pgfId-1036556"></A>   int secondCount = 0;
+<A NAME="0_pgfId-1036557"></A>&nbsp;
+<A NAME="0_pgfId-1036558"></A>   while (!completed &amp;&amp; secondCount &lt; timeOut) {
+<A NAME="0_pgfId-1036559"></A>      Vix_PumpEvents(hostHandle, VIX_PUMPEVENTOPTION_NONE);
+<A NAME="0_pgfId-1036560"></A>      
+<A NAME="0_pgfId-1036561"></A>      err = VixJob_CheckCompletion(jobHandle, &amp;completed);
+<A NAME="0_pgfId-1036562"></A>      if (VIX_OK != err) {
+<A NAME="0_pgfId-1036563"></A>         return FALSE;
+<A NAME="0_pgfId-1036564"></A>      }
+<A NAME="0_pgfId-1036565"></A>      
+<A NAME="0_pgfId-1036566"></A>      secondCount++;
+<A NAME="0_pgfId-1036567"></A>      sleep(1);
+<A NAME="0_pgfId-1036568"></A>   }
+<A NAME="0_pgfId-1036569"></A>   
+<A NAME="0_pgfId-1036570"></A>   if ((!completed) &amp;&amp; (secondCount == ONE_MINUTE)) {
+<A NAME="0_pgfId-1036571"></A>      return FALSE;
+<A NAME="0_pgfId-1036572"></A>   }
+<A NAME="0_pgfId-1036573"></A>   
+<A NAME="0_pgfId-1036574"></A>   return TRUE;
+<A NAME="0_pgfId-1036575"></A>}
+<A NAME="0_pgfId-1036576"></A>&nbsp;
+<A NAME="0_pgfId-1036577"></A>// Part of virtual machine processing below.
+<A NAME="0_pgfId-1036578"></A>VixError err = VIX_OK;
+<A NAME="0_pgfId-1036579"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036580"></A>VixPowerState powerState = 0;
+<A NAME="0_pgfId-1036581"></A>&nbsp;
+<A NAME="0_pgfId-1036582"></A>// Suspend the virtual machine.
+<A NAME="0_pgfId-1036583"></A>jobHandle = VixVM_Suspend(vmHandle,
+<A NAME="0_pgfId-1036584"></A>                          0, // powerOnOptions,
+<A NAME="0_pgfId-1036585"></A>                          VIX_INVALID_HANDLE, // propertyListHandle,
+<A NAME="0_pgfId-1036586"></A>                          NULL, // callbackProc,
+<A NAME="0_pgfId-1036587"></A>                          NULL); // clientData
+<A NAME="0_pgfId-1036588"></A>&nbsp;
+<A NAME="0_pgfId-1036647"></A>// The powerState may be VIX_POWERSTATE_SUSPENDING for a few seconds.
+<A NAME="0_pgfId-1036589"></A>// Wait for completion.
+<A NAME="0_pgfId-1036590"></A>if (CheckCompletion(hostHandle, jobHandle, 30)) {
+<A NAME="0_pgfId-1036591"></A>   // Now the powerState should be ready.
+<A NAME="0_pgfId-1036592"></A>   err = Vix_GetProperties(vmHandle,
+<A NAME="0_pgfId-1036593"></A>                           VIX_PROPERTY_VM_POWER_STATE,
+<A NAME="0_pgfId-1036594"></A>                           &amp;powerState,
+<A NAME="0_pgfId-1036595"></A>                           VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1036596"></A>   if (VIX_OK != err) {
+<A NAME="0_pgfId-1036597"></A>      // Handle the error...
+<A NAME="0_pgfId-1036598"></A>      goto abort;
+<A NAME="0_pgfId-1036599"></A>   }
+<A NAME="0_pgfId-1027114"></A>} // CheckCompletion</PRE>
+</DIV>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1015515"></A><A NAME="0_87020"></A>Using a Callback Function in a Single-Threaded Client</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1009449"></A>Single-threaded clients also have the option to use callback functions that handle completion. Because the callback has to share the single thread, it cannot happen asynchronously. As with the polling method of completion described in <A HREF="concepts.html#0_16890" CLASS="XRef">Polling for Completion in a Single-Threaded Client</A>, the client cannot call <tt>VixJob_Wait()</tt>.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1009542"></A>In the single-threaded client, processing takes place only during calls to <tt>Vix_PumpEvents()</tt>.
+Each call does more work on the operation. If a callback was specified in the call to the asynchronous function that began the operation, the Vix library invokes the callback function during one of the calls to <tt>Vix_PumpEvents()</tt>.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1009557"></A>The code to use this method looks like the following example. The main function initiates a host connection operation (specifying a callback function) and then enters a loop to pump events. When the operation has completed, the callback function returns a handle to the host (or an invalid value in case of failure).</P>
+<DIV>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1010431"></A>Example 2-17.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1036677"></A>Bool handleCallbackDone = FALSE;
+<A NAME="0_pgfId-1036798"></A>&nbsp;
+<A NAME="0_pgfId-1036680"></A>void handleCallback(VixHandle jobHandle,
+<A NAME="0_pgfId-1036681"></A>                    VixEventType eventType,
+<A NAME="0_pgfId-1036682"></A>                    VixHandle moreEventInfo,
+<A NAME="0_pgfId-1036683"></A>                    void *clientData)
+<A NAME="0_pgfId-1036684"></A>{
+<A NAME="0_pgfId-1036685"></A>   /*
+<A NAME="0_pgfId-1036686"></A>    * This function is invoked on completion of an asynchronous operation.
+<A NAME="0_pgfId-1036687"></A>    * If the operation succeeded, this function returns a handle
+<A NAME="0_pgfId-1036688"></A>    * that resulted from the asynchronous operation.
+<A NAME="0_pgfId-1036689"></A>    */
+<A NAME="0_pgfId-1036690"></A>   VixError err;
+<A NAME="0_pgfId-1036691"></A>   VixError asyncErr;
+<A NAME="0_pgfId-1036692"></A>   VixHandle resultHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036693"></A>&nbsp;
+<A NAME="0_pgfId-1036694"></A>   /*
+<A NAME="0_pgfId-1036695"></A>    * Ignore progress callbacks. Check only for final signal.
+<A NAME="0_pgfId-1036696"></A>   */
+<A NAME="0_pgfId-1036697"></A>   if (VIX_EVENTTYPE_JOB_COMPLETED != eventType) {
+<A NAME="0_pgfId-1036698"></A>      return;
+<A NAME="0_pgfId-1036699"></A>   }
+<A NAME="0_pgfId-1036700"></A>&nbsp;
+<A NAME="0_pgfId-1036701"></A>   err = Vix_GetProperties(jobHandle,
+<A NAME="0_pgfId-1036702"></A>                           VIX_PROPERTY_JOB_RESULT_HANDLE,
+<A NAME="0_pgfId-1036703"></A>                           &amp;resultHandle,
+<A NAME="0_pgfId-1036704"></A>                           VIX_PROPERTY_JOB_RESULT_ERROR_CODE,
+<A NAME="0_pgfId-1036705"></A>                           &amp;asyncErr,
+<A NAME="0_pgfId-1036706"></A>                           VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1036707"></A>   if (VIX_OK != err) {
+<A NAME="0_pgfId-1036708"></A>      // Failed to get properties. Bail.
+<A NAME="0_pgfId-1036709"></A>      *clientData = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036710"></A>      handleCallbackDone = TRUE;
+<A NAME="0_pgfId-1036711"></A>      return;
+<A NAME="0_pgfId-1036712"></A>   }
+<A NAME="0_pgfId-1036713"></A>&nbsp;
+<A NAME="0_pgfId-1036714"></A>   if (VIX_OK == asyncErr) {
+<A NAME="0_pgfId-1036715"></A>      *clientData = (void) resultHandle;
+<A NAME="0_pgfId-1036716"></A>   } else {
+<A NAME="0_pgfId-1036717"></A>      // The asynchronous operation failed. Bail.
+<A NAME="0_pgfId-1036718"></A>      *clientData = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036719"></A>   }
+<A NAME="0_pgfId-1036720"></A>   
+<A NAME="0_pgfId-1036721"></A>   handleCallbackDone = TRUE;
+<A NAME="0_pgfId-1036722"></A>} // end handleCallback
+<A NAME="0_pgfId-1036723"></A>&nbsp;
+<A NAME="0_pgfId-1036726"></A>int main()
+<A NAME="0_pgfId-1036727"></A>{
+<A NAME="0_pgfId-1036728"></A>   VixHandle hostHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036729"></A>   VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036730"></A>   char *contextData = &quot;Hello, Vix&quot;;
+<A NAME="0_pgfId-1036731"></A>&nbsp;
+<A NAME="0_pgfId-1036732"></A>   jobHandle = VixHost_Connect(VIX_API_VERSION,
+<A NAME="0_pgfId-1036733"></A>                               VIX_SERVICEPROVIDER_VMWARE_VI_SERVER,
+<A NAME="0_pgfId-1036734"></A>                               &quot;server2.example.com&quot;, // hostName
+<A NAME="0_pgfId-1036735"></A>                               0, // hostPort
+<A NAME="0_pgfId-1036736"></A>                               &quot;root&quot;, // username
+<A NAME="0_pgfId-1036737"></A>                               &quot;secretpw&quot;, // password
+<A NAME="0_pgfId-1036738"></A>                               VIX_HOSTOPTION_USE_EVENT_PUMP, // options
+<A NAME="0_pgfId-1036739"></A>                               VIX_INVALID_HANDLE, // propertyListHandle
+<A NAME="0_pgfId-1036740"></A>                               handleCallback,
+<A NAME="0_pgfId-1036741"></A>                               (void *) &amp;hostHandle);
+<A NAME="0_pgfId-1036742"></A>&nbsp;
+<A NAME="0_pgfId-1036743"></A>   // Release handle, if not using it.
+<A NAME="0_pgfId-1036744"></A>   Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1036843"></A>   jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1036745"></A>&nbsp;
+<A NAME="0_pgfId-1036746"></A>   // Pump events and wait for callback.
+<A NAME="0_pgfId-1036747"></A>   handleCallbackDone = FALSE;
+<A NAME="0_pgfId-1036748"></A>   while (!handleCallbackDone) {
+<A NAME="0_pgfId-1036749"></A>      Vix_PumpEvents();
+<A NAME="0_pgfId-1036750"></A>   }
+<A NAME="0_pgfId-1036751"></A>   
+<A NAME="0_pgfId-1036752"></A>   if (VIX_INVALID_HANDLE == hostHandle) {
+<A NAME="0_pgfId-1036753"></A>      printf(&quot;:-(&#92;n&quot;);
+<A NAME="0_pgfId-1036754"></A>   } else {
+<A NAME="0_pgfId-1036755"></A>      printf(&quot;:-)&#92;n&quot;);
+<A NAME="0_pgfId-1036756"></A>   }
+<A NAME="0_pgfId-1027118"></A>} // end main</PRE>
+</DIV>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1036897"></A><A NAME="0_77829"></A><A NAME="0_marker-1036896"></A>Local and Remote Host Handles</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1036898"></A>Vix defines a &quot;host&quot; object (identified by a handle) that allows access to virtual machines. Typically, a Vix application begins by getting a handle to a host object, and then passing that host handle to other functions. A host handle can represent either a local or remote machine.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1006002"></A>Vix provides a single API function to open any host. To open an arbitrary host, the function requires a machine name and password authentication.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1006006"></A>When you have a host object, you pass it as a parameter to several Vix functions, such as the function that opens a <A NAME="0_marker-1008017"></A>handle to a virtual machine. When the client completes all operations, it releases the host handle with a call to <tt>VixHost_Disconect()</tt>.
+All handles and all states associated with that host are erased by the call.</P>
+</DIV>
+</BODY>
+</HTML>

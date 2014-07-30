@@ -1,0 +1,70 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>RenameFileInGuest</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+RenameFileInGuest([in] BSTR oldName,
+                  [in] BSTR newName,
+                  [in] LONG options,
+                  [in] IVixHandle* propertyList,
+                  [in] ICallback* jobDoneCallback,
+                  [out,retval] IJob** renameJob);
+</pre>
+<p>
+This function renames a file or directory in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>oldName</i></dt>
+<dd>
+The path to the file to be renamed.
+</dd>
+<dt><i>newName</i></dt>
+<dd>
+The path to the new file.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be NULL (C++), null (C#), or Nothing (VB).
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>renameJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> You must call VM::LoginInGuest() before calling this function.
+<li> Only absolute paths should be used for files in the guest; the resolution of
+relative paths is not specified.
+<li> On Windows guests, it fails on directory moves when the destination is on a
+different volume.
+<li> Because of the differences in how various operating systems handle filenames,
+Vix may return either VIX_E_INVALID_ARG or VIX_E_FILE_NAME_TOO_LONG for
+filenames longer than 255 characters.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br></body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

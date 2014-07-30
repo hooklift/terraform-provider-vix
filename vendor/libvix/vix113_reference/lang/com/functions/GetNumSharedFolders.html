@@ -1,0 +1,71 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>GetNumSharedFolders</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+GetNumSharedFolders([in] ICallback* jobDoneCallback,
+                    [out,retval] IJob** getJob);
+</pre>
+<p>
+This function returns the number of shared folders mounted in the virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>getJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function returns the number of shared folders mounted in
+the virtual machine referenced by
+the IVM object against which this method is invoked.
+<li> When the job is signaled, the property
+VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_COUNT will be available on the
+returned job handle
+<li> It is not necessary to call
+VM::LoginInGuest()
+before calling this function.
+<li> Shared folders are not supported for the following guest operating systems:
+Windows ME, Windows 98, Windows 95, Windows 3.x, and DOS.
+<li> In this release, this function requires the virtual machine to be powered on
+with VMware Tools installed.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+Dim job
+Dim err
+Dim results
+Dim numFolders
+
+results = Nothing
+
+Set job = vm.GetNumSharedFolders(Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_COUNT), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle error...
+End If
+numFolders = results(0)
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

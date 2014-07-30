@@ -1,0 +1,82 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMGetSharedFolderState</b>
+<h1>Description</h1>
+<pre>
+($err, $folderFlags, $folderName, $folderHostPath) = VMSetSharedFolderState($vmHandle,
+                                                                            $index);
+</pre>
+<p>
+This function returns the state of a shared folder mounted in the virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>index</i></dt>
+<dd>
+Identifies the shared folder.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<p>
+$folderFlags.  Flags describing the folder options VIX_SHAREDFOLDER_WRITE_ACCESS
+<p>
+$folderName. The name of the folder.
+<p>
+$folderHostPath.  The host path the folder is mounted from.
+<h1>Remarks</h1>
+<ul>
+<li> Shared folders are indexed from 0 to n-1, where n is the number of shared
+folders. Use the function 
+VMGetNumSharedFolders()
+to get the
+value of n.
+<li> It is not necessary to call 
+VMLoginInGuest()
+before calling this function.
+<li> Shared folders are not supported for the following guest operating systems:  
+Windows ME, Windows 98, Windows 95, Windows 3.x, and DOS.
+<li> In this release, this function requires the virtual machine to be powered on
+with VMware Tools installed.  
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+my $err;
+my $numSharedFolders;
+my $folderName;
+my $folderHostPath;
+my $folderFlags;
+my $i;
+
+($err, $numSharedFolders) = VMGetNumSharedFolders($vmHandle);
+die "VMGetNumSharedFolders() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+for ($i = 0; $i &lt; $numSharedFolders; $i++) {
+   ($err, $folderFlags, $folderName, $folderHostPath) = VMGetSharedFolderState($vmHandle, $i);
+   die "VMGetSharedFolderState() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+   print "Folder #$i: $folderHostPath:$folderName, $folderFlags\n";
+   
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

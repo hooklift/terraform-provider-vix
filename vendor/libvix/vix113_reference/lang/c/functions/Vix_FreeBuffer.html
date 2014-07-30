@@ -1,0 +1,63 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>Vix_FreeBuffer</b>
+<h1>Description</h1>
+<pre>
+void
+Vix_FreeBuffer(void *p);
+</pre>
+<p>
+When Vix_GetProperties() or Vix_JobWait() returns a string or blob property, 
+it allocates a buffer for the data. Client applications are responsible
+for calling Vix_FreeBuffer() to free the buffer when no longer needed.
+<h1>Parameters</h1>
+<dl>
+<dt><i>p</i></dt>
+<dd>
+A pointer returned by a call to Vix_GetProperties() or
+       Vix_JobWait().
+</dd>
+</dl>
+<h1>Return Value</h1>
+None.
+<h1>Remarks</h1>
+<ul>
+<li> If you pass a null pointer to Vix_FreeBuffer(), the function returns
+immediately.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+<h1>Example</h1>
+This example retrieves the path name and power state of a virtual machine.
+Vix_FreeBuffer() is used to free the path name storage.
+<pre>
+VixError err = VIX_OK;
+VixHandle myVM = VIX_INVALID_HANDLE;
+char *pathName;
+int vmPowerState = 0;
+
+// ...Open the virtual machine and get a handle...
+
+err = Vix_GetProperties(myVM,
+                        VIX_VM_VMX_PATHNAME,
+                        &pathName,
+                        VIX_VM_POWER_STATE_PROPERTY,
+                        &vmPowerState,
+                        VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+  // Handle the error...
+}
+Vix_FreeBuffer(pathName);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

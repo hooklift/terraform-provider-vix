@@ -1,0 +1,266 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<META NAME="GENERATOR" CONTENT="Adobe FrameMaker 7.0/HTML Export Filter">
+<link rel="stylesheet" href="foundrydoc.css" charset="ISO-8859-1" type="text/css">
+<TITLE>Security Information</TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff">
+<H6 CLASS="zChapterAnchor">&nbsp;</H6>
+<TABLE>
+<TR>
+<TD ROWSPAN="1" COLSPAN="1">
+<H1 CLASS="H0-Title">
+<A NAME="007_001"></A>Security Information</H1>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<H6 CLASS="zChapterNumber">&nbsp;</H6>
+</TD>
+</TR>
+</TABLE>
+<P>
+Guest virtual machines should be isolated from the host
+and from other guests running on the same host.
+Interaction between the host and guests, or between guests on the host,
+should occur only through channels with well-understood and documented security properties.
+This chapter helps you understand and mitigate the security risks of VIX API guest operations.</P>
+<P>
+To use the VIX API for guest operations,
+applications must authenticate with two distinct security domains:</P>
+<ol>
+<li>The client must first authenticate with the vSphere host.</li>
+<li>The client must then supply a valid credential for the guest operating system
+on any virtual machine where it wants to perform guest operations.</li>
+</ol>
+<P>
+These authentication mechanisms are explained in sections
+<a href="#007_004">Authenticating to the vSphere Host</a> and
+<a href="#007_008">The VIX Guest Authentication Mechanism</a> below.</P>
+
+<H2 id="007_002">How to Disable Guest Operations in the VIX API</H2>
+<P>
+Many VIX functions (those with Guest in the name)
+can change data and affect settings on a guest operating system.
+Although guest-related functions are password protected,
+guest modification capability might contradict your site's security policy.
+If you decide to do so after reading this chapter,
+you can disable the running of VIX API guest operations
+by adding the following line to the config file:</P>
+<pre>guest.commands.enabled = "FALSE"
+</pre>
+<P>
+Placing this line in the virtual machine's VMX file affects only that virtual machine.
+Placing this line in the host-wide configuration file affects all guests on that host.
+On ESX/ESXi hosts, <tt>/etc/vmware/config</tt> is the host-wide configuration file.</P>
+<P>
+This line disables the operation of VMware vCenter Update Manager (VUM)
+and VMware Consolidated Backup (VCB),
+both of which call the VIX API for guest operations.
+This line also disables guest operations in the vSphere API 5.0
+(see GuestAuthManager, GuestFileManager, and GuestProcessManager).</P>
+
+<H2 id="007_003">Security of VIX API Guest Operations</H2>
+<P>
+The following sections describe the various authentication mechanisms
+for VIX API clients performing operations inside guest environments.</P>
+<P>
+VIX provides functions that allow guest operations such as running a program in the guest,
+manipulating files in the guest, and so on.  Guest operations are designed to be easy to use,
+for example, a 10-line Perl script in the guest.
+Guest operations are also designed to run remotely and affect many VMs.
+This raises the question of security.</P>
+<P>
+Virtual machines and guest operating systems
+use security mechanisms similar to those on physical machines,
+in addition to the mechanisms described in this chapter.</P>
+
+<H2 id="007_004">Authenticating to the vSphere Host</H2>
+<P>
+To perform any operations through the VIX API,
+the API client must first establish a connection to a host (ESX/ESXi or vCenter)
+by calling <tt>VixHost_Connect</tt> while supplying
+a username and password combination that is valid for that host.</P>
+<P>
+Alternatively, with vCenter Server and ESX/ESXi 4.0 and later,
+a connection can be authenticated using an existing vSphere API session
+instead of with the username-password combination.
+To use an existing vSphere API session, a &ldquo;clone ticket&rdquo; is required.
+To get a clone ticket, call the API method <tt>AcquireCloneTicket</tt>
+with the SessionManager object reference.
+Then using the ticket string returned by this method,
+call <tt>VixHost_Connect</tt> with NULL as the <i>userName</i>
+and the clone ticket as <i>password</i>.</P>
+<P>
+For more information about the vCenter authorization model,
+read about <tt>AuthorizationManager</tt> in the <i>VMware vSphere API Reference</i>.
+
+<H2 id="007_005">vSphere Permissions for Guest Operations</H2>
+<P>
+Specific permissions are required at the vSphere level
+to perform guest operations through the VIX API.
+In particular, the vSphere user supplied to <tt>VixHost_Connect</tt>
+must be associated with a role that has the
+&ldquo;Acquire Guest Control Ticket&rdquo; permission.</P>
+<P>
+The administrator can prevent a user
+from performing guest operations with the VIX API
+by removing this permission from the user or the role.</P>
+<P>
+If the user supplied to <tt>VixHost_Connect</tt> lacks this permission,
+attempts to perform guest operations through the VIX API will throw
+the error <tt>VIX_E_HOST_USER_PERMISSIONS</tt>.</P>
+
+<H2 id="007_006">Network Connections, Transport, and Encryption</H2>
+<P>
+The VIX API makes two distinct connections to a vSphere or ESX/ESXi host.
+First, when an API client calls <tt>VixHost_Connect</tt> and connects to
+either an ESX/ESXi host or the vCenter Server,
+an initial connection is made using HTTPS/SOAP on TCP port 443.
+This is the port for secure HTTP over TLS/SSL.</P>
+<P>
+Second, for each open VM handle
+(created by calling <tt>VixHost_OpenVM</tt> or <tt>VixVM_Open</tt>),
+the client code opens a socket on TCP port 902 from the client to the ESX/ESXi host
+where the VM resides. Data going over this connection are encrypted with SSL.</P>
+
+<H2 id="007_007">Security of Virtual Disk and VMX Files</H2>
+<P>
+Despite the guest authentication mechanisms supplied with the VIX API,
+a vSphere user who has direct access to an unencrypted virtual disk file
+can use other mechanisms, such as VixDiskLib and the VDDK,
+to access or modify portions of the guest operating system.
+Unlike VixDiskLib, access to the VMX file requires local access,
+but could be used to modify VM configuration.</P>
+
+<H2 id="007_008">The VIX Guest Authentication Mechanism</H2>
+<P>
+Authentication works in terms of implicit sessions. Currently, a VIX
+client (that is, a single process using the VIX library) can maintain at most
+one active session per VM.</P>
+<P>
+Session state is stored only in the client, and any credentials are
+included with each command that is contained within the session. The
+guest Tools are stateless in terms of the security model.</P>
+<P>
+To begin a session, a client calls <tt>VixVM_LoginInGuest</tt> with the
+appropriate credentials. These credentials are sent to the VMX.
+The VMX will, depending on the type of credentials,
+either determine the validity of the credential itself,
+or forward the command to VMware Tools for determination.
+Once the credentials have been accepted by either the VMX or VMware Tools,
+a session is established and the VIX client stores the credentials in memory,
+associated with the VM handle.</P>
+<P>
+For each guest command (such as calling <tt>VixVM_RunProgramInGuest</tt>)
+issued by a client after successfully calling <tt>VixVM_LoginInGuest</tt>,
+the credential data associated with the handle gets sent as part of
+the request to the VMX, which forwards the command to VMware Tools.
+VMware Tools verify the credential data again, then use it if needed to
+perform the command.</P>
+<P>
+A session can be ended in one of the following ways:</P>
+<ul>
+  <li>The client calls <tt>VixVM_LogoutInGuest</tt>.</li>
+  <li>The client successfully calls <tt>VixVM_LoginInGuest</tt> again
+  with different credentials.</li>
+  <li>The client releases the VM handle.
+  Because the session state is stored with the VM handle state,
+  releasing the handle removes the session data.</li>
+  <li>The client process exits. Session data is stored only in memory
+  and is never persisted to disk (except swap).</li>
+</ul>
+<P>
+Guest operations can be disabled on a per-VM or on a per-host basis,
+as documented in the <a href="#007_002">How to Disable</a> section.
+Guest operations can also be disabled on a per-user basis by removing the
+&ldquo;Acquire Guest Control Ticket&rdquo; permission from their assigned role,
+as documented in the <a href="#007_005">vSphere Permissions</a>section.</P>
+
+<H2 id="007_009">More About VIX Guest Security Mechanisms</H2>
+<P>
+The currently supported security mechanisms are presented below.</P>
+
+<H4>Guest Username and Password with Impersonation</H4>
+<P>
+In this case, the client provides the username and password belonging
+to a guest account.</P>
+<P>
+When <tt>VixVM_LoginInGuest</tt> is called, a command with the credentials
+is sent to the Tools daemon-service, which will attempt to impersonate
+the user account using the credentials. If VMware Tools succeeds with
+impersonation, the credentials are considered valid and success is
+reported to the client; otherwise, an error is reported.</P>
+<P>
+When the client receives a successful response, the username and password
+are stored as part of the VM handle data structure (as above).</P>
+<P>
+For each successive guest command, the client will send the username
+and password as part of the command request to the Tools. The Tools
+will take the credentials and then impersonate the user using them;
+if the impersonation succeeds, VMware Tools will then perform the action
+specified by the command, then undo its impersonation and revert to its
+original identity.</P>
+<P>
+Since the Tools daemon-service runs as super user, it can impersonate any user.
+Also, since (if installed) it should be running whenever the guest OS is running,
+it can receive commands at any time after the guest completes boot-up.</P>
+<P>
+On Windows, the authentication and impersonation is achieved with the
+<tt>LoginUser()</tt> and <tt>LoadUserProfile()</tt> Win32 APIs.</P>
+<P>
+On Linux, the authentication is performed using PAM,
+and the impersonation is performed using <tt>setresuid()</tt>.</P>
+<P>
+For non-interactive sessions on Linux, VIX API clients do not look at
+dot files inside the guest, nor do they set environment variables from the profile.
+
+<H4>Guest Username and Password to Match the Interactive Session</H4>
+<P>
+First, a quick definition: an "interactive session" is a session where a
+user is logged into the guest's console. In other words, some human
+is interacting with the MKS (mouse keyboard screen).</P>
+<P>
+When a user logs into the console of a guest OS that has VMware
+Tools installed, a process called <tt>vmware-user</tt>
+(VMwareUser on Windows, <tt>vmtoolsd</tt> on ESX/ESXi)
+starts. This process runs as the user who logged in, and runs inside
+the same environment as any applications that the user starts.
+On Linux this process knows about the user's X session, and has all of
+the user's environment variables that might be set in the <tt>.bashrc</tt> file
+and other dot files (except for non-interactive sessions).
+On Windows, this program has access to any mapped drives
+that the user has configured, and on Windows Vista and later, it runs in
+the interactive desktop session.</P>
+<P>
+To allow users to run commands in the interactive environment,
+there is another login mechanism that will securely direct a command
+to vmware-user. To request that a command use the impersonation mechanism, a
+client calls <tt>VixVM_LoginInGuest</tt> with the options parameter set to
+<tt>VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT</tt> and passes the
+username and password for the account that belongs to the user who is
+currently logged in interactively.</P>
+<P>
+When the user logs in with this method, a command is sent to the VMX,
+which checks if both the Tools daemon-service and the vmware-user
+process are running. If one or both are not running, then the command
+fails. If both are running, then the VMX first forwards the command
+to the daemon-service, which validates that the username and password
+are valid. If they are, then the daemon-service responds first to the VMX,
+which removes the password and sends the command to
+the vmware-user process. The vmware-user process then checks to see if
+the username matches the account under which it is currently running,
+and if so, executes the command.</P>
+<P>
+The process is somewhat convoluted for a number of reasons:
+(1) In Linux, only root has access to <tt>/etc/shadow</tt>, where a hashed and
+salted version of each password is stored for local accounts. Thus,
+vmware-user process for any non-root account cannot verify the provided
+password. So the password must be verified by the Tools daemon.
+(2) Because all users have control over what applications launch
+when they log in, they could replace vmware-user with a malicious
+binary. Because a different user could be logged in interactively when a
+VIX client calls <tt>LoginInGuest</tt>,
+the authentication layer must not send cleartext passwords to vmware-user.</P>
+</BODY>
+</HTML>

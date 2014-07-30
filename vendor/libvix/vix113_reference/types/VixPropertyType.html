@@ -1,0 +1,88 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixPropertyType</b>
+<h1>Description</h1>
+These are the possible types for Vix properties. 
+Property types are returned by the Vix_GetPropertyType() function.
+<h1>Values</h1>
+<dl>
+<dt><i>VIX_PROPERTYTYPE_ANY</i></dt>
+<dd>
+Indicates that no property type has been assigned to this
+variable.  Recommended for initializing property type variables.
+<p>
+</dd>
+<dt><i>VIX_PROPERTYTYPE_INTEGER</i></dt>
+<dd>
+The property type is 'int'. 
+<p>
+</dd>
+<dt><i>VIX_PROPERTYTYPE_STRING</i></dt>
+<dd>
+The property type is 'char *'.
+<p>
+</dd>
+<dt><i>VIX_PROPERTYTYPE_BOOL</i></dt>
+<dd>
+The property type is Boolean.
+<p>
+</dd>
+<dt><i>VIX_PROPERTYTYPE_HANDLE</i></dt>
+<dd>
+The property type is VixHandle.
+<p>
+</dd>
+<dt><i>VIX_PROPERTYTYPE_INT64</i></dt>
+<dd>
+The property type is 'int64'.
+<p>
+</dd>
+<dt><i>VIX_PROPERTYTYPE_BLOB</i></dt>
+<dd>
+The property type is 'char *".
+When returned as a job property, the blob is returned as two values:
+first an 'int' containing the blob size in bytes,
+then a pointer to the blob.
+</dd>
+</dl>
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+<h1>Example</h1>
+This example retrieves and tests a property type.
+<pre>
+VixError err = VIX_OK;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle myHandle = VIX_INVALID_HANDLE;
+VixPropertyType myPropertyType = VIX_PROPERTYTYPE_ANY;
+
+// Create a new handle:
+jobHandle = VixHost_Connect(...);
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+// Check the property type:
+err = Vix_GetPropertyType(jobHandle, 
+                          VIX_PROPERTY_JOB_RESULT_HANDLE, 
+                          &myPropertyType);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+ASSERT(VIX_PROPERTYTYPE_HANDLE == myPropertyType);
+
+// Release job handle when done:
+Vix_ReleaseHandle(jobHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2008 VMware, Inc.  All rights reserved.

@@ -1,0 +1,76 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>RemoveSharedFolder</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+RemoveSharedFolder([in] BSTR shareName,
+                   [in] LONG flags,
+                   [in] ICallback* jobDoneCallback,
+                   [out,retval] IJob** removeJob);
+</pre>
+<p>
+This function removes a shared folder in the virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>shareName</i></dt>
+<dd>
+Specifies the guest pathname of the shared folder to delete.
+</dd>
+<dt><i>flags</i></dt>
+<dd>
+Must be 0.
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>removeJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function removes a shared folder in the virtual machine
+referenced by vmHandle.
+<li> It is not necessary to call
+VM::LoginInGuest()
+before calling this function.
+<li> Shared folders are not supported for the following guest operating systems:
+Windows ME, Windows 98, Windows 95, Windows 3.x, and DOS.
+<li> In this release, this function requires the virtual machine to be powered on
+with VMware Tools installed.
+<li> Depending on the behavior of the guest operating system, when removing
+shared folders, there might be a delay before the shared
+folder is no longer visible to programs running within the guest operating
+system and to functions such as VixVM_FileExistsInGuest.
+</ul>
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+Dim job
+Dim err
+
+Set job = vm.RemoveSharedFolder("/work", 0, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set job = Nothing
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

@@ -1,0 +1,60 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>CreateDirectoryInGuest</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+CreateDirectoryInGuest([in] BSTR pathName,
+                       [in] IVixHandle* propertyList,
+                       [in] ICallback* jobDoneCallback,
+                       [out,retval] IJob** createJob);
+</pre>
+<p>
+This function creates a directory in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>pathName</i></dt>
+<dd>
+The path to the directory to be created.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be NULL (C++), null (C#), or Nothing (VB).
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>copyJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this
+              asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> You must call VM::LoginInGuest() before calling this function.
+<li> If the parent directories for the specified path do not exist, this function
+will create them.
+<li> If the directory already exists, the error associated with the IJob object
+will be set to VIX_E_FILE_ALREADY_EXISTS.
+<li> Only absolute paths should be used for files in the guest; the resolution of 
+relative paths is not specified.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br></body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

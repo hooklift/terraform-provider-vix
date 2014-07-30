@@ -1,0 +1,112 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_Suspend</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_Suspend(VixHandle vmHandle,
+              VixVMPowerOpOptions powerOffOptions,
+              VixEventProc *callbackProc,
+              void *clientData);
+</pre>
+<p>
+This function suspends a virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>powerOffOptions</i></dt>
+<dd>
+Should be 0.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the power
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+<ul>
+<li> This function suspends a virtual machine.
+It is an asynchronous operation,
+and the job will be signaled when the operation completes. 
+<li> If the virtual machine is not powered on when you call this function,
+the function returns the error VIX_E_VM_NOT_RUNNING.
+<li> Call
+VixVM_PowerOn
+to resume running a suspended virtual machine.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0
+<h1>Example</h1>
+<pre>
+VixError err = VIX_OK;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_VI_SERVER,
+                            "https://10.1.9.245/sdk", // hostName
+                            0, // hostPort
+                            "root", // userName
+                            "secret", // password
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+Vix_ReleaseHandle(jobHandle);
+jobHandle = VixVM_Open(hostHandle,
+                       "[storage1] vm/vm.vmx",
+                       NULL, // callbackProc
+                       NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+Vix_ReleaseHandle(jobHandle);
+
+// Assume this virtual machine is already running.
+jobHandle = VixVM_Suspend(vmHandle,
+                           0, // powerOffOptions,
+                           NULL, // callbackProc,
+                           NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_NONE);
+abort:
+   Vix_ReleaseHandle(jobHandle);
+   Vix_ReleaseHandle(vmHandle);
+   VixHost_Disconnect(hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

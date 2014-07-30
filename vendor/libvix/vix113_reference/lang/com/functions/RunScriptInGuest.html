@@ -1,0 +1,266 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>RunScriptInGuest</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+RunScriptInGuest([in] BSTR interpreter,
+                 [in] BSTR scriptText,
+                 [in] LONG options,
+                 [in] IVixHandle* propertyList,
+                 [in] ICallback* jobDoneCallback,
+                 [out,retval] IJob** runJob);
+</pre>
+<p>
+This function runs a script in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>interpreter</i></dt>
+<dd>
+The path to the script interpreter,
+                 or NULL to use cmd.exe as the interpreter on Windows.
+</dd>
+<dt><i>scriptText</i></dt>
+<dd>
+The text of the script.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Run options for the program. See the remarks below.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be 
+   NULL (C++), null (C#), or Nothing (VB).
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>runJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function runs the script in the guest operating system.
+<li> The current working directory for the script executed in the guest is not defined.
+Absolute paths should be used for files in the guest, including the path
+to the interpreter, and any files referenced in the script text.
+<li> You must call
+VM::LoginInGuest()
+before calling this function.
+<li> If the options parameter is 0, this function will
+report completion to the IJob object
+when the program exits in the guest operating system.
+Alternatively, you can pass
+VixCOM.Constants.VIX_RUNPROGRAM_RETURN_IMMEDIATELY
+as the
+value of the options parameter, and this function
+reports completion to the IJob object
+as soon as the program starts in the guest.
+<li> When the job is signaled, the following properties will be available on
+the returned IJob object:
+<ul>
+<li> VIX_PROPERTY_JOB_RESULT_PROCESS_ID: the process id; however, if the guest
+has an older version of Tools (those released with Workstation 6 and
+earlier) and the VixCOM.Constants.VIX_RUNPROGRAM_RETURN_IMMEDIATELY
+flag is used, then the process ID will not be returned from the guest and
+this property will not be set on the job handle, so attempting to access
+this property will result in VIX_E_UNRECOGNIZED_PROPERTY being returned;
+<li> VIX_PROPERTY_JOB_RESULT_GUEST_PROGRAM_ELAPSED_TIME: the process elapsed time in seconds;
+<li> VIX_PROPERTY_JOB_RESULT_GUEST_PROGRAM_EXIT_CODE: the process exit code.
+</ul>
+If the option parameter is VixCOM.Constants.VIX_RUNPROGRAM_RETURN_IMMEDIATELY, the latter two will
+both be 0.
+<li> Depending on the behavior of the guest operating system, there may be a
+short delay after the job completes before the process is visible in the
+guest operating system.
+<li> If the total size of the specified interpreter and the script text is larger
+than 60536 bytes, then the error VIX_E_ARGUMENT_TOO_BIG is returned.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+
+VBScript:
+<pre>
+Dim lib
+Dim host
+Dim job
+Dim vm
+Dim result
+
+Set lib = CreateObject("VixCOM.VixLib")
+
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION, Empty, 0, Empty, Empty, 0, Nothing, Nothing)
+
+' results needs to be initialized before it's used, even if it's just going to be overwritten.
+Set results = Nothing
+
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set host = results(0)
+
+Set job = host.OpenVM("c:\Virtual Machines\vm1\win2000.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set vm = results(0)
+
+Set job = vm.PowerOn(VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set job = vm.WaitForToolsInGuest(300, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set job = vm.LoginInGuest("vixuser", "secret", 0, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Dim scriptText
+
+scriptText = "if (!open IN, ""&lt;"", ""in.txt"") { die ""failed to open input file""};\n"
+scriptText = scriptText & "if (!open OUT, ""&gt;"", ""out.txt"") { die ""failed to open output file""};\n"
+scriptText = scriptText & "@input = &lt;IN&gt;;\n"
+scriptText = scriptText & "@reverse = reverse @input;\n"
+scriptText = scriptText & "print OUT @reverse;\n"
+
+Set job = vm.RunScriptInGuest("c:\perl\perl.exe", scriptText, 0, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+
+host.Disconnect()
+</pre>
+C#:
+<pre>
+class Program
+{
+
+   static void Main(string[] args)  
+   {
+      VixCOM.VixLibClass lib = new VixCOM.VixLibClass();
+      UInt64 err;
+      object results = null;
+
+      VixCOM.IJob job = lib.Connect(VixCOM.Constants.VIX_API_VERSION,
+                                    VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                    null,
+                                    0,
+                                    null,
+                                    null,
+                                    0,
+                                    null,
+                                    null);
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE },
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IHost host = (VixCOM.IHost)((object[])results)[0];
+      CloseVixObject(job);
+
+      job = host.OpenVM("c:\\Virtual Machines\\vm1\\win2000.vmx", null);
+
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE }, 
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IVM2 vm = (VixCOM.IVM2)((object[])results)[0];
+      CloseVixObject(job);
+
+      job = vm.PowerOn(VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI, null, null);
+      job.WaitWithoutResults();
+      if (lib.ErrorIndicatesFailure(err))
+      {
+         // Handle the error... 
+      }
+      CloseVixObject(job);
+
+      // Wait up to 300 seconds for tools to start
+      job = vm.WaitForToolsInGuest(300, null);
+      err = job.WaitWithoutResults();
+      if (lib.ErrorIndicatesFailure(err))
+      {
+         // Handle the error... 
+      }
+      CloseVixObject(job);
+
+      job = vm.LoginInGuest("vixuser", "secret", 0, null);
+      err = job.WaitWithoutResults();
+      if (lib.ErrorIndicatesFailure(err))
+      {
+         // Handle the error...
+      }
+      CloseVixObject(job);
+
+
+      string perlScript = "";
+
+      // Fill perlScript with desired perl script text
+
+      job = vm.RunScriptInGuest("c:\\perl\\perl.exe", perlScript, 0, null, null);
+      err = job.WaitWithoutResults();
+      if (lib.ErrorIndicatesFailure(err))
+      {
+         // Handle the error...
+      }
+      CloseVixObject(job);
+
+      CloseVixObject(vm);
+     
+      host.Disconnect();
+   }
+
+   static void CloseVixObject(Object vixObject)
+   {
+      try
+      {
+         ((IVixHandle2)vixObject).Close();
+      }
+      catch(Exception)
+      {
+         //Close is not supported in this version of Vix COM - Ignore
+      }
+   }
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

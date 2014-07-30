@@ -1,0 +1,262 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixPropertyID</b>
+<h1>Description</h1>
+These are the possible IDs for Vix properties. 
+To retrieve a property from a handle, pass the ID for the property you want.
+<h1>Values</h1>
+<dl>
+<dt><i>VIX_PROPERTY_NONE</i></dt>
+<dd>
+Indicates that no value has been assigned to this property variable.
+Recommended for initializing property variables.
+</dd>
+</dl>
+<h1>Virtual Machine Properties</h1>
+The following properties may be available from virtual machine handles:
+<h1>Values</h1>
+<dl>
+<dt><i>VIX_PROPERTY_VM_NUM_VCPUS</i></dt>
+<dd>
+The number of virtual CPUs configured for the 
+virtual machine.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_VM_VMX_PATHNAME</i></dt>
+<dd>
+The path to the virtual machine configuration file.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_VM_VMTEAM_PATHNAME</i></dt>
+<dd>
+The path to the virtual machine team.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_VM_MEMORY_SIZE</i></dt>
+<dd>
+The memory size of the virtual machine.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_VM_READ_ONLY</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_VM_IN_VMTEAM</i></dt>
+<dd>
+Whether the virtual machine is a member of a team.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_VM_POWER_STATE</i></dt>
+<dd>
+The power state of the virtual machine.
+For a list of values, see Topics &gt; Types &gt; VixPowerState.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_VM_TOOLS_STATE</i></dt>
+<dd>
+The state of the VMware Tools suite in the guest.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_VM_IS_RUNNING</i></dt>
+<dd>
+Whether the virtual machine is running.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_VM_SUPPORTED_FEATURES</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_VM_IS_RECORDING</i></dt>
+<dd>
+Whether the virtual machine is recording.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_VM_IS_REPLAYING</i></dt>
+<dd>
+Whether the virtual machine is replaying.
+</dd>
+</dl>
+<h1>Job Handle Properties</h1>
+The following properties may be available from job handles:
+<h1>Values</h1>
+<dl>
+<dt><i>VIX_PROPERTY_JOB_RESULT_ERROR_CODE</i></dt>
+<dd>
+The most recent error encountered by the job.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_VM_IN_GROUP</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_USER_MESSAGE</i></dt>
+<dd>
+A user message blocking the virtual machine.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_EXIT_CODE</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_COMMAND_OUTPUT</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_HANDLE</i></dt>
+<dd>
+A handle resulting from an asynchronous operation.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_GUEST_OBJECT_EXISTS</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_GUEST_PROGRAM_ELAPSED_TIME</i></dt>
+<dd>
+The time it took to execute 
+a program with VixVM_RunProgramInGuest().
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_GUEST_PROGRAM_EXIT_CODE</i></dt>
+<dd>
+The exit code resulting from 
+VixVM_RunProgramInGuest().
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_ITEM_NAME</i></dt>
+<dd>
+For VixJob_GetNthProperties(), 
+the name of an item found.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_FOUND_ITEM_DESCRIPTION</i></dt>
+<dd>
+For VixJob_GetNthProperties(), 
+the description of an item found.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_SCREEN_IMAGE_DATA</i></dt>
+<dd>
+a Blob property containing the
+screen image
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_SCREEN_IMAGE_SIZE</i></dt>
+<dd>
+an integer property containing
+the size of the image, in bytes
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_COUNT</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_HOST</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_FLAGS</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_PROCESS_ID</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_PROCESS_OWNER</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_PROCESS_COMMAND</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_FILE_FLAGS</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_PROCESS_START_TIME</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_JOB_RESULT_PROCESS_BEING_DEBUGGED</i></dt>
+<dd>
+ 
+</dd>
+</dl>
+<h1>Event Properties</h1>
+The following properties may be available from event handles:
+<h1>Values</h1>
+<dl>
+<dt><i>VIX_PROPERTY_FOUND_ITEM_LOCATION</i></dt>
+<dd>
+ 
+</dd>
+</dl>
+<h1>Snapshot Properties</h1>
+The following properties may be available from snapshot handles:
+<h1>Values</h1>
+<dl>
+<dt><i>VIX_PROPERTY_SNAPSHOT_DISPLAYNAME</i></dt>
+<dd>
+User defined name for the snapshot.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_SNAPSHOT_DESCRIPTION</i></dt>
+<dd>
+User defined description for the snapshot.
+<p>
+</dd>
+<dt><i>VIX_PROPERTY_SNAPSHOT_IS_REPLAYABLE</i></dt>
+<dd>
+Whether the snapshot is replayable.
+</dd>
+</dl>
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+<h1>Example</h1>
+This example retrieves the a property from a job handle.
+<pre>
+VixError err = VIX_OK;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+
+// Create a new handle:
+jobHandle = VixHost_Connect(...);
+
+// Retrieve the host handle from the job property list:
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE, 
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+// Release job handle when done:
+Vix_ReleaseHandle(jobHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2008 VMware, Inc.  All rights reserved.

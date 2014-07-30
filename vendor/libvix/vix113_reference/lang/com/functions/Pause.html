@@ -1,0 +1,90 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>Pause</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+Pause(LONG pauseOptions,
+      IVixHandle* propertyList,
+      ICallback* jobDoneCallback,
+      IJob** pauseJob);
+</pre>
+<p>
+This function pauses a virtual machine.  See Remarks section for pause behavior when
+used with different operations.
+<h1>Parameters</h1>
+<dl>
+<dt><i>pauseOptions</i></dt>
+<dd>
+Must be zero.
+</dd>
+<dt><i>propertyList</i></dt>
+<dd>
+Must be NULL (C++), null (C#), or Nothing (VB).
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>pauseJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This stops execution of the virtual machine.
+<li> Functions that invoke guest operations should not be called
+when the virtual machine is paused.
+<li> Call Unpause to continue execution of the virtual machine.
+<li> Calling Reset, PowerOff, and Suspend will
+successfully work when paused.  The pause state is not preserved
+in a suspended virtual machine; a subsequent PowerOn will
+not remember the previous pause state.
+<li> Calling BeginRecording when paused is legal.  The actual recording
+will start when the virtual machine is unpaused.
+<li> Do not call BeginReplay when the virtual machine is paused.
+To do so, call PowerOff first, which will reset the pause state.
+After the virtual machine is powered off, you can then call
+BeginReplay.
+<li> This function is not supported when using the 
+VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.5
+<h1>Example</h1>
+<pre>
+
+</pre>
+VBScript:
+<pre>
+Set job = vm.Pause(0, Nothing, Nothing)
+' WaitWithoutResults is just like Wait, except it does not get any properties. 
+err = job.WaitWithoutResults()
+QuitIfError(err)
+
+' Do something...
+
+Set job = vm.Unpause(0, Nothing, Nothing)
+' WaitWithoutResults is just like Wait, except it does not get any properties. 
+err = job.WaitWithoutResults()
+QuitIfError(err)
+
+Set job = Nothing
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

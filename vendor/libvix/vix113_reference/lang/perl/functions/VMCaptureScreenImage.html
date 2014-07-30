@@ -1,0 +1,73 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMCaptureScreenImage</b>
+<h1>Description</h1>
+<pre>
+($err, $imageSize, $imageBytes) = VMCaptureScreenImage($vmHandle, $captureType, 
+						       $propertyListHandle);
+
+</pre>
+<p>
+This function captures the screen of the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+The handle to the VM.
+</dd>
+<dt><i>captureType</i></dt>
+<dd>
+the data format.  Must be VIX_CAPTURESCREENFORMAT_PNG
+</dd>
+<dt><i>additionalProperties</i></dt>
+<dd>
+must be VIX_INVALID_HANDLE
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<p>
+$imageSize. The size of the image in bytes.
+<p>
+$imageBytes. The bytes making up the image.
+<h1>Remarks</h1>
+<p>
+For security reasons, this function requires 
+a successful call to
+VMLoginInGuest
+must be made.
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.5
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+my $err;
+my $imageSize;
+my $imageBytes;
+my $filename = "screendump.png";
+
+($err, $imageSize, $imageBytes) = VMCaptureScreenImage($vmHandle,
+				       VIX_CAPTURESCREENFORMAT_PNG,
+				       VIX_INVALID_HANDLE);
+die "CaptureScreenImage failed, $err ", GetErrorText($err), "\n" if $err != VIX_ OK;
+
+open IMAGE, "&gt;", $filename or die "can't open screen capture file $filename";
+print IMAGE $imagebytes;
+close IMAGE;
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

@@ -1,0 +1,153 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>CreateSnapshot</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+CreateSnapshot([in] BSTR name,
+               [in] BSTR description,
+               [in] LONG options,
+               [in] IVixHandle* propertyList,
+               [in] ICallback* jobDoneCallback,
+               [out,retval] IJob** createJob);
+</pre>
+<p>
+This
+method
+saves a copy of the virtual machine state as a snapshot object.
+The ISnapshot object is returned in the IJob object properties.
+<h1>Parameters</h1>
+<dl>
+<dt><i>name</i></dt>
+<dd>
+A user-defined name for the snapshot; need not be unique.
+</dd>
+<dt><i>description</i></dt>
+<dd>
+A user-defined description for the snapshot.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Flags to specify how the snapshot should be created. Any
+             combination of the following or 0 to exclude memory:
+<ul>
+<li> VIX_SNAPSHOT_INCLUDE_MEMORY - Captures the full state of a
+running virtual machine, including the memory.
+</ul>
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be VIX_INVALID_HANDLE.
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>createJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this
+              asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+<h1>Remarks</h1>
+<ul>
+<li> This function creates a child snapshot of the current snapshot.
+<li> If a virtual machine is suspended, you cannot snapshot it more than once.
+<li> If a powered-on virtual machine gets a snapshot created with option 0 (exclude memory),
+the power state is not saved, so reverting to the snapshot sets powered-off state.
+<li> The 'name' and 'description' parameters can be set but not retrieved
+using the VIX API.
+<li> VMware Server supports only a single snapshot for each virtual machine.
+The following considerations apply to VMware Server:
+<ul>
+<li> If you call this function a second time for the same virtual machine
+without first deleting the snapshot, the second call will overwrite
+the previous snapshot.
+<li> A virtual machine imported to VMware Server from another VMware product
+might have more than one snapshot at the time it is imported.
+In that case, you can use this function to add a new snapshot to the
+series.
+</ul>
+<li> Starting in VMware Workstation 6.5, snapshot operations are allowed on
+virtual machines that are part of a team.  Previously, this operation failed
+with error code VIX_PROPERTY_VM_IN_VMTEAM.  Team members snapshot independently
+so they can have different and inconsistent snapshot states.
+<li> This function is not supported when using the
+VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+<li> If the virtual machine is open and powered off in the UI, this function
+now closes the virtual machine in the UI before creating the snapshot.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+</pre>
+VBScript:
+<pre>
+Dim lib
+Dim host
+Dim job
+Dim vm
+Dim results
+Dim snapshot
+
+Set lib = CreateObject("VixCOM.VixLib")
+
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION, Empty, 0, Empty, Empty, 0, Nothing, Nothing)
+
+' results needs to be initialized before it's used, even if it's just going to be overwritten.
+Set results = Nothing
+
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set host = results(0)
+
+Set job = host.OpenVM("c:\Virtual Machines\vm1\win2000.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set vm = results(0)
+
+Set job = vm.PowerOn(VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set job = vm.CreateSnapshot("Snapshot 1", "Test Snapshot", VixCOM.Constants.VIX_SNAPSHOT_INCLUDE_MEMORY, Nothing, Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+snapshot = results(0)
+
+' Use snapshot...
+
+Set snapshot = Nothing
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+
+host.Disconnect()
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

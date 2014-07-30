@@ -1,0 +1,74 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixJob_GetNthProperties</b>
+<h1>Description</h1>
+<pre>
+VixError
+VixJob_GetNthProperties(VixHandle jobHandle,
+                        int index,
+                        int propertyID,
+                        ...);
+</pre>
+<p>
+Retrieves the property at a specific index in a list.
+You can use this to iterate through returned property lists.
+<h1>Parameters</h1>
+<dl>
+<dt><i>VixHandle</i></dt>
+<dd>
+The handle of a job object, returned from any
+               asynchronous Vix function.
+</dd>
+<dt><i>index</i></dt>
+<dd>
+Index into the property list of the job object.
+</dd>
+<dt><i>propertyID</i></dt>
+<dd>
+A property ID.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixError. The result returned by a completed asynchronous function.
+<h1>Remarks</h1>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since Workstation 6.0.
+<h1>Example</h1>
+<pre>
+job = VixVM_ListDirectoryInGuest(vm, guestdir, 0, NULL, NULL);
+err = VixJob_Wait(job, VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   fprintf(stderr, "failed to list dir '%s' in vm '%s'(%"FMT64"d %s)\n",
+           guestdir, vmpath, err, Vix_GetErrorText(err, NULL));
+   goto abort;
+}
+
+num = VixJob_GetNumProperties(job, VIX_PROPERTY_JOB_RESULT_ITEM_NAME);
+for (i = 0; i &lt; num; i++) {
+   char *fname;
+
+   err = VixJob_GetNthProperties(job,
+                                 i,
+                                 VIX_PROPERTY_JOB_RESULT_ITEM_NAME,
+                                 &fname,
+                                 VIX_PROPERTY_NONE);
+
+   printf("file #%d '%s'\n", i, fname);
+
+   Vix_FreeBuffer(fname);
+}
+
+Vix_ReleaseHandle(job);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

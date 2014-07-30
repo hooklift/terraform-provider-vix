@@ -1,0 +1,85 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<div class="deprecated">This function was removed in version 1.11.</div><h1>Name</h1>
+<b>OpenUrlInGuest</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+OpenUrlInGuest([in] BSTR url,
+               [in] LONG windowState,
+               [in] IVixHandle* propertyList,
+               [in] ICallback* jobDoneCallback,
+               [out,retval] IJob** openJob);
+</pre>
+<p>
+This function is deprecated.
+This function opens a browser window on the specified URL in the
+guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>url</i></dt>
+<dd>
+The URL to be opened.
+</dd>
+<dt><i>windowState</i></dt>
+<dd>
+Must be 0.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be 
+NULL (C++), null (C#), or Nothing (VB).
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>openJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function is deprecated and may be removed from future versions of the 
+VIX API.
+<li> This function opens the URL in the guest operating system.
+<li> You must call 
+VM::LoginInGuest() 
+with
+</ul>
+VixCOM.Constants.VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT
+  in the options, and enable autologin on the guest operating system,
+  before calling this function.
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+</pre>
+VBScript:
+<pre>
+Dim err
+Dim job
+
+Set job = vm.OpenUrlInGuest("http://www.vmware.com", 0, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set job = Nothing
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.
