@@ -18,7 +18,8 @@ type ResourceProvider struct {
 func (p *ResourceProvider) Validate(c *terraform.ResourceConfig) ([]string, []error) {
 	v := &config.Validator{
 		Required: []string{
-			"provider",
+			"product",
+			"verify_ssl",
 		},
 	}
 
