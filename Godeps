@@ -1,0 +1,71 @@
+{
+	"ImportPath": "github.com/c4milo/terraform_vix",
+	"GoVersion": "go1.3",
+	"Deps": [
+		{
+			"ImportPath": "github.com/c4milo/govix",
+			"Rev": "3336ee8e44870e2c258f691c7843e2cf75d3bf6a"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/terraform/config",
+			"Comment": "v0.1.0-111-g726c388",
+			"Rev": "726c388ba298fb7b6dd2fa6f4de9dcf99e0003fd"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/terraform/depgraph",
+			"Comment": "v0.1.0-111-g726c388",
+			"Rev": "726c388ba298fb7b6dd2fa6f4de9dcf99e0003fd"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/terraform/digraph",
+			"Comment": "v0.1.0-111-g726c388",
+			"Rev": "726c388ba298fb7b6dd2fa6f4de9dcf99e0003fd"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/terraform/flatmap",
+			"Comment": "v0.1.0-111-g726c388",
+			"Rev": "726c388ba298fb7b6dd2fa6f4de9dcf99e0003fd"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/terraform/helper/config",
+			"Comment": "v0.1.0-111-g726c388",
+			"Rev": "726c388ba298fb7b6dd2fa6f4de9dcf99e0003fd"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/terraform/helper/diff",
+			"Comment": "v0.1.0-111-g726c388",
+			"Rev": "726c388ba298fb7b6dd2fa6f4de9dcf99e0003fd"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/terraform/helper/multierror",
+			"Comment": "v0.1.0-111-g726c388",
+			"Rev": "726c388ba298fb7b6dd2fa6f4de9dcf99e0003fd"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/terraform/helper/resource",
+			"Comment": "v0.1.0-111-g726c388",
+			"Rev": "726c388ba298fb7b6dd2fa6f4de9dcf99e0003fd"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/terraform/terraform",
+			"Comment": "v0.1.0-111-g726c388",
+			"Rev": "726c388ba298fb7b6dd2fa6f4de9dcf99e0003fd"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/copystructure",
+			"Rev": "d8968bce41ab42f33aeb143afa95e331cb1ba886"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/go-libucl",
+			"Rev": "8da0f346ecb82446ebceafd6e8e9d9be4d549745"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Rev": "740c764bc6149d3f1806231418adb9f52c11bcbf"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/reflectwalk",
+			"Rev": "e311b7bc81996c7e4cb570b2cbfd6448eba094b2"
+		}
+	]
+}
