@@ -1,13 +1,17 @@
 /*
 terraform apply \
     -var 'key_path=/home/camilo/.ssh/id_pub' \
-    -var 'username=test' \
     -var 'password=test' \
 */
 
-variable "key_path" {}
-variable "username" {}
-variable "password" {}
+variable "key_path" {
+    default = "~/.ssh/id_rsa.pub"
+}
+
+variable "password" {
+    default: ""
+}
+
 
 provider "vix" {
     product = "fusion"
@@ -23,7 +27,8 @@ resource "vix_vswitch" "vmnet10" {
 }
 */
 
-resource "vix_vm" "ubuntu" {
+resource "vix_vm" "coreos" {
+    name = "coreos-%d"
     description = "Terraform VMWARE VIX test"
 
     image {
@@ -31,8 +36,7 @@ resource "vix_vm" "ubuntu" {
         checksum = "c791812465f2cda236da1132b9f651cc58d5a7120636e48d82f4cb1546877bbd"
         checksum_type = "sha256"
 
-        // If image is encrypted we need to provide credentials
-        username = "${var.username}"
+        // If image is encrypted we need to provide password
         password = "${var.password}"
     }
 
@@ -45,6 +49,8 @@ resource "vix_vm" "ubuntu" {
     ]
 
     count = 1
+    hardware_version = 10
+    network_driver = "vmxnet3"
 
     connection {
         # The default username for our Box image
@@ -64,5 +70,5 @@ resource "vix_vm" "ubuntu" {
 }
 
 output "address" {
-  value = "${vix_vm.ubuntu.ip_address}"
+  value = "${vix_vm.coreos.ip_address}"
 }
