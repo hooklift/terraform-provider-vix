@@ -5,12 +5,12 @@ terraform apply \
 */
 
 variable "key_path" {
-    default = "~/.ssh/id_rsa.pub"
+    default = "/Users/camilo/.ssh/id_rsa"
 }
 
-variable "password" {
-    default: ""
-}
+# variable "password" {
+#     default: ""
+# }
 
 
 provider "vix" {
@@ -28,7 +28,7 @@ resource "vix_vswitch" "vmnet10" {
 */
 
 resource "vix_vm" "coreos" {
-    name = "coreos-%d"
+    name = "coreos"
     description = "Terraform VMWARE VIX test"
 
     image {
@@ -36,16 +36,16 @@ resource "vix_vm" "coreos" {
         checksum = "c791812465f2cda236da1132b9f651cc58d5a7120636e48d82f4cb1546877bbd"
         checksum_type = "sha256"
 
-        // If image is encrypted we need to provide password
-        password = "${var.password}"
+        # If image is encrypted we need to provide 
+        # password = "${var.password}"
     }
 
     cpus = 2
     memory = "1g"
     networks = [
-        //"vmnet10", 
+        #"vmnet10",
         "bridged", 
-        //"nat"
+        #"nat"
     ]
 
     count = 1
