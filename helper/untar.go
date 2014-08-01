@@ -4,18 +4,15 @@ import (
 	"archive/tar"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 func Untar(data io.Reader, dest string) error {
-	err := os.MkdirAll(dest, 0744)
-	if err != nil {
-		return err
-	}
+	os.MkdirAll(dest, 0740)
 
 	tr := tar.NewReader(data)
 
 	// Iterate through the files in the archive.
-	returnPath := dest
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {
@@ -28,12 +25,11 @@ func Untar(data io.Reader, dest string) error {
 		}
 
 		if hdr.FileInfo().IsDir() {
-			returnPath += hdr.Name
-			os.Mkdir(dest+hdr.Name, 0744)
+			os.Mkdir(filepath.Join(dest, hdr.Name), 0740)
 			continue
 		}
 
-		file, err := os.Create(dest + hdr.Name)
+		file, err := os.Create(filepath.Join(dest, hdr.Name))
 		if err != nil {
 			return err
 		}

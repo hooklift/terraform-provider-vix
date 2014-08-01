@@ -1,42 +1,37 @@
 package helper
 
 import (
+	"bytes"
 	"compress/gzip"
+	"io"
 	"io/ioutil"
 	"os"
 )
 
-func FetchImage(url, checksum, checksumType, dest string) error {
+func FetchImage(URL, checksum, checksumType string) (*os.File, error) {
 	client := NewHttpClient()
-	data, err := client.Get(url)
+	data, err := client.Get(URL)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = VerifyChecksum(data, checksumType, checksum)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = ioutil.WriteFile(dest, data, 0740)
+	file, err := ioutil.TempFile(os.TempDir(), "terraform-vix")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	io.Copy(file, bytes.NewReader(data))
+
+	return file, nil
 }
 
-func UnpackImage(path, dest string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	err = os.MkdirAll(dest, 0740)
-	if err != nil {
-		return err
-	}
+func UnpackImage(file *os.File, destDir string) error {
+	os.MkdirAll(destDir, 0740)
 
 	//unzip
 	data, err := gzip.NewReader(file)
@@ -45,10 +40,5 @@ func UnpackImage(path, dest string) error {
 	}
 
 	//untar
-	err = Untar(data, dest)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return Untar(data, destDir)
 }
