@@ -3,16 +3,20 @@ package terraform_vix
 import (
 	"github.com/c4milo/govix"
 	"github.com/hashicorp/terraform/helper/config"
+	"github.com/hashicorp/terraform/helper/diff"
 	"github.com/hashicorp/terraform/terraform"
 )
 
 func resource_vix_vswitch_validation() *config.Validator {
 	return &config.Validator{
 		Required: []string{
-			"image",
+			"name",
 		},
 		Optional: []string{
-			"description",
+			"nat",
+			"dhcp",
+			"range",
+			"host_access",
 		},
 	}
 }
@@ -49,7 +53,19 @@ func resource_vix_vswitch_diff(
 	c *terraform.ResourceConfig,
 	meta interface{}) (*terraform.ResourceDiff, error) {
 
-	return nil, nil
+	b := &diff.ResourceBuilder{
+		// We have to choose whether a change in an attribute triggers a new
+		// resource creation or updates the existing resource.
+		Attrs: map[string]diff.AttrType{
+			"name":        diff.AttrTypeCreate,
+			"nat":         diff.AttrTypeUpdate,
+			"dhcp":        diff.AttrTypeUpdate,
+			"range":       diff.AttrTypeUpdate,
+			"host_access": diff.AttrTypeUpdate,
+		},
+	}
+
+	return b.Diff(s, c)
 }
 
 func resource_vix_vswitch_refresh(
