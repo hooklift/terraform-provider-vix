@@ -1,4 +1,4 @@
-package helper
+package helper_test
 
 import (
 	"fmt"
@@ -8,19 +8,17 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/c4milo/terraform_vix/helper"
 )
 
 func TestExpBackoff(t *testing.T) {
 	duration := time.Millisecond
 	max := time.Hour
 	for i := 0; i < math.MaxUint16; i++ {
-		duration = ExpBackoff(duration, max)
-		if duration < 0 {
-			t.Fatalf("duration too small: %v %v", duration, i)
-		}
-		if duration > max {
-			t.Fatalf("duration too large: %v %v", duration, i)
-		}
+		duration = helper.ExpBackoff(duration, max)
+		assert(t, duration > 0, fmt.Sprintf("duration too small: %v %v", duration, i))
+		assert(t, duration <= max, fmt.Sprintf("duration too large: %v %v", duration, i))
 	}
 }
 
@@ -35,7 +33,7 @@ func TestGetURLExpBackOff(t *testing.T) {
 		{1, "number of attempts: 1"},
 		{2, "number of attempts: 2"},
 	}
-	client := NewHttpClient()
+	client := helper.NewHttpClient()
 
 	for i, tt := range expBackoffTests {
 		mux := http.NewServeMux()
@@ -52,23 +50,15 @@ func TestGetURLExpBackOff(t *testing.T) {
 		defer ts.Close()
 
 		data, err := client.GetRetry(ts.URL)
-		if err != nil {
-			t.Errorf("Test case %d produced error: %v", i, err)
-		}
-
-		if count != tt.count {
-			t.Errorf("Test case %d failed: %d != %d", i, count, tt.count)
-		}
-
-		if string(data) != tt.body {
-			t.Errorf("Test case %d failed: %s != %s", i, tt.body, data)
-		}
+		ok(t, err)
+		assert(t, count == tt.count, fmt.Sprintf("Test case %d failed: %d != %d", i, count, tt.count))
+		assert(t, string(data) == tt.body, fmt.Sprintf("Test case %d failed: %s != %s", i, tt.body, data))
 	}
 }
 
 // Test that it stops retrying if a 4xx response comes back
 func TestGetURL4xx(t *testing.T) {
-	client := NewHttpClient()
+	client := helper.NewHttpClient()
 	retries := 0
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		retries++
@@ -77,13 +67,9 @@ func TestGetURL4xx(t *testing.T) {
 	defer ts.Close()
 
 	_, err := client.GetRetry(ts.URL)
-	if err == nil {
-		t.Errorf("Incorrect result\ngot:  %s\nwant: %s", err.Error(), "Not found. HTTP status code: 404")
-	}
-
-	if retries > 1 {
-		t.Errorf("Number of retries:\n%d\nExpected number of retries:\n%s", retries, 1)
-	}
+	assert(t, err != nil, fmt.Sprintf("Error was expected not to be nil. Got %v", err))
+	equals(t, err.Error(), "Not found. HTTP status code: 404")
+	assert(t, retries <= 1, fmt.Sprintf("Number of retries:\n%d\nExpected number of retries:\n%s", retries, 1))
 }
 
 // Test that it fetches and returns user-data just fine
@@ -101,25 +87,20 @@ coreos:
 		reboot-strategy: best-effort
 `
 
-	client := NewHttpClient()
+	client := helper.NewHttpClient()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, cloudcfg)
 	}))
 	defer ts.Close()
 
 	data, err := client.GetRetry(ts.URL)
-	if err != nil {
-		t.Errorf("Incorrect result\ngot:  %v\nwant: %v", err, nil)
-	}
-
-	if string(data) != cloudcfg {
-		t.Errorf("Incorrect result\ngot:  %s\nwant: %s", string(data), cloudcfg)
-	}
+	ok(t, err)
+	assert(t, string(data) == cloudcfg, fmt.Sprintf("%s != %s", string(data), cloudcfg))
 }
 
 // Test attempt to fetching using malformed URL
 func TestGetMalformedURL(t *testing.T) {
-	client := NewHttpClient()
+	client := helper.NewHttpClient()
 
 	var tests = []struct {
 		url  string
@@ -133,8 +114,7 @@ func TestGetMalformedURL(t *testing.T) {
 
 	for _, test := range tests {
 		_, err := client.GetRetry(test.url)
-		if err == nil || err.Error() != test.want {
-			t.Errorf("Incorrect result\ngot:  %v\nwant: %v", err, test.want)
-		}
+		assert(t, err != nil, fmt.Sprintf("Error was expected not to be nil. Got %v", err))
+		assert(t, err.Error() == test.want, fmt.Sprintf("Incorrect result\ngot:  %v\nwant: %v", err, test.want))
 	}
 }

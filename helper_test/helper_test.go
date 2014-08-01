@@ -1,4 +1,4 @@
-package terraform_vix
+package helper_test
 
 import (
 	"fmt"
