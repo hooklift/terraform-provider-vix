@@ -9,9 +9,6 @@ import (
 
 func resource_vix_vswitch_validation() *config.Validator {
 	return &config.Validator{
-		Required: []string{
-			"name",
-		},
 		Optional: []string{
 			"nat",
 			"dhcp",
@@ -57,7 +54,6 @@ func resource_vix_vswitch_diff(
 		// We have to choose whether a change in an attribute triggers a new
 		// resource creation or updates the existing resource.
 		Attrs: map[string]diff.AttrType{
-			"name":        diff.AttrTypeCreate,
 			"nat":         diff.AttrTypeUpdate,
 			"dhcp":        diff.AttrTypeUpdate,
 			"range":       diff.AttrTypeUpdate,

@@ -10,7 +10,6 @@ import (
 func resource_vix_sharedfolder_validation() *config.Validator {
 	return &config.Validator{
 		Required: []string{
-			"name",
 			"host_path",
 			"guest_path",
 		},
@@ -56,7 +55,6 @@ func resource_vix_sharedfolder_diff(
 		// We have to choose whether a change in an attribute triggers a new
 		// resource creation or updates the existing resource.
 		Attrs: map[string]diff.AttrType{
-			"name":       diff.AttrTypeCreate,
 			"host_path":  diff.AttrTypeUpdate,
 			"guest_path": diff.AttrTypeUpdate,
 			"readonly":   diff.AttrTypeUpdate,

@@ -1,17 +1,16 @@
 /*
 terraform apply \
-    -var 'key_path=/home/camilo/.ssh/id_pub' \
+    -var 'key_path=/home/camilo/.ssh/id_rsa' \
     -var 'password=test' \
 */
 
 variable "key_path" {
-    default = "/Users/camilo/.ssh/id_rsa.pub"
+    default = "/Users/camilo/.ssh/id_rsa"
 }
 
 variable "password" {
      default: ""
 }
-
 
 provider "vix" {
     product = "fusion"
@@ -19,7 +18,6 @@ provider "vix" {
 }
 
 resource "vix_vswitch" "vmnet10" {
-    name = "vmnet10"
     nat = true
     dhcp = true
     range = "192.168.1.0/24"
@@ -27,14 +25,12 @@ resource "vix_vswitch" "vmnet10" {
 }
 
 resource "vix_sharedfolder" "dev" {
-    name = "dev"
     guest_path = "/home/camilo/dev"
     host_path = "/Users/camilo/Development"
     readonly = false
 }
 
 resource "vix_vm" "coreos" {
-    name = "coreos"
     description = "Terraform VMWARE VIX test"
 
     image {
@@ -42,7 +38,7 @@ resource "vix_vm" "coreos" {
         checksum = "c791812465f2cda236da1132b9f651cc58d5a7120636e48d82f4cb1546877bbd"
         checksum_type = "sha256"
 
-        # If image is encrypted we need to provide
+        # If image is encrypted we need to provide a password
         password = "${var.password}"
     }
 
@@ -58,7 +54,7 @@ resource "vix_vm" "coreos" {
     hardware_version = 10
     network_driver = "vmxnet3"
 
-    # Whether to enable or disable shared folders in this VM
+    # Whether to enable or disable shared folders for this VM
     sharedfolders = "enable"
 
     connection {
