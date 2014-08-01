@@ -5,7 +5,7 @@ terraform apply \
 */
 
 variable "key_path" {
-    default = "/Users/camilo/.ssh/id_rsa"
+    default = "/Users/camilo/.ssh/id_rsa.pub"
 }
 
 # variable "password" {
@@ -43,9 +43,9 @@ resource "vix_vm" "coreos" {
     cpus = 2
     memory = "1g"
     networks = [
-        #"vmnet10",
+        # "vmnet10",
         "bridged", 
-        #"nat"
+        # "nat"
     ]
 
     count = 1
