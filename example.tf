@@ -42,11 +42,11 @@ resource "vix_vm" "coreos" {
         password = "${var.password}"
     }
 
-    cpus = 2
+    cpus = 1
     memory = "1g"
     networks = [
         "vmnet10",
-        "bridged", 
+        "bridged",
         # "nat"
     ]
 
@@ -55,7 +55,7 @@ resource "vix_vm" "coreos" {
     network_driver = "vmxnet3"
 
     # Whether to enable or disable shared folders for this VM
-    sharedfolders = "enable"
+    sharedfolders = true
 
     connection {
         # The default username for our Box image
