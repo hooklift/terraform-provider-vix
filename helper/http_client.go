@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	neturl "net/url"
 	"strings"
@@ -66,27 +65,27 @@ func NewHttpClient() *HttpClient {
 	}
 
 	hc.client = &http.Client{
-		// Go 1.3 http client has a timeout property! yay!
-		// The only problem is that when it fires up it logs a misleading
-		// error:
-		// read tcp 54.231.0.168:443: use of closed network connection
-		// Unlike our precious timeout hack:
-		// read tcp 176.32.97.226:443: i/o timeout
+		// Go 1.3 screwed things up with timeouts, not even
+		// our precious SetDeadline workaround works anymore
+		// I filed an issue in https://code.google.com/p/go/issues/detail?id=8465
+		// to track this
 		//
 		// Timeout: hc.Timeout,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: hc.SkipTLS,
 			},
-			Dial: func(network, addr string) (net.Conn, error) {
-				deadline := time.Now().Add(hc.Timeout)
-				c, err := net.DialTimeout(network, addr, hc.Timeout)
-				if err != nil {
-					return nil, err
-				}
-				c.SetDeadline(deadline)
-				return c, nil
-			},
+			// Go 1.3 what have you done! <o> https://code.google.com/p/go/issues/detail?id=8465
+			//
+			// Dial: func(network, addr string) (net.Conn, error) {
+			// 	deadline := time.Now().Add(hc.Timeout)
+			// 	c, err := net.DialTimeout(network, addr, hc.Timeout)
+			// 	if err != nil {
+			// 		return nil, err
+			// 	}
+			// 	c.SetDeadline(deadline)
+			// 	return c, nil
+			// },
 		},
 	}
 

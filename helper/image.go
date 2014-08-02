@@ -7,18 +7,16 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"time"
 )
 
 func FetchImage(URL, checksum, checksumType string) (*os.File, error) {
 	client := NewHttpClient()
-	client.Timeout = time.Duration(15) * time.Second
 	data, err := client.GetRetry(URL)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Print("[DEBUG] Verifying checksum for image...")
+	log.Println("[DEBUG] Verifying checksum for image...")
 	err = VerifyChecksum(data, checksumType, checksum)
 	if err != nil {
 		return nil, err
@@ -29,6 +27,7 @@ func FetchImage(URL, checksum, checksumType string) (*os.File, error) {
 		return nil, err
 	}
 
+	log.Printf("[DEBUG] Copying image data onto %s", file.Name())
 	io.Copy(file, bytes.NewReader(data))
 
 	return file, nil
