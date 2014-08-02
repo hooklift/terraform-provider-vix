@@ -24,12 +24,6 @@ resource "vix_vswitch" "vmnet10" {
     host_access = true
 }
 
-resource "vix_sharedfolder" "dev" {
-    guest_path = "/home/camilo/dev"
-    host_path = "/Users/camilo/Development"
-    readonly = false
-}
-
 resource "vix_vm" "coreos" {
     description = "Terraform VMWARE VIX test"
 
@@ -56,6 +50,18 @@ resource "vix_vm" "coreos" {
 
     # Whether to enable or disable shared folders for this VM
     sharedfolders = true
+
+    sharedfolder {
+        guest_path = "/home/camilo/dev"
+        host_path = "/Users/camilo/Development"
+        readonly = false
+    }
+
+    sharedfolder {
+        guest_path = "/home/camilo/dev2"
+        host_path = "/Users/camilo/Dropbox/Development"
+        readonly = false
+    }
 
     connection {
         # The default username for our Box image
