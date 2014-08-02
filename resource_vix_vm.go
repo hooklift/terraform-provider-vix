@@ -10,6 +10,7 @@ import (
 
 	"github.com/c4milo/govix"
 	"github.com/c4milo/terraform_vix/helper"
+	"github.com/dustin/go-humanize"
 	"github.com/hashicorp/terraform/flatmap"
 	"github.com/hashicorp/terraform/helper/config"
 	"github.com/hashicorp/terraform/helper/diff"
@@ -48,7 +49,7 @@ func resource_vix_vm_create(
 	name := rs.ID
 	description := rs.Attributes["description"]
 	cpus, err := strconv.ParseUint(rs.Attributes["cpus"], 0, 8)
-	memory, err := strconv.ParseUint(rs.Attributes["memory"], 0, 64)
+	memory := rs.Attributes["memory"]
 	hwversion, err := strconv.ParseUint(rs.Attributes["hardware_version"], 0, 8)
 	netdrv := rs.Attributes["network_driver"]
 	sharedfolders, err := strconv.ParseBool(rs.Attributes["sharedfolders"])
@@ -129,7 +130,15 @@ func resource_vix_vm_create(
 	}
 	defer client.Disconnect()
 
-	vm.SetMemorySize(uint(memory))
+	memoryInMb, err := humanize.ParseBytes(memory)
+	if err != nil {
+		log.Printf("[WARN] Unable to set memory size, defaulting to 1g: %s", err)
+		memoryInMb = 1024
+	} else {
+		memoryInMb /= 1024
+	}
+
+	vm.SetMemorySize(uint(memoryInMb))
 	vm.SetNumberVcpus(uint8(cpus))
 
 	for _, netType := range networks {
