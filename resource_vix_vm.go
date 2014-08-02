@@ -3,7 +3,6 @@ package terraform_vix
 import (
 	"fmt"
 	"log"
-	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
@@ -46,7 +45,7 @@ func resource_vix_vm_create(
 	// properly.
 	rs := s.MergeDiff(d)
 
-	name := rs.ID
+	name := "coreos"
 	description := rs.Attributes["description"]
 	cpus, err := strconv.ParseUint(rs.Attributes["cpus"], 0, 8)
 	memory := rs.Attributes["memory"]
@@ -98,32 +97,25 @@ func resource_vix_vm_create(
 
 	// FIXME(c4milo): There is an issue here whenever count is greater than 1
 	// please see: https://github.com/hashicorp/terraform/issues/141
-	imagePath := filepath.Join(usr.HomeDir, fmt.Sprintf(".terraform/vix/vms/%s", name))
+	vmPath := filepath.Join(usr.HomeDir, fmt.Sprintf(".terraform/vix/vms/%s", name))
+	imagePath := filepath.Join(usr.HomeDir, fmt.Sprintf(".terraform/vix/images"))
 
-	// Check if there is an image already in imagePath, if not, fetches it and unpacks it.
-	_, err = os.Stat(imagePath)
+	imageConfig := helper.Image{
+		URL:          image["url"].(string),
+		Checksum:     image["checksum"].(string),
+		ChecksumType: image["checksum_type"].(string),
+		DownloadPath: imagePath,
+	}
+
+	file, err := helper.FetchImage(imageConfig)
 	if err != nil {
-		if os.IsNotExist(err) {
-			url := image["url"].(string)
+		return nil, err
+	}
+	defer file.Close()
 
-			log.Printf("[INFO] Downloading image from %s", url)
-			imageGzFile, err := helper.FetchImage(url,
-				image["checksum"].(string),
-				image["checksum_type"].(string))
-
-			if err != nil {
-				return nil, err
-			}
-			defer imageGzFile.Close()
-
-			log.Printf("[INFO] Unpacking image onto %s", imagePath)
-			err = helper.UnpackImage(imageGzFile, imagePath)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
+	err = helper.UnpackImage(file, vmPath)
+	if err != nil {
+		return nil, err
 	}
 
 	// Gets VIX instance

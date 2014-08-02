@@ -1,18 +1,16 @@
 package helper
 
 import (
-	"bytes"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
-	"encoding/hex"
 	"fmt"
 	"hash"
 	"io"
 )
 
-func VerifyChecksum(data []byte, algorithm, sum string) error {
+func VerifyChecksum(data io.Reader, algorithm, sum string) error {
 	var hasher hash.Hash
 
 	switch algorithm {
@@ -27,13 +25,12 @@ func VerifyChecksum(data []byte, algorithm, sum string) error {
 	default:
 		return fmt.Errorf("Crypto algorithm no supported: %s", algorithm)
 	}
-
-	_, err := io.Copy(hasher, bytes.NewReader(data))
+	_, err := io.Copy(hasher, data)
 	if err != nil {
 		return err
 	}
 
-	result := hex.EncodeToString(hasher.Sum(nil))
+	result := fmt.Sprintf("%x", hasher.Sum(nil))
 
 	if result != sum {
 		return fmt.Errorf("Checksum does not match\n Result: %s\n Expected: %s", result, sum)

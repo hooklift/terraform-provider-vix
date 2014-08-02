@@ -26,10 +26,26 @@ func TestFetchImage(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	file, err := helper.FetchImage(ts.URL, "de147793e322837247c7b83f2f96033918825d4b68fe16dc4e7242fac7015611", "sha256")
+	destDir, err := ioutil.TempDir(os.TempDir(), "terraform-vix")
 	ok(t, err)
+	//defer os.RemoveAll(destDir)
+
+	image := helper.Image{
+		URL:          ts.URL,
+		Checksum:     "35fd19dc1bb7e18a365c1c589df2292942c197a4",
+		ChecksumType: "sha1",
+		DownloadPath: destDir,
+	}
+
+	file, err := helper.FetchImage(image)
+	ok(t, err)
+	defer file.Close()
+
 	assert(t, file != nil, fmt.Sprintf("%v == %v", file.Name(), nil))
-	file.Close()
+	finfo, err := file.Stat()
+	ok(t, err)
+
+	assert(t, finfo.Size() > 0, fmt.Sprintf("Image file is empty: %d", finfo.Size()))
 }
 
 func TestUnpackImage(t *testing.T) {
