@@ -86,7 +86,7 @@ func resource_vix_vm_create(
 	log.Printf("[DEBUG] description => %s", description)
 	log.Printf("[DEBUG] image => %v", image)
 	log.Printf("[DEBUG] cpus => %d", cpus)
-	log.Printf("[DEBUG] memory => %d", memory)
+	log.Printf("[DEBUG] memory => %s", memory)
 	log.Printf("[DEBUG] hwversion => %d", hwversion)
 	log.Printf("[DEBUG] netdrv => %s", netdrv)
 	log.Printf("[DEBUG] sharedfolders => %t", sharedfolders)
@@ -104,14 +104,19 @@ func resource_vix_vm_create(
 	_, err = os.Stat(imagePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			imageGzFile, err := helper.FetchImage(image["url"].(string),
+			url := image["url"].(string)
+
+			log.Printf("[INFO] Downloading image from %s", url)
+			imageGzFile, err := helper.FetchImage(url,
 				image["checksum"].(string),
 				image["checksum_type"].(string))
 
 			if err != nil {
 				return nil, err
 			}
+			defer imageGzFile.Close()
 
+			log.Printf("[INFO] Unpacking image onto %s", imagePath)
 			err = helper.UnpackImage(imageGzFile, imagePath)
 			if err != nil {
 				return nil, err
@@ -124,6 +129,9 @@ func resource_vix_vm_create(
 	// Gets VIX instance
 	p := meta.(*ResourceProvider)
 	client := p.client
+
+	log.Printf("[INFO] Opening virtual machine from %s", imagePath)
+
 	vm, err := client.OpenVm(imagePath, image["password"].(string))
 	if err != nil {
 		return nil, err
@@ -138,7 +146,10 @@ func resource_vix_vm_create(
 		memoryInMb /= 1024
 	}
 
+	log.Printf("[DEBUG] Setting memory size to %d megabytes", memoryInMb)
 	vm.SetMemorySize(uint(memoryInMb))
+
+	log.Printf("[DEBUG] Setting vcpus to %d", cpus)
 	vm.SetNumberVcpus(uint8(cpus))
 
 	for _, netType := range networks {
@@ -176,9 +187,10 @@ func resource_vix_vm_create(
 
 	// TODO(c4milo): Set hardware version
 
+	log.Println("[INFO] Powering virtual machine on...")
 	err = vm.PowerOn(vix.VMPOWEROP_NORMAL)
 	if err != nil {
-		return nil, err
+		return rs, err
 	}
 
 	// rs.ConnInfo["type"] = "ssh"

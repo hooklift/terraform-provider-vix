@@ -61,14 +61,19 @@ func NewHttpClient() *HttpClient {
 	hc := &HttpClient{
 		MaxBackoff: time.Second * 5,
 		MaxRetries: 15,
-		Timeout:    time.Duration(2) * time.Second,
+		Timeout:    time.Duration(5) * time.Second,
 		SkipTLS:    false,
 	}
 
-	// We need to create our own client in order to add timeout support.
-	// TODO(c4milo) Replace it once Go 1.3 is officially out
-	// More info: https://code.google.com/p/go/source/detail?r=ada6f2d5f99f
 	hc.client = &http.Client{
+		// Go 1.3 http client has a timeout property! yay!
+		// The only problem is that when it fires up it logs a misleading
+		// error:
+		// read tcp 54.231.0.168:443: use of closed network connection
+		// Unlike our precious timeout hack:
+		// read tcp 176.32.97.226:443: i/o timeout
+		//
+		// Timeout: hc.Timeout,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: hc.SkipTLS,
