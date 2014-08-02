@@ -46,11 +46,10 @@ func resource_vix_vm_create(
 	rs := s.MergeDiff(d)
 
 	name := rs.ID
-	description := rs.Attributes["name"]
-	image := flatmap.Expand(rs.Attributes, "image").([]interface{})
-	cpus, err := strconv.ParseInt(rs.Attributes["cpus"], 0, 16)
-	memory := rs.Attributes["memory"]
-	hwversion, err := strconv.ParseInt(rs.Attributes["hardware_version"], 0, 8)
+	description := rs.Attributes["description"]
+	cpus, err := strconv.ParseUint(rs.Attributes["cpus"], 0, 8)
+	memory, err := strconv.ParseUint(rs.Attributes["memory"], 0, 64)
+	hwversion, err := strconv.ParseUint(rs.Attributes["hardware_version"], 0, 8)
 	netdrv := rs.Attributes["network_driver"]
 	sharedfolders, err := strconv.ParseBool(rs.Attributes["sharedfolders"])
 	var networks []string
@@ -72,6 +71,10 @@ func resource_vix_vm_create(
 		}
 	}
 
+	// This is nasty but there doesn't seem to be a cleaner way to extract stuff
+	// from the TF configuration
+	image := flatmap.Expand(rs.Attributes, "image").([]interface{})[0].(map[string]interface{})
+
 	log.Printf("[DEBUG] networks => %v", networks)
 
 	if len(networks) == 0 {
@@ -82,10 +85,10 @@ func resource_vix_vm_create(
 	log.Printf("[DEBUG] description => %s", description)
 	log.Printf("[DEBUG] image => %v", image)
 	log.Printf("[DEBUG] cpus => %d", cpus)
-	log.Printf("[DEBUG] memory => %s", memory)
+	log.Printf("[DEBUG] memory => %d", memory)
 	log.Printf("[DEBUG] hwversion => %d", hwversion)
 	log.Printf("[DEBUG] netdrv => %s", netdrv)
-	log.Printf("[DEBUG] sharedfolders => %s", sharedfolders)
+	log.Printf("[DEBUG] sharedfolders => %t", sharedfolders)
 
 	usr, err := user.Current()
 	if err != nil {
@@ -97,10 +100,13 @@ func resource_vix_vm_create(
 	imagePath := filepath.Join(usr.HomeDir, fmt.Sprintf(".terraform/vix/vms/%s", name))
 
 	// Check if there is an image already in imagePath, if not, fetches it and unpacks it.
-	finfo, err := os.Stat(imagePath)
+	_, err = os.Stat(imagePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			imageGzipFile, err := helper.FetchImage(image["url"], image["checksum"], image["checksum_type"])
+			imageGzFile, err := helper.FetchImage(image["url"].(string),
+				image["checksum"].(string),
+				image["checksum_type"].(string))
+
 			if err != nil {
 				return nil, err
 			}
@@ -117,18 +123,17 @@ func resource_vix_vm_create(
 	// Gets VIX instance
 	p := meta.(*ResourceProvider)
 	client := p.client
-	vm, err := client.OpenVm(imagePath, image["password"])
+	vm, err := client.OpenVm(imagePath, image["password"].(string))
 	if err != nil {
 		return nil, err
 	}
 	defer client.Disconnect()
 
-	vm.SetMemorySize(memory)
-	vm.SetNumberVcpus(cpus)
+	vm.SetMemorySize(uint(memory))
+	vm.SetNumberVcpus(uint8(cpus))
 
 	for _, netType := range networks {
-		adapter := vix.NetworkAdapter{
-			ConnType:       netType,
+		adapter := &vix.NetworkAdapter{
 			VSwitch:        vix.VSwitch{},
 			StartConnected: true,
 		}
@@ -142,6 +147,18 @@ func resource_vix_vm_create(
 			adapter.Vdevice = vix.NETWORK_DEVICE_E1000
 		}
 
+		switch netType {
+		case "hostonly":
+			adapter.ConnType = vix.NETWORK_HOSTONLY
+		case "bridged":
+			adapter.ConnType = vix.NETWORK_BRIDGED
+		case "nat":
+			adapter.ConnType = vix.NETWORK_NAT
+		default:
+			adapter.ConnType = vix.NETWORK_CUSTOM
+
+		}
+
 		err = vm.AddNetworkAdapter(adapter)
 		if err != nil {
 			return nil, err
@@ -152,7 +169,7 @@ func resource_vix_vm_create(
 
 	err = vm.PowerOn(vix.VMPOWEROP_NORMAL)
 	if err != nil {
-		return rs, err
+		return nil, err
 	}
 
 	// rs.ConnInfo["type"] = "ssh"
