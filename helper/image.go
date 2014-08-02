@@ -32,8 +32,6 @@ func FetchImage(image Image) (*os.File, error) {
 	}
 
 	filePath := filepath.Join(image.DownloadPath, filename)
-
-	// client := NewHttpClient()
 	writeToDisk := false
 
 	var file io.Reader
@@ -47,13 +45,11 @@ func FetchImage(image Image) (*os.File, error) {
 			}
 		} else if os.IsNotExist(err) || finfo.Size() == 0 {
 			log.Printf("[DEBUG] %s image does not exist. Downloading it...", filename)
-			// data, err := client.GetRetry(image.URL)
 			file, err = download(image.URL)
 			if err != nil {
 				return nil, err
 			}
 
-			//file = bytes.NewBuffer(data)
 			writeToDisk = true
 		} else {
 			return nil, err
@@ -63,16 +59,10 @@ func FetchImage(image Image) (*os.File, error) {
 	if err = VerifyChecksum(file, image.ChecksumType, image.Checksum); err != nil {
 		log.Printf("[DEBUG] Image in disk does not match current checksum.\n Downloading image again...")
 
-		// data, err := client.GetRetry(image.URL)
-		// if err != nil {
-		// 	return nil, err
-		// }
 		file, err := download(image.URL)
 		if err != nil {
 			return nil, err
 		}
-
-		//file = bytes.NewBuffer(data)
 
 		if err = VerifyChecksum(file, image.ChecksumType, image.Checksum); err != nil {
 			return nil, err
