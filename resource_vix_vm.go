@@ -100,20 +100,20 @@ func resource_vix_vm_create(
 	vmPath := filepath.Join(usr.HomeDir, fmt.Sprintf(".terraform/vix/vms/%s", name))
 	imagePath := filepath.Join(usr.HomeDir, fmt.Sprintf(".terraform/vix/images"))
 
-	imageConfig := helper.Image{
+	imageConfig := helper.FetchConfig{
 		URL:          image["url"].(string),
 		Checksum:     image["checksum"].(string),
 		ChecksumType: image["checksum_type"].(string),
 		DownloadPath: imagePath,
 	}
 
-	file, err := helper.FetchImage(imageConfig)
+	file, err := helper.FetchFile(imageConfig)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	err = helper.UnpackImage(file, vmPath)
+	err = helper.UnpackFile(file, vmPath)
 	if err != nil {
 		return nil, err
 	}
