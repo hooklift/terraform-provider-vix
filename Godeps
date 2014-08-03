@@ -7,6 +7,10 @@
 			"Rev": "3336ee8e44870e2c258f691c7843e2cf75d3bf6a"
 		},
 		{
+			"ImportPath": "github.com/dustin/go-humanize",
+			"Rev": "3cd90eb3d932037b141d4daff9a012e1aee7e765"
+		},
+		{
 			"ImportPath": "github.com/hashicorp/terraform/config",
 			"Comment": "v0.1.0-111-g726c388",
 			"Rev": "726c388ba298fb7b6dd2fa6f4de9dcf99e0003fd"

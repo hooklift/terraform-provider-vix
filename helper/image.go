@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"bytes"
 	"compress/gzip"
 	"crypto/tls"
 	"fmt"
@@ -11,6 +12,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/dustin/go-humanize"
 )
 
 type Image struct {
@@ -20,7 +23,7 @@ type Image struct {
 	DownloadPath string
 }
 
-func FetchImage(image Image) (*os.File, error) {
+func FetchImage(image Image) (*bytes.Buffer, error) {
 	u, err := url.Parse(image.URL)
 	if err != nil {
 		return nil, err
@@ -28,24 +31,28 @@ func FetchImage(image Image) (*os.File, error) {
 
 	_, filename := path.Split(u.Path)
 	if filename == "" {
-		filename = "default.tar.gz"
+		filename = "unnamed"
 	}
 
 	filePath := filepath.Join(image.DownloadPath, filename)
 	writeToDisk := false
 
-	var file io.Reader
+	fstream := new(bytes.Buffer)
 
 	finfo, err := os.Stat(filePath)
 	if err != nil {
 		if os.IsExist(err) && finfo.Size() > 0 {
-			file, err = os.Open(filePath)
+			file, err := os.Open(filePath)
 			if err != nil {
 				return nil, err
 			}
+			defer file.Close()
+
+			io.Copy(fstream, file)
 		} else if os.IsNotExist(err) || finfo.Size() == 0 {
 			log.Printf("[DEBUG] %s image does not exist. Downloading it...", filename)
-			file, err = download(image.URL)
+
+			fstream, err = download(image.URL)
 			if err != nil {
 				return nil, err
 			}
@@ -56,15 +63,18 @@ func FetchImage(image Image) (*os.File, error) {
 		}
 	}
 
-	if err = VerifyChecksum(file, image.ChecksumType, image.Checksum); err != nil {
+	buffer := bytes.NewReader(fstream.Bytes())
+	if err = VerifyChecksum(buffer, image.ChecksumType, image.Checksum); err != nil {
 		log.Printf("[DEBUG] Image in disk does not match current checksum.\n Downloading image again...")
 
-		file, err := download(image.URL)
+		fstream.Reset()
+		fstream, err = download(image.URL)
 		if err != nil {
 			return nil, err
 		}
 
-		if err = VerifyChecksum(file, image.ChecksumType, image.Checksum); err != nil {
+		buffer := bytes.NewReader(fstream.Bytes())
+		if err = VerifyChecksum(buffer, image.ChecksumType, image.Checksum); err != nil {
 			return nil, err
 		}
 		writeToDisk = true
@@ -76,19 +86,19 @@ func FetchImage(image Image) (*os.File, error) {
 			return nil, err
 		}
 
-		written, err := io.Copy(gzfile, file)
+		written, err := io.Copy(gzfile, fstream)
 		if err != nil {
 			return nil, err
 		}
-		log.Printf("[DEBUG] %d bytes written to %s", written, filePath)
+		defer gzfile.Close()
 
-		file = gzfile
+		log.Printf("[DEBUG] %s written to %s", humanize.Bytes(uint64(written)), filePath)
 	}
 
-	return file.(*os.File), nil
+	return fstream, nil
 }
 
-func download(imageURL string) (io.Reader, error) {
+func download(imageURL string) (*bytes.Buffer, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -101,11 +111,16 @@ func download(imageURL string) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("Unable to fetch data, server returned code %d", resp.StatusCode)
 	}
-	return resp.Body, nil
+
+	buffer := new(bytes.Buffer)
+	io.Copy(buffer, resp.Body)
+
+	return buffer, nil
 }
 
 func UnpackImage(file io.Reader, destPath string) error {

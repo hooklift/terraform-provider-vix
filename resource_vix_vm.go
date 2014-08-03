@@ -122,6 +122,7 @@ func resource_vix_vm_create(
 	p := meta.(*ResourceProvider)
 	client := p.client
 
+	// TODO(c4milo): Lookup VMX file in imagePath
 	log.Printf("[INFO] Opening virtual machine from %s", imagePath)
 
 	vm, err := client.OpenVm(imagePath, image["password"].(string))
