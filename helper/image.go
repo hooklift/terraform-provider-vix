@@ -1,7 +1,6 @@
 package helper
 
 import (
-	"bytes"
 	"compress/gzip"
 	"crypto/tls"
 	"fmt"
@@ -16,15 +15,31 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
-type Image struct {
+type FetchConfig struct {
 	URL          string
 	Checksum     string
 	ChecksumType string
 	DownloadPath string
 }
 
-func FetchImage(image Image) (*bytes.Buffer, error) {
-	u, err := url.Parse(image.URL)
+func FetchFile(config FetchConfig) (*os.File, error) {
+	if config.URL == "" {
+		panic("URL is required")
+	}
+
+	if config.Checksum == "" {
+		panic("Checksum is required")
+	}
+
+	if config.ChecksumType == "" {
+		panic("Checksum type is required")
+	}
+
+	if config.DownloadPath == "" {
+		config.DownloadPath = os.TempDir()
+	}
+
+	u, err := url.Parse(config.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -34,71 +49,79 @@ func FetchImage(image Image) (*bytes.Buffer, error) {
 		filename = "unnamed"
 	}
 
-	filePath := filepath.Join(image.DownloadPath, filename)
-	writeToDisk := false
+	filePath := filepath.Join(config.DownloadPath, filename)
 
-	fstream := new(bytes.Buffer)
+	var file *os.File
 
 	finfo, err := os.Stat(filePath)
 	if err != nil {
 		if os.IsExist(err) && finfo.Size() > 0 {
-			file, err := os.Open(filePath)
+			file, err = os.Open(filePath)
 			if err != nil {
 				return nil, err
 			}
-			defer file.Close()
-
-			io.Copy(fstream, file)
 		} else if os.IsNotExist(err) || finfo.Size() == 0 {
-			log.Printf("[DEBUG] %s image does not exist. Downloading it...", filename)
+			log.Printf("[DEBUG] %s file does not exist. Downloading it...", filename)
 
-			fstream, err = download(image.URL)
+			data, err := download(config.URL)
 			if err != nil {
 				return nil, err
 			}
 
-			writeToDisk = true
+			file, err = write(data, filePath)
+			if err != nil {
+				return nil, err
+			}
+			data.Close()
 		} else {
 			return nil, err
 		}
 	}
 
-	buffer := bytes.NewReader(fstream.Bytes())
-	if err = VerifyChecksum(buffer, image.ChecksumType, image.Checksum); err != nil {
-		log.Printf("[DEBUG] Image in disk does not match current checksum.\n Downloading image again...")
+	// Makes sure the file is at the beginning so that verifying the checksum
+	// does not fail
+	file.Seek(0, 0)
 
-		fstream.Reset()
-		fstream, err = download(image.URL)
+	if err = VerifyChecksum(file, config.ChecksumType, config.Checksum); err != nil {
+		log.Printf("[DEBUG] File on disk does not match current checksum.\n Downloading file again...")
+
+		data, err := download(config.URL)
 		if err != nil {
 			return nil, err
 		}
 
-		buffer := bytes.NewReader(fstream.Bytes())
-		if err = VerifyChecksum(buffer, image.ChecksumType, image.Checksum); err != nil {
+		file, err = write(data, filePath)
+		if err != nil {
 			return nil, err
 		}
-		writeToDisk = true
+		data.Close()
+
+		file.Seek(0, 0)
+
+		if err = VerifyChecksum(file, config.ChecksumType, config.Checksum); err != nil {
+			return nil, err
+		}
 	}
 
-	if writeToDisk {
-		gzfile, err := os.Create(filePath)
-		if err != nil {
-			return nil, err
-		}
-
-		written, err := io.Copy(gzfile, fstream)
-		if err != nil {
-			return nil, err
-		}
-		defer gzfile.Close()
-
-		log.Printf("[DEBUG] %s written to %s", humanize.Bytes(uint64(written)), filePath)
-	}
-
-	return fstream, nil
+	return file, nil
 }
 
-func download(imageURL string) (*bytes.Buffer, error) {
+func write(reader io.Reader, filePath string) (*os.File, error) {
+	gzfile, err := os.Create(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	written, err := io.Copy(gzfile, reader)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[DEBUG] %s written to %s", humanize.Bytes(uint64(written)), filePath)
+
+	return gzfile, nil
+}
+
+func download(URL string) (io.ReadCloser, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -107,27 +130,23 @@ func download(imageURL string) (*bytes.Buffer, error) {
 		},
 	}
 
-	resp, err := client.Get(imageURL)
+	resp, err := client.Get(URL)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("Unable to fetch data, server returned code %d", resp.StatusCode)
 	}
 
-	buffer := new(bytes.Buffer)
-	io.Copy(buffer, resp.Body)
-
-	return buffer, nil
+	return resp.Body, nil
 }
 
-func UnpackImage(file io.Reader, destPath string) error {
+func UnpackFile(file io.Reader, destPath string) error {
 	os.MkdirAll(destPath, 0740)
 
 	//unzip
-	log.Printf("[DEBUG] Unzipping image...")
+	log.Printf("[DEBUG] Unzipping file...")
 	unzippedFile, err := gzip.NewReader(file)
 	if err != nil {
 		return err
@@ -135,6 +154,6 @@ func UnpackImage(file io.Reader, destPath string) error {
 	defer unzippedFile.Close()
 
 	//untar
-	log.Printf("[DEBUG] Untaring image...")
+	log.Printf("[DEBUG] Untaring archive...")
 	return Untar(unzippedFile, destPath)
 }
