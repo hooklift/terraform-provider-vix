@@ -40,8 +40,8 @@ func TestFetch(t *testing.T) {
 	file, err := helper.FetchFile(fetchConfig)
 	ok(t, err)
 
-	assert(t, file != nil, fmt.Sprintf("%v == %v", file, nil))
-	finfo, err := file.Stat()
+	assert(t, file != "", fmt.Sprintf("%v == %v", file, nil))
+	finfo, err := os.Stat(file)
 	ok(t, err)
 
 	assert(t, finfo.Size() > 0, fmt.Sprintf("Image file is empty: %d", finfo.Size()))
