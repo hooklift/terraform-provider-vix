@@ -17,6 +17,7 @@ provider "vix" {
     verify_ssl = false
 }
 
+/*
 resource "vix_vswitch" "vmnet10" {
     name = "vmnet10"
     nat = true
@@ -24,6 +25,7 @@ resource "vix_vswitch" "vmnet10" {
     range = "192.168.1.0/24"
     host_access = true
 }
+*/
 
 resource "vix_vm" "coreos" {
     name = "core01"
@@ -31,7 +33,7 @@ resource "vix_vm" "coreos" {
 
     image {
         url = "https://github.com/c4milo/dobby-boxes/releases/download/stable/coreos-stable-vmware.box"
-        checksum = "0a1dcd15da093f37965bbc8c12dd6085defe9e4883465be9e7e7e3b08e91d3dc"
+        checksum = "545fec52ef3f35eee6e906fae8665abbad62d2007c7655ffa2ff4133ea3038b8"
         checksum_type = "sha256"
 
         # If image is encrypted we need to provide a password
@@ -41,13 +43,17 @@ resource "vix_vm" "coreos" {
     cpus = 1
     memory = "1g"
     networks = [
-        "vmnet10",
+        # "vmnet10",
         "bridged",
         # "nat"
     ]
 
     count = 1
-    hardware_version = 10
+    upgrade_vhardware = false
+    tools_init_timeout = 30s
+
+    # GUI does not work if VM is encrypted
+    gui = true
     network_driver = "vmxnet3"
 
     # Whether to enable or disable shared folders for this VM

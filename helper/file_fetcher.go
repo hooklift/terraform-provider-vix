@@ -106,7 +106,7 @@ func FetchFile(config FetchConfig) (string, error) {
 	if unpack {
 		// TODO(c4milo): Make sure the file is a tgz file before attempting
 		// to unpack it.
-		vmPath, err = UnpackFile(file, vmPath)
+		_, err = UnpackFile(file, vmPath)
 		if err != nil {
 			return "", err
 		}

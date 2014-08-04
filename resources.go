@@ -12,7 +12,7 @@ var resourceMap *resource.Map
 
 func init() {
 	// Terraform is already adding the timestamp for us
-	log.SetFlags(0)
+	log.SetFlags(log.Lshortfile)
 
 	resourceMap = &resource.Map{
 		Mapping: map[string]resource.Resource{
