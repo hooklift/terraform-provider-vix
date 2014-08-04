@@ -51,7 +51,7 @@ func resource_vix_vm_create(
 	description := rs.Attributes["description"]
 	cpus, err := strconv.ParseUint(rs.Attributes["cpus"], 0, 8)
 	memory := rs.Attributes["memory"]
-	hwversion, err := strconv.ParseUint(rs.Attributes["hardware_version"], 0, 8)
+	//hwversion, err := strconv.ParseUint(rs.Attributes["hardware_version"], 0, 8)
 	netdrv := rs.Attributes["network_driver"]
 	sharedfolders, err := strconv.ParseBool(rs.Attributes["sharedfolders"])
 	var networks []string
@@ -83,14 +83,14 @@ func resource_vix_vm_create(
 		networks = append(networks, "bridged")
 	}
 
-	log.Printf("[DEBUG] name => %s", name)
-	log.Printf("[DEBUG] description => %s", description)
-	log.Printf("[DEBUG] image => %v", image)
-	log.Printf("[DEBUG] cpus => %d", cpus)
-	log.Printf("[DEBUG] memory => %s", memory)
-	log.Printf("[DEBUG] hwversion => %d", hwversion)
-	log.Printf("[DEBUG] netdrv => %s", netdrv)
-	log.Printf("[DEBUG] sharedfolders => %t", sharedfolders)
+	// log.Printf("[DEBUG] name => %s", name)
+	// log.Printf("[DEBUG] description => %s", description)
+	// log.Printf("[DEBUG] image => %v", image)
+	// log.Printf("[DEBUG] cpus => %d", cpus)
+	// log.Printf("[DEBUG] memory => %s", memory)
+	// log.Printf("[DEBUG] hwversion => %d", hwversion)
+	// log.Printf("[DEBUG] netdrv => %s", netdrv)
+	// log.Printf("[DEBUG] sharedfolders => %t", sharedfolders)
 
 	usr, err := user.Current()
 	if err != nil {
@@ -123,6 +123,10 @@ func resource_vix_vm_create(
 
 	log.Printf("[DEBUG] VMX files found %v", files)
 
+	if len(files) == 0 {
+		return nil, fmt.Errorf("[ERROR] VMX file was not found: %s", pattern)
+	}
+
 	// Gets VIX instance
 	p := meta.(*ResourceProvider)
 	client := p.client
@@ -148,6 +152,9 @@ func resource_vix_vm_create(
 
 	log.Printf("[DEBUG] Setting vcpus to %d", cpus)
 	vm.SetNumberVcpus(uint8(cpus))
+
+	vm.SetAnnotation(description)
+	vm.EnableSharedFolders(sharedfolders)
 
 	for _, netType := range networks {
 		adapter := &vix.NetworkAdapter{

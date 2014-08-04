@@ -102,9 +102,10 @@ func FetchFile(config FetchConfig) (string, error) {
 	}
 	defer file.Close()
 
-	// Only unpacks file if checksum changed or the file didn't
-	// exists
+	// Only unpacks file if checksum changed or file does not exists
 	if unpack {
+		// TODO(c4milo): Make sure the file is a tgz file before attempting
+		// to unpack it.
 		vmPath, err = UnpackFile(file, vmPath)
 		if err != nil {
 			return "", err
