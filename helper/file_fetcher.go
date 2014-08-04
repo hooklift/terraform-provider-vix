@@ -22,7 +22,7 @@ type FetchConfig struct {
 	DownloadPath string
 }
 
-func FetchFile(config FetchConfig) (*os.File, error) {
+func FetchFile(config FetchConfig) (string, error) {
 	if config.URL == "" {
 		panic("URL is required")
 	}
@@ -41,7 +41,7 @@ func FetchFile(config FetchConfig) (*os.File, error) {
 
 	u, err := url.Parse(config.URL)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	_, filename := path.Split(u.Path)
@@ -49,37 +49,34 @@ func FetchFile(config FetchConfig) (*os.File, error) {
 		filename = "unnamed"
 	}
 
+	os.MkdirAll(config.DownloadPath, 0740)
+
 	filePath := filepath.Join(config.DownloadPath, filename)
 
-	var file *os.File
+	unpack := false
+	vmPath := config.DownloadPath
 
-	finfo, err := os.Stat(filePath)
+	log.Printf("[DEBUG] Opening %s...", filePath)
+	file, err := os.Open(filePath)
 	if err != nil {
-		if os.IsExist(err) && finfo.Size() > 0 {
-			file, err = os.Open(filePath)
-			if err != nil {
-				return nil, err
-			}
-		} else if os.IsNotExist(err) || finfo.Size() == 0 {
-			log.Printf("[DEBUG] %s file does not exist. Downloading it...", filename)
+		log.Printf("[DEBUG] %s file does not exist. Downloading it...", filename)
 
-			data, err := download(config.URL)
-			if err != nil {
-				return nil, err
-			}
-
-			file, err = write(data, filePath)
-			if err != nil {
-				return nil, err
-			}
-			data.Close()
-		} else {
-			return nil, err
+		data, err := download(config.URL)
+		if err != nil {
+			return "", err
 		}
+
+		file, err = write(data, filePath)
+		if err != nil {
+			return "", err
+		}
+		data.Close()
+
+		unpack = true
 	}
 
-	// Makes sure the file is at the beginning so that verifying the checksum
-	// does not fail
+	// We need to make sure the reader is pointing to the beginning of the file
+	// so verifying integrity does not fail
 	file.Seek(0, 0)
 
 	if err = VerifyChecksum(file, config.ChecksumType, config.Checksum); err != nil {
@@ -87,26 +84,39 @@ func FetchFile(config FetchConfig) (*os.File, error) {
 
 		data, err := download(config.URL)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 
 		file, err = write(data, filePath)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		data.Close()
 
 		file.Seek(0, 0)
-
 		if err = VerifyChecksum(file, config.ChecksumType, config.Checksum); err != nil {
-			return nil, err
+			return "", err
+		}
+
+		unpack = true
+	}
+	defer file.Close()
+
+	// Only unpacks file if checksum changed or the file didn't
+	// exists
+	if unpack {
+		vmPath, err = UnpackFile(file, vmPath)
+		if err != nil {
+			return "", err
 		}
 	}
 
-	return file, nil
+	return vmPath, nil
 }
 
 func write(reader io.Reader, filePath string) (*os.File, error) {
+	log.Printf("[DEBUG] Downloading file data to %s", filePath)
+
 	gzfile, err := os.Create(filePath)
 	if err != nil {
 		return nil, err
@@ -142,18 +152,19 @@ func download(URL string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-func UnpackFile(file io.Reader, destPath string) error {
+func UnpackFile(file *os.File, destPath string) (string, error) {
 	os.MkdirAll(destPath, 0740)
 
 	//unzip
-	log.Printf("[DEBUG] Unzipping file...")
+	log.Printf("[DEBUG] Unzipping file stream ...")
+	file.Seek(0, 0)
+
 	unzippedFile, err := gzip.NewReader(file)
-	if err != nil {
-		return err
+	if err != nil && err != io.EOF {
+		return "", err
 	}
 	defer unzippedFile.Close()
 
 	//untar
-	log.Printf("[DEBUG] Untaring archive...")
 	return Untar(unzippedFile, destPath)
 }

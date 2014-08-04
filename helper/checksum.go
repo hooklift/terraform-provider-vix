@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"log"
 )
 
 func VerifyChecksum(data io.Reader, algorithm, sum string) error {
+	log.Printf("[DEBUG] Verifying checksum...")
 	var hasher hash.Hash
 
 	switch algorithm {

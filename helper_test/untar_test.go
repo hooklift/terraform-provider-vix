@@ -47,6 +47,6 @@ func TestUntar(t *testing.T) {
 	ok(t, err)
 	defer os.RemoveAll(destDir)
 
-	err = helper.Untar(r, destDir)
+	_, err = helper.Untar(r, destDir)
 	ok(t, err)
 }

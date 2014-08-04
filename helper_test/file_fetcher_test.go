@@ -59,6 +59,6 @@ func TestUnpackFile(t *testing.T) {
 	ok(t, err)
 	defer os.RemoveAll(destDir)
 
-	err = helper.UnpackFile(gzipFile, destDir)
+	_, err = helper.UnpackFile(gzipFile, destDir)
 	ok(t, err)
 }

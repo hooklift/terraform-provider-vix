@@ -19,6 +19,7 @@ import (
 func resource_vix_vm_validation() *config.Validator {
 	return &config.Validator{
 		Required: []string{
+			"name",
 			"image.*",
 			"image.*.url",
 			"image.*.checksum",
@@ -33,6 +34,7 @@ func resource_vix_vm_validation() *config.Validator {
 			"network_driver",
 			"networks.*",
 			"sharedfolders",
+			"sharedfolder.*",
 		},
 	}
 }
@@ -45,7 +47,7 @@ func resource_vix_vm_create(
 	// properly.
 	rs := s.MergeDiff(d)
 
-	name := "coreos"
+	name := rs.Attributes["name"]
 	description := rs.Attributes["description"]
 	cpus, err := strconv.ParseUint(rs.Attributes["cpus"], 0, 8)
 	memory := rs.Attributes["memory"]
@@ -98,34 +100,36 @@ func resource_vix_vm_create(
 	// FIXME(c4milo): There is an issue here whenever count is greater than 1
 	// please see: https://github.com/hashicorp/terraform/issues/141
 	vmPath := filepath.Join(usr.HomeDir, fmt.Sprintf(".terraform/vix/vms/%s", name))
-	imagePath := filepath.Join(usr.HomeDir, fmt.Sprintf(".terraform/vix/images"))
 
 	imageConfig := helper.FetchConfig{
 		URL:          image["url"].(string),
 		Checksum:     image["checksum"].(string),
 		ChecksumType: image["checksum_type"].(string),
-		DownloadPath: imagePath,
+		DownloadPath: vmPath,
 	}
 
-	file, err := helper.FetchFile(imageConfig)
+	vmPath, err = helper.FetchFile(imageConfig)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
 
-	err = helper.UnpackFile(file, vmPath)
-	if err != nil {
-		return nil, err
-	}
+	// FIXME(c4milo): This has an edge case when a resource with the same
+	// name is declared with a different image box, it will return multiple
+	// vmx files.
+	pattern := filepath.Join(vmPath, "/**/*.vmx")
+
+	log.Printf("[DEBUG] Finding VMX file in %s", pattern)
+	files, _ := filepath.Glob(pattern)
+
+	log.Printf("[DEBUG] VMX files found %v", files)
 
 	// Gets VIX instance
 	p := meta.(*ResourceProvider)
 	client := p.client
 
-	// TODO(c4milo): Lookup VMX file in imagePath
-	log.Printf("[INFO] Opening virtual machine from %s", imagePath)
+	log.Printf("[INFO] Opening virtual machine from %s", files[0])
 
-	vm, err := client.OpenVm(imagePath, image["password"].(string))
+	vm, err := client.OpenVm(files[0], image["password"].(string))
 	if err != nil {
 		return nil, err
 	}
@@ -136,10 +140,10 @@ func resource_vix_vm_create(
 		log.Printf("[WARN] Unable to set memory size, defaulting to 1g: %s", err)
 		memoryInMb = 1024
 	} else {
-		memoryInMb /= 1024
+		memoryInMb = memoryInMb / 1024
 	}
 
-	log.Printf("[DEBUG] Setting memory size to %d megabytes", memoryInMb)
+	log.Printf("[DEBUG] Setting memory size to %s", humanize.Bytes(memoryInMb*1024))
 	vm.SetMemorySize(uint(memoryInMb))
 
 	log.Printf("[DEBUG] Setting vcpus to %d", cpus)
@@ -219,6 +223,7 @@ func resource_vix_vm_diff(
 		// We have to choose whether a change in an attribute triggers a new
 		// resource creation or updates the existing resource.
 		Attrs: map[string]diff.AttrType{
+			"name":             diff.AttrTypeCreate,
 			"description":      diff.AttrTypeUpdate,
 			"image":            diff.AttrTypeCreate,
 			"cpus":             diff.AttrTypeUpdate,

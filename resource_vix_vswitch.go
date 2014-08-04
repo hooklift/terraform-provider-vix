@@ -9,6 +9,10 @@ import (
 
 func resource_vix_vswitch_validation() *config.Validator {
 	return &config.Validator{
+		Required: []string{
+			"name",
+		},
+
 		Optional: []string{
 			"nat",
 			"dhcp",

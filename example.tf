@@ -18,6 +18,7 @@ provider "vix" {
 }
 
 resource "vix_vswitch" "vmnet10" {
+    name = "vmnet10"
     nat = true
     dhcp = true
     range = "192.168.1.0/24"
@@ -25,11 +26,12 @@ resource "vix_vswitch" "vmnet10" {
 }
 
 resource "vix_vm" "coreos" {
+    name = "core01"
     description = "Terraform VMWARE VIX test"
 
     image {
-        url = "https://github.com/c4milo/dobby-boxes/releases/download/alpha/coreos-alpha-vmware.box"
-        checksum = "c791812465f2cda236da1132b9f651cc58d5a7120636e48d82f4cb1546877bbd"
+        url = "https://github.com/c4milo/dobby-boxes/releases/download/stable/coreos-stable-vmware.box"
+        checksum = "0a1dcd15da093f37965bbc8c12dd6085defe9e4883465be9e7e7e3b08e91d3dc"
         checksum_type = "sha256"
 
         # If image is encrypted we need to provide a password
@@ -52,12 +54,14 @@ resource "vix_vm" "coreos" {
     sharedfolders = true
 
     sharedfolder {
+        name = "Dev1"
         guest_path = "/home/camilo/dev"
         host_path = "/Users/camilo/Development"
         readonly = false
     }
 
     sharedfolder {
+        name = "Dev2"
         guest_path = "/home/camilo/dev2"
         host_path = "/Users/camilo/Dropbox/Development"
         readonly = false
