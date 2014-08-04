@@ -225,6 +225,7 @@ func resource_vix_vm_create(
 			return rs, err
 		}
 
+		log.Println("[INFO] Waiting for VMware Tools to initialize...")
 		err = vm.WaitForToolsInGuest(toolsInitTimeout)
 		if err != nil {
 			log.Println("[WARN] VMware Tools initialization timed out.")
