@@ -206,52 +206,53 @@ func resource_vix_vm_create(
 		return nil, err
 	}
 
-	if !running {
-		if upgradehw &&
-			((client.Provider & vix.VMWARE_PLAYER) == 0) {
-
-			log.Println("[INFO] Upgrading virtual hardware...")
-			err = vm.UpgradeVHardware()
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		log.Println("[INFO] Powering virtual machine on...")
-		var options vix.VMPowerOption
-
-		if launchGUI {
-			log.Println("[INFO] Preparing to launch GUI...")
-			options |= vix.VMPOWEROP_LAUNCH_GUI
-		}
-
-		options |= vix.VMPOWEROP_NORMAL
-
-		err = vm.PowerOn(options)
-		if err != nil {
-			return rs, err
-		}
-
-		log.Println("[INFO] Waiting for VMware Tools to initialize...")
-		err = vm.WaitForToolsInGuest(toolsInitTimeout)
-		if err != nil {
-			log.Println("[WARN] VMware Tools initialization timed out.")
-			if sharedfolders {
-				log.Println("[WARN] Enabling shared folders is not possible.")
-			}
-			return rs, nil
-		}
-
-		if sharedfolders {
-			log.Println("[DEBUG] Enabling shared folders...")
-
-			err = vm.EnableSharedFolders(sharedfolders)
-			if err != nil {
-				return nil, err
-			}
-		}
-	} else {
+	if running {
 		log.Println("[INFO] Virtual machine is already powered on")
+		return rs, nil
+	}
+
+	if upgradehw &&
+		((client.Provider & vix.VMWARE_PLAYER) == 0) {
+
+		log.Println("[INFO] Upgrading virtual hardware...")
+		err = vm.UpgradeVHardware()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	log.Println("[INFO] Powering virtual machine on...")
+	var options vix.VMPowerOption
+
+	if launchGUI {
+		log.Println("[INFO] Preparing to launch GUI...")
+		options |= vix.VMPOWEROP_LAUNCH_GUI
+	}
+
+	options |= vix.VMPOWEROP_NORMAL
+
+	err = vm.PowerOn(options)
+	if err != nil {
+		return rs, err
+	}
+
+	log.Println("[INFO] Waiting for VMware Tools to initialize...")
+	err = vm.WaitForToolsInGuest(toolsInitTimeout)
+	if err != nil {
+		log.Println("[WARN] VMware Tools initialization timed out.")
+		if sharedfolders {
+			log.Println("[WARN] Enabling shared folders is not possible.")
+		}
+		return rs, nil
+	}
+
+	if sharedfolders {
+		log.Println("[DEBUG] Enabling shared folders...")
+
+		err = vm.EnableSharedFolders(sharedfolders)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	//rs.ConnInfo["type"] = "ssh"
