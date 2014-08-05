@@ -123,6 +123,13 @@ func resource_vix_vm_create(
 		return nil, fmt.Errorf("[ERROR] VMX file was not found: %s", pattern)
 	}
 
+	vmxFile := files[0]
+
+	// Sets as resource ID the VMX file path, this is to be able
+	// to run operations on the VM for the others Terraform resource
+	// fuctions such as: destroy, update, etc.
+	rs.ID = vmxFile
+
 	// Gets VIX instance
 	p := meta.(*ResourceProvider)
 	client := p.client
@@ -130,15 +137,15 @@ func resource_vix_vm_create(
 	if ((client.Provider & vix.VMWARE_VI_SERVER) == 0) ||
 		((client.Provider & vix.VMWARE_SERVER) == 0) {
 		log.Printf("[INFO] Registering VM in host's inventory...")
-		err = client.RegisterVm(files[0])
+		err = client.RegisterVm(vmxFile)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	log.Printf("[INFO] Opening virtual machine from %s", files[0])
+	log.Printf("[INFO] Opening virtual machine from %s", vmxFile)
 
-	vm, err := client.OpenVm(files[0], image["password"].(string))
+	vm, err := client.OpenVm(vmxFile, image["password"].(string))
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +165,7 @@ func resource_vix_vm_create(
 	log.Printf("[DEBUG] Setting vcpus to %d", cpus)
 	vm.SetNumberVcpus(uint8(cpus))
 
-	log.Printf("[DEBUG] Setting annotation to %s", description)
+	log.Printf("[DEBUG] Setting description to %s", description)
 	vm.SetAnnotation(description)
 
 	// for _, netType := range networks {
@@ -265,10 +272,56 @@ func resource_vix_vm_update(
 func resource_vix_vm_destroy(
 	s *terraform.ResourceState,
 	meta interface{}) error {
-	// p := meta.(*ResourceProvider)
-	// client := p.client
+	p := meta.(*ResourceProvider)
+	client := p.client
 
-	return nil
+	vmxFile := s.ID
+
+	if ((client.Provider & vix.VMWARE_VI_SERVER) == 0) ||
+		((client.Provider & vix.VMWARE_SERVER) == 0) {
+		log.Printf("[INFO] Unregistering VM from host's inventory...")
+
+		err := client.UnregisterVm(vmxFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	password := s.Attributes["password"]
+
+	vm, err := client.OpenVm(vmxFile, password)
+	if err != nil {
+		return err
+	}
+	defer client.Disconnect()
+
+	running, err := vm.IsRunning()
+	if err != nil {
+		return err
+	}
+
+	if !running {
+		return nil
+	}
+
+	tstate, err := vm.ToolState()
+	if err != nil {
+		return err
+	}
+
+	var powerOpts vix.VMPowerOption
+	if (tstate & vix.TOOLSSTATE_RUNNING) == 0 {
+		powerOpts |= vix.VMPOWEROP_FROM_GUEST
+	} else {
+		powerOpts |= vix.VMPOWEROP_NORMAL
+	}
+
+	err = vm.PowerOff(powerOpts)
+	if err != nil {
+		return err
+	}
+
+	return vm.Delete(vix.VMDELETE_DISK_FILES)
 }
 
 func resource_vix_vm_diff(

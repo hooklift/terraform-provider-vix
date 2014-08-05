@@ -45,7 +45,7 @@ func (c *Config) Client() (*vix.Host, error) {
 		return nil, err
 	}
 
-	log.Printf("[INFO] VIX Client configured for product: VMware %s. SSL: %t", c.Product, c.VerifySSL)
+	log.Printf("[INFO] VIX client configured for product: VMware %s. SSL: %t", c.Product, c.VerifySSL)
 
 	return host, nil
 }
