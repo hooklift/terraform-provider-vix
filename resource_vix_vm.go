@@ -36,7 +36,7 @@ func resource_vix_vm_validation() *config.Validator {
 	}
 }
 
-// Maps provider attributes to Terraform's resource estate
+// Maps provider attributes to Terraform's resource state
 func vix_to_tf(vm provider.VM, rs *terraform.ResourceState) error {
 	rs.Attributes["name"] = vm.Name
 	rs.Attributes["description"] = vm.Description
@@ -222,9 +222,13 @@ func resource_vix_vm_refresh(
 
 	vm.Image.Password = s.Attributes["password"]
 
-	err := vm.Refresh(vmxFile)
+	running, err := vm.Refresh(vmxFile)
 	if err != nil {
 		return nil, err
+	}
+
+	if !running {
+		return nil, nil
 	}
 
 	vix_to_tf(*vm, s)

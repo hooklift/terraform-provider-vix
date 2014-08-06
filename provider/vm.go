@@ -293,7 +293,8 @@ func (v *VM) Destroy(vmxFile string) error {
 
 	return vm.Delete(vix.VMDELETE_DISK_FILES)
 }
-func (v *VM) Refresh(vmxFile string) error {
+
+func (v *VM) Refresh(vmxFile string) (bool, error) {
 	log.Printf("[DEBUG] Syncing VM resource %s...", vmxFile)
 
 	client, err := v.client()
@@ -305,6 +306,11 @@ func (v *VM) Refresh(vmxFile string) error {
 	vm, err := client.OpenVm(vmxFile, v.Image.Password)
 	if err != nil {
 		return err
+	}
+
+	running, err := vm.IsRunning()
+	if !running {
+		return running, err
 	}
 
 	vcpus, err := vm.Vcpus()
