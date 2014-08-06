@@ -172,39 +172,6 @@ func (v *VM) Create() (string, error) {
 	log.Printf("[DEBUG] Setting description to %s", v.Description)
 	vm.SetAnnotation(v.Description)
 
-	// for _, netType := range networks {
-	// 	adapter := &vix.NetworkAdapter{
-	// 		//VSwitch:        vix.VSwitch{},
-	// 		StartConnected: true,
-	// 	}
-
-	// 	switch netdrv {
-	// 	case "e1000":
-	// 		adapter.Vdevice = vix.NETWORK_DEVICE_E1000
-	// 	case "vmxnet3":
-	// 		adapter.Vdevice = vix.NETWORK_DEVICE_VMXNET3
-	// 	default:
-	// 		adapter.Vdevice = vix.NETWORK_DEVICE_E1000
-	// 	}
-
-	// 	switch netType {
-	// 	case "hostonly":
-	// 		adapter.ConnType = vix.NETWORK_HOSTONLY
-	// 	case "bridged":
-	// 		adapter.ConnType = vix.NETWORK_BRIDGED
-	// 	case "nat":
-	// 		adapter.ConnType = vix.NETWORK_NAT
-	// 	default:
-	// 		adapter.ConnType = vix.NETWORK_CUSTOM
-
-	// 	}
-
-	// 	err = vm.AddNetworkAdapter(adapter)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-
 	running, err := vm.IsRunning()
 	if err != nil {
 		return "", err
