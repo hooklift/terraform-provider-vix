@@ -1,7 +1,7 @@
 package terraform_vix
 
 import (
-	"github.com/c4milo/govix"
+	"log"
 
 	"github.com/hashicorp/terraform/helper/config"
 	"github.com/hashicorp/terraform/terraform"
@@ -9,8 +9,6 @@ import (
 
 type ResourceProvider struct {
 	Config Config
-
-	client *vix.Host
 }
 
 func (p *ResourceProvider) Validate(c *terraform.ResourceConfig) ([]string, []error) {
@@ -33,6 +31,12 @@ func (p *ResourceProvider) Configure(c *terraform.ResourceConfig) error {
 	if _, err := config.Decode(&p.Config, c.Config); err != nil {
 		return err
 	}
+
+	if p.Config.Product == "" {
+		log.Printf("[INFO] No product was configured, using workstation by default.")
+		p.Config.Product = "workstation"
+	}
+
 	return nil
 }
 
