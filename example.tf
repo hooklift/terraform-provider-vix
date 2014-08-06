@@ -1,9 +1,3 @@
-/*
-terraform apply \
-    -var 'key_path=/home/camilo/.ssh/id_rsa' \
-    -var 'password=test' \
-*/
-
 variable "key_path" {
     default = "/Users/camilo/.ssh/id_rsa"
 }
@@ -24,6 +18,13 @@ resource "vix_vswitch" "vmnet10" {
     dhcp = true
     range = "192.168.1.0/24"
     host_access = true
+}
+
+resource "vix_sharedfolder" "myfolder" {
+    name = "Dev1"
+    guest_path = "/home/camilo/dev"
+    host_path = "/Users/camilo/Development"
+    readonly = false 
 }
 */
 
@@ -52,28 +53,14 @@ resource "vix_vm" "coreos" {
     upgrade_vhardware = false
     tools_init_timeout = 30s
 
-    # GUI does not work if VM is encrypted
+    # Be aware that GUI does not work if VM is encrypted
     gui = true
     network_driver = "vmxnet3"
 
     # Whether to enable or disable shared folders for this VM
     sharedfolders = true
 
-    sharedfolder {
-        name = "Dev1"
-        guest_path = "/home/camilo/dev"
-        host_path = "/Users/camilo/Development"
-        readonly = false
-    }
-
-    sharedfolder {
-        name = "Dev2"
-        guest_path = "/home/camilo/dev2"
-        host_path = "/Users/camilo/Dropbox/Development"
-        readonly = false
-    }
-
-    connection {
+    /*connection {
         # The default username for our Box image
         user = "c4milo"
 
@@ -87,7 +74,7 @@ resource "vix_vm" "coreos" {
             "sudo apt-get -y install nginx",
             "sudo service nginx start",
         ]
-    }
+    }*/
 }
 
 output "address" {

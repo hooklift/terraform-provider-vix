@@ -1,8 +1,6 @@
 package terraform_vix
 
 import (
-	"log"
-
 	"github.com/c4milo/govix"
 
 	"github.com/hashicorp/terraform/helper/config"
@@ -35,15 +33,6 @@ func (p *ResourceProvider) Configure(c *terraform.ResourceConfig) error {
 	if _, err := config.Decode(&p.Config, c.Config); err != nil {
 		return err
 	}
-
-	log.Println("[INFO] Initializing VIX client")
-	var err error
-	p.client, err = p.Config.Client()
-
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 

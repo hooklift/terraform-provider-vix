@@ -1,16 +1,10 @@
 package terraform_vix
 
 import (
-	"fmt"
-	"log"
-	"os/user"
-	"path/filepath"
 	"strconv"
 	"time"
 
-	"github.com/c4milo/govix"
-	"github.com/c4milo/terraform_vix/helper"
-	"github.com/dustin/go-humanize"
+	"github.com/c4milo/terraform_vix/provider"
 	"github.com/hashicorp/terraform/flatmap"
 	"github.com/hashicorp/terraform/helper/config"
 	"github.com/hashicorp/terraform/helper/diff"
@@ -42,6 +36,85 @@ func resource_vix_vm_validation() *config.Validator {
 	}
 }
 
+// Maps provider attributes to Terraform's resource estate
+func vix_to_tf(vm provider.VM, rs *terraform.ResourceState) error {
+	rs.Attributes["name"] = vm.Name
+	rs.Attributes["description"] = vm.Description
+
+	rs.Attributes["cpus"] = string(vm.CPUs)
+	rs.Attributes["memory"] = vm.Memory
+
+	rs.Attributes["upgrade_vhardware"] = strconv.FormatBool(vm.UpgradeVHardware)
+	rs.Attributes["tools_init_timeout"] = vm.ToolsInitTimeout.String()
+	rs.Attributes["gui"] = strconv.FormatBool(vm.LaunchGUI)
+	rs.Attributes["network_driver"] = vm.NetworkDriver
+	rs.Attributes["sharedfolders"] = strconv.FormatBool(vm.SharedFolders)
+
+	networks := make([]string, len(vm.VSwitches))
+	for i, n := range vm.VSwitches {
+		networks[i] = n
+	}
+
+	//Converts networks array to a map and merges it with rs.Attributes
+	flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
+		"networks": networks,
+	}))
+
+	flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
+		"image": vm.Image,
+	}))
+
+	return nil
+}
+
+// Maps Terraform attributes to provider's structs
+func tf_to_vix(rs *terraform.ResourceState, vm *provider.VM) error {
+	var err error
+	vm.Name = rs.Attributes["name"]
+	vm.Description = rs.Attributes["description"]
+
+	vcpus, err := strconv.ParseUint(rs.Attributes["cpus"], 0, 8)
+	vm.CPUs = uint(vcpus)
+
+	vm.Memory = rs.Attributes["memory"]
+	vm.ToolsInitTimeout, err = time.ParseDuration(rs.Attributes["tools_init_timeout"])
+	vm.UpgradeVHardware, err = strconv.ParseBool(rs.Attributes["upgrade_vhardware"])
+	vm.NetworkDriver = rs.Attributes["network_driver"]
+	vm.LaunchGUI, err = strconv.ParseBool(rs.Attributes["gui"])
+	vm.SharedFolders, err = strconv.ParseBool(rs.Attributes["sharedfolders"])
+
+	if err != nil {
+		return err
+	}
+
+	if raw := flatmap.Expand(rs.Attributes, "networks"); raw != nil {
+		if networks, ok := raw.([]interface{}); ok {
+			for _, n := range networks {
+				name, ok := n.(string)
+				if !ok {
+					continue
+				}
+
+				vm.VSwitches = append(vm.VSwitches, name)
+			}
+		}
+	}
+
+	// This is nasty but there doesn't seem to be a cleaner way to extract stuff
+	// from the TF configuration
+	imgconf := flatmap.Expand(rs.Attributes, "image").([]interface{})[0].(map[string]interface{})
+
+	image := provider.Image{
+		URL:          imgconf["url"].(string),
+		Checksum:     imgconf["checksum"].(string),
+		ChecksumType: imgconf["checksum_type"].(string),
+		Password:     imgconf["password"].(string),
+	}
+	vm.Image = image
+
+	return nil
+}
+
 func resource_vix_vm_create(
 	s *terraform.ResourceState,
 	d *terraform.ResourceDiff,
@@ -50,213 +123,20 @@ func resource_vix_vm_create(
 	// properly.
 	rs := s.MergeDiff(d)
 
-	name := rs.Attributes["name"]
-	description := rs.Attributes["description"]
-	cpus, err := strconv.ParseUint(rs.Attributes["cpus"], 0, 8)
-	memory := rs.Attributes["memory"]
-	toolsInitTimeout, err := time.ParseDuration(rs.Attributes["tools_init_timeout"])
-	upgradehw, err := strconv.ParseBool(rs.Attributes["upgrade_vhardware"])
-	//netdrv := rs.Attributes["network_driver"]
-	launchGUI, err := strconv.ParseBool(rs.Attributes["gui"])
-	sharedfolders, err := strconv.ParseBool(rs.Attributes["sharedfolders"])
-	var networks []string
+	vm := new(provider.VM)
 
-	if err != nil {
-		return nil, err
-	}
+	// Maps terraform.ResourceState attrbutes to provider.VM
+	tf_to_vix(rs, vm)
 
-	if raw := flatmap.Expand(rs.Attributes, "networks"); raw != nil {
-		if nets, ok := raw.([]interface{}); ok {
-			for _, net := range nets {
-				str, ok := net.(string)
-				if !ok {
-					continue
-				}
-
-				networks = append(networks, str)
-			}
-		}
-	}
-
-	// This is nasty but there doesn't seem to be a cleaner way to extract stuff
-	// from the TF configuration
-	image := flatmap.Expand(rs.Attributes, "image").([]interface{})[0].(map[string]interface{})
-
-	log.Printf("[DEBUG] networks => %v", networks)
-
-	if len(networks) == 0 {
-		networks = append(networks, "bridged")
-	}
-
-	usr, err := user.Current()
-	if err != nil {
-		return nil, err
-	}
-
-	// FIXME(c4milo): There is an issue here whenever count is greater than 1
-	// please see: https://github.com/hashicorp/terraform/issues/141
-	vmPath := filepath.Join(usr.HomeDir, fmt.Sprintf(".terraform/vix/vms/%s", name))
-
-	imageConfig := helper.FetchConfig{
-		URL:          image["url"].(string),
-		Checksum:     image["checksum"].(string),
-		ChecksumType: image["checksum_type"].(string),
-		DownloadPath: vmPath,
-	}
-
-	vmPath, err = helper.FetchFile(imageConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	// FIXME(c4milo): This has an edge case when a resource with the same
-	// name is declared with a different image box, it will return multiple
-	// vmx files.
-	pattern := filepath.Join(vmPath, "/**/*.vmx")
-
-	log.Printf("[DEBUG] Finding VMX file in %s", pattern)
-	files, _ := filepath.Glob(pattern)
-
-	log.Printf("[DEBUG] VMX files found %v", files)
-
-	if len(files) == 0 {
-		return nil, fmt.Errorf("[ERROR] VMX file was not found: %s", pattern)
-	}
-
-	vmxFile := files[0]
-
-	// Sets as resource ID the VMX file path, this is to be able
-	// to run operations on the VM for the others Terraform resource
-	// fuctions such as: destroy, update, etc.
-	rs.ID = vmxFile
-
-	// Gets VIX instance
 	p := meta.(*ResourceProvider)
-	client := p.client
+	vm.Provider = p.Config.Product
+	vm.VerifySSL = p.Config.VerifySSL
 
-	if ((client.Provider & vix.VMWARE_VI_SERVER) == 0) ||
-		((client.Provider & vix.VMWARE_SERVER) == 0) {
-		log.Printf("[INFO] Registering VM in host's inventory...")
-		err = client.RegisterVm(vmxFile)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	log.Printf("[INFO] Opening virtual machine from %s", vmxFile)
-
-	vm, err := client.OpenVm(vmxFile, image["password"].(string))
+	id, err := vm.Create()
 	if err != nil {
 		return nil, err
 	}
-	defer client.Disconnect()
-
-	memoryInMb, err := humanize.ParseBytes(memory)
-	if err != nil {
-		log.Printf("[WARN] Unable to set memory size, defaulting to 1g: %s", err)
-		memoryInMb = 1024
-	} else {
-		memoryInMb = (memoryInMb / 1024) / 1024
-	}
-
-	log.Printf("[DEBUG] Setting memory size to %d megabytes", memoryInMb)
-	vm.SetMemorySize(uint(memoryInMb))
-
-	log.Printf("[DEBUG] Setting vcpus to %d", cpus)
-	vm.SetNumberVcpus(uint8(cpus))
-
-	log.Printf("[DEBUG] Setting description to %s", description)
-	vm.SetAnnotation(description)
-
-	// for _, netType := range networks {
-	// 	adapter := &vix.NetworkAdapter{
-	// 		//VSwitch:        vix.VSwitch{},
-	// 		StartConnected: true,
-	// 	}
-
-	// 	switch netdrv {
-	// 	case "e1000":
-	// 		adapter.Vdevice = vix.NETWORK_DEVICE_E1000
-	// 	case "vmxnet3":
-	// 		adapter.Vdevice = vix.NETWORK_DEVICE_VMXNET3
-	// 	default:
-	// 		adapter.Vdevice = vix.NETWORK_DEVICE_E1000
-	// 	}
-
-	// 	switch netType {
-	// 	case "hostonly":
-	// 		adapter.ConnType = vix.NETWORK_HOSTONLY
-	// 	case "bridged":
-	// 		adapter.ConnType = vix.NETWORK_BRIDGED
-	// 	case "nat":
-	// 		adapter.ConnType = vix.NETWORK_NAT
-	// 	default:
-	// 		adapter.ConnType = vix.NETWORK_CUSTOM
-
-	// 	}
-
-	// 	err = vm.AddNetworkAdapter(adapter)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-
-	running, err := vm.IsRunning()
-	if err != nil {
-		return nil, err
-	}
-
-	if running {
-		log.Println("[INFO] Virtual machine is already powered on")
-		return rs, nil
-	}
-
-	if upgradehw &&
-		((client.Provider & vix.VMWARE_PLAYER) == 0) {
-
-		log.Println("[INFO] Upgrading virtual hardware...")
-		err = vm.UpgradeVHardware()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	log.Println("[INFO] Powering virtual machine on...")
-	var options vix.VMPowerOption
-
-	if launchGUI {
-		log.Println("[INFO] Preparing to launch GUI...")
-		options |= vix.VMPOWEROP_LAUNCH_GUI
-	}
-
-	options |= vix.VMPOWEROP_NORMAL
-
-	err = vm.PowerOn(options)
-	if err != nil {
-		return rs, err
-	}
-
-	log.Println("[INFO] Waiting for VMware Tools to initialize...")
-	err = vm.WaitForToolsInGuest(toolsInitTimeout)
-	if err != nil {
-		log.Println("[WARN] VMware Tools initialization timed out.")
-		if sharedfolders {
-			log.Println("[WARN] Enabling shared folders is not possible.")
-		}
-		return rs, nil
-	}
-
-	if sharedfolders {
-		log.Println("[DEBUG] Enabling shared folders...")
-
-		err = vm.EnableSharedFolders(sharedfolders)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	//rs.ConnInfo["type"] = "ssh"
-	// rs.ConnInfo["host"] = ?
+	rs.ID = id
 
 	return rs, nil
 }
@@ -265,64 +145,38 @@ func resource_vix_vm_update(
 	s *terraform.ResourceState,
 	d *terraform.ResourceDiff,
 	meta interface{}) (*terraform.ResourceState, error) {
-	//p := meta.(*ResourceProvider)
+	rs := s.MergeDiff(d)
 
-	return nil, nil
+	vm := new(provider.VM)
+
+	// Maps terraform.ResourceState attrbutes to provider.VM
+	tf_to_vix(rs, vm)
+
+	p := meta.(*ResourceProvider)
+	vm.Provider = p.Config.Product
+	vm.VerifySSL = p.Config.VerifySSL
+
+	err := vm.Update(rs.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs, nil
 }
 
 func resource_vix_vm_destroy(
 	s *terraform.ResourceState,
 	meta interface{}) error {
 	p := meta.(*ResourceProvider)
-	client := p.client
-
 	vmxFile := s.ID
 
-	if ((client.Provider & vix.VMWARE_VI_SERVER) == 0) ||
-		((client.Provider & vix.VMWARE_SERVER) == 0) {
-		log.Printf("[INFO] Unregistering VM from host's inventory...")
+	vm := new(provider.VM)
+	vm.Provider = p.Config.Product
+	vm.VerifySSL = p.Config.VerifySSL
 
-		err := client.UnregisterVm(vmxFile)
-		if err != nil {
-			return err
-		}
-	}
+	vm.Image.Password = s.Attributes["password"]
 
-	password := s.Attributes["password"]
-
-	vm, err := client.OpenVm(vmxFile, password)
-	if err != nil {
-		return err
-	}
-	defer client.Disconnect()
-
-	running, err := vm.IsRunning()
-	if err != nil {
-		return err
-	}
-
-	if !running {
-		return nil
-	}
-
-	tstate, err := vm.ToolState()
-	if err != nil {
-		return err
-	}
-
-	var powerOpts vix.VMPowerOption
-	if (tstate & vix.TOOLSSTATE_RUNNING) == 0 {
-		powerOpts |= vix.VMPOWEROP_FROM_GUEST
-	} else {
-		powerOpts |= vix.VMPOWEROP_NORMAL
-	}
-
-	err = vm.PowerOff(powerOpts)
-	if err != nil {
-		return err
-	}
-
-	return vm.Delete(vix.VMDELETE_DISK_FILES)
+	return vm.Destroy(vmxFile)
 }
 
 func resource_vix_vm_diff(
@@ -358,13 +212,22 @@ func resource_vix_vm_diff(
 func resource_vix_vm_refresh(
 	s *terraform.ResourceState,
 	meta interface{}) (*terraform.ResourceState, error) {
+	p := meta.(*ResourceProvider)
 
-	return nil, nil
-}
+	vmxFile := s.ID
 
-func resource_vix_vm_update_state(
-	s *terraform.ResourceState,
-	vm *vix.VM) (*terraform.ResourceState, error) {
+	vm := new(provider.VM)
+	vm.Provider = p.Config.Product
+	vm.VerifySSL = p.Config.VerifySSL
 
-	return nil, nil
+	vm.Image.Password = s.Attributes["password"]
+
+	err := vm.Refresh(vmxFile)
+	if err != nil {
+		return nil, err
+	}
+
+	vix_to_tf(*vm, s)
+
+	return s, nil
 }
