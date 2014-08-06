@@ -95,6 +95,8 @@ func (v *VM) client() (*vix.Host, error) {
 }
 
 func (v *VM) Create() (string, error) {
+	log.Printf("[DEBUG] Creating VM resource...")
+
 	usr, err := user.Current()
 	if err != nil {
 		return "", err
@@ -235,6 +237,8 @@ func (v *VM) Update(vmxFile string) error {
 }
 
 func (v *VM) Destroy(vmxFile string) error {
+	log.Printf("[DEBUG] Destroying VM resource %s...", vmxFile)
+
 	client, err := v.client()
 	if err != nil {
 		return err
@@ -274,9 +278,11 @@ func (v *VM) Destroy(vmxFile string) error {
 
 	var powerOpts vix.VMPowerOption
 	if (tstate & vix.TOOLSSTATE_RUNNING) == 0 {
+		log.Printf("[INFO] VMware Tools is running, attempting a graceful shutdown...")
 		// if VMware tools is running attempt a graceful shutdown
 		powerOpts |= vix.VMPOWEROP_FROM_GUEST
 	} else {
+		log.Printf("[INFO] VMware Tools is NOT running, shutting down the machine abruptly...")
 		powerOpts |= vix.VMPOWEROP_NORMAL
 	}
 
@@ -288,6 +294,8 @@ func (v *VM) Destroy(vmxFile string) error {
 	return vm.Delete(vix.VMDELETE_DISK_FILES)
 }
 func (v *VM) Refresh(vmxFile string) error {
+	log.Printf("[DEBUG] Syncing VM resource %s...", vmxFile)
+
 	client, err := v.client()
 	if err != nil {
 		return err
