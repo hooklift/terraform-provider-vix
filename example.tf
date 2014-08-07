@@ -20,7 +20,18 @@ resource "vix_vswitch" "vmnet10" {
     host_access = true
 }
 
+resource "vix_vnic" "custom" {
+    type = "custom"
+    mac_address = ""
+    mac_address_type = "static"
+    vswitch = ${vix_vswitch.vmnet10}
+    start_connected = true
+    driver = "vmxnet3"
+    wake_on_lan = false
+}
+
 resource "vix_sharedfolder" "myfolder" {
+    enable = false
     name = "Dev1"
     guest_path = "/home/camilo/dev"
     host_path = "/Users/camilo/Development"
@@ -43,11 +54,10 @@ resource "vix_vm" "coreos" {
 
     cpus = 1
     memory = "1g"
-    networks = [
-        # "vmnet10",
-        "bridged",
-        # "nat"
-    ]
+    /*networks = [
+        "${vix_vnic.custom}",
+        "${vix_vnic.bridged}",
+    ]*/
 
     count = 1
     upgrade_vhardware = false
@@ -75,8 +85,4 @@ resource "vix_vm" "coreos" {
             "sudo service nginx start",
         ]
     }*/
-}
-
-output "address" {
-  value = "${vix_vm.coreos.ip_address}"
 }
