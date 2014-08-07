@@ -33,7 +33,7 @@ func (p *ResourceProvider) Configure(c *terraform.ResourceConfig) error {
 	}
 
 	if p.Config.Product == "" {
-		log.Printf("[INFO] No product was configured, using workstation by default.")
+		log.Printf("[INFO] No product was configured, using 'workstation' by default.")
 		p.Config.Product = "workstation"
 	}
 
