@@ -141,8 +141,8 @@ func (v *VM) Create() (string, error) {
 	}
 	defer client.Disconnect()
 
-	if ((client.Provider & vix.VMWARE_VI_SERVER) == 0) ||
-		((client.Provider & vix.VMWARE_SERVER) == 0) {
+	if client.Provider == vix.VMWARE_VI_SERVER ||
+		client.Provider == vix.VMWARE_SERVER {
 		log.Printf("[INFO] Registering VM in host's inventory...")
 		err = client.RegisterVm(vmxFile)
 		if err != nil {
@@ -185,7 +185,7 @@ func (v *VM) Create() (string, error) {
 	}
 
 	if v.UpgradeVHardware &&
-		((client.Provider & vix.VMWARE_PLAYER) == 0) {
+		client.Provider != vix.VMWARE_PLAYER {
 
 		log.Println("[INFO] Upgrading virtual hardware...")
 		err = vm.UpgradeVHardware()
@@ -245,8 +245,8 @@ func (v *VM) Destroy(vmxFile string) error {
 	}
 	defer client.Disconnect()
 
-	if ((client.Provider & vix.VMWARE_VI_SERVER) == 0) ||
-		((client.Provider & vix.VMWARE_SERVER) == 0) {
+	if client.Provider == vix.VMWARE_VI_SERVER ||
+		client.Provider == vix.VMWARE_SERVER {
 		log.Printf("[INFO] Unregistering VM from host's inventory...")
 
 		err := client.UnregisterVm(vmxFile)
@@ -268,16 +268,18 @@ func (v *VM) Destroy(vmxFile string) error {
 
 	if !running {
 		log.Printf("[INFO] Virtual machine is already powered off, deleting...")
-		return vm.Delete(vix.VMDELETE_DISK_FILES)
+		return vm.Delete(vix.VMDELETE_KEEP_FILES)
 	}
 
-	tstate, err := vm.ToolState()
+	tstate, err := vm.ToolsState()
 	if err != nil {
 		return err
 	}
 
 	var powerOpts vix.VMPowerOption
-	if (tstate & vix.TOOLSSTATE_RUNNING) == 0 {
+	log.Printf("Tools state %d", tstate)
+
+	if (tstate & vix.TOOLSSTATE_RUNNING) != 0 {
 		log.Printf("[INFO] VMware Tools is running, attempting a graceful shutdown...")
 		// if VMware tools is running attempt a graceful shutdown
 		powerOpts |= vix.VMPOWEROP_FROM_GUEST
@@ -291,7 +293,7 @@ func (v *VM) Destroy(vmxFile string) error {
 		return err
 	}
 
-	return vm.Delete(vix.VMDELETE_DISK_FILES)
+	return vm.Delete(vix.VMDELETE_KEEP_FILES)
 }
 
 func (v *VM) Refresh(vmxFile string) (bool, error) {
@@ -299,13 +301,13 @@ func (v *VM) Refresh(vmxFile string) (bool, error) {
 
 	client, err := v.client()
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer client.Disconnect()
 
 	vm, err := client.OpenVm(vmxFile, v.Image.Password)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	running, err := vm.IsRunning()
@@ -315,12 +317,12 @@ func (v *VM) Refresh(vmxFile string) (bool, error) {
 
 	vcpus, err := vm.Vcpus()
 	if err != nil {
-		return err
+		return running, err
 	}
 
 	memory, err := vm.MemorySize()
 	if err != nil {
-		return err
+		return running, err
 	}
 	v.Memory = humanize.Bytes(uint64(memory))
 	v.CPUs = uint(vcpus)
@@ -328,5 +330,5 @@ func (v *VM) Refresh(vmxFile string) (bool, error) {
 	v.Description, err = vm.Annotation()
 
 	log.Printf("[DEBUG] Refresh: %#v", v)
-	return err
+	return running, err
 }
