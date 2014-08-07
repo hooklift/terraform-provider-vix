@@ -56,13 +56,13 @@ func vix_to_tf(vm provider.VM, rs *terraform.ResourceState) error {
 	}
 
 	//Converts networks array to a map and merges it with rs.Attributes
-	flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
-		"networks": networks,
-	}))
+	// flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
+	// 	"networks": networks,
+	// }))
 
-	flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
-		"image": vm.Image,
-	}))
+	// flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
+	// 	"image": vm.Image,
+	// }))
 
 	return nil
 }
@@ -220,7 +220,11 @@ func resource_vix_vm_refresh(
 	vm.Provider = p.Config.Product
 	vm.VerifySSL = p.Config.VerifySSL
 
-	vm.Image.Password = s.Attributes["password"]
+	imgconf := flatmap.Expand(s.Attributes, "image").([]interface{})[0].(map[string]interface{})
+	vm.Image.URL = imgconf["url"].(string)
+	vm.Image.Checksum = imgconf["checksum"].(string)
+	vm.Image.ChecksumType = imgconf["checksum_type"].(string)
+	vm.Image.Password = imgconf["password"].(string)
 
 	running, err := vm.Refresh(vmxFile)
 	if err != nil {
