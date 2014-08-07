@@ -14,6 +14,7 @@ func resource_vix_sharedfolder_validation() *config.Validator {
 			"guest_path",
 		},
 		Optional: []string{
+			"enable",
 			"readonly",
 		},
 	}
