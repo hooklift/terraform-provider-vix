@@ -75,9 +75,7 @@ func TestResourceProvider_Configure(t *testing.T) {
 		VerifySSL: true,
 	}
 
-	if !reflect.DeepEqual(rp.Config, expected) {
-		t.Fatalf("bad: %#v", rp.Config)
-	}
+	equals(t, rp.Config, expected)
 }
 
 func TestResourceProvider_Defaults(t *testing.T) {
@@ -98,7 +96,5 @@ func TestResourceProvider_Defaults(t *testing.T) {
 		VerifySSL: false,
 	}
 
-	if !reflect.DeepEqual(rp.Config, expected) {
-		t.Fatalf("bad: %#v", rp.Config)
-	}
+	equals(t, rp.Config, expected)
 }
