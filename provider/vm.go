@@ -339,7 +339,8 @@ func (v *VM) Refresh(vmxFile string) (bool, error) {
 
 	// We need to convert memory value to megabytes so humanize can interpret it
 	// properly.
-	v.Memory = humanize.Bytes(uint64((memory * 1024) * 1024))
+	memory = (memory * 1024) * 1024
+	v.Memory = strings.ToLower(humanize.IBytes(uint64(memory)))
 	v.CPUs = uint(vcpus)
 	v.Name, err = vm.DisplayName()
 	v.Description, err = vm.Annotation()

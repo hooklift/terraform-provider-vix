@@ -53,7 +53,7 @@ resource "vix_vm" "coreos" {
     }
 
     cpus = 1
-    memory = "1gib"
+    memory = "1.0gib"
     /*networks = [
         "${vix_vnic.custom}",
         "${vix_vnic.bridged}",
