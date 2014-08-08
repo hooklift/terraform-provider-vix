@@ -301,7 +301,7 @@ func (v *VM) Destroy(vmxFile string) error {
 		}
 	}
 
-	return vm.Delete(vix.VMDELETE_KEEP_FILES)
+	return vm.Delete(vix.VMDELETE_KEEP_FILES | vix.VMDELETE_FORCE)
 }
 
 func (v *VM) Refresh(vmxFile string) (bool, error) {
