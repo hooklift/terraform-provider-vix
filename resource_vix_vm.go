@@ -1,6 +1,7 @@
 package terraform_vix
 
 import (
+	"log"
 	"strconv"
 	"time"
 
@@ -27,7 +28,6 @@ func resource_vix_vm_validation() *config.Validator {
 			"memory",
 			"upgrade_vhardware",
 			"tools_init_timeout",
-			"network_driver",
 			"networks.*",
 			"sharedfolders",
 			"sharedfolder.*",
@@ -37,35 +37,48 @@ func resource_vix_vm_validation() *config.Validator {
 }
 
 // Maps provider attributes to Terraform's resource state
-func vix_to_tf(vm provider.VM, rs *terraform.ResourceState) error {
-	rs.Attributes["name"] = vm.Name
-	rs.Attributes["description"] = vm.Description
+// func vix_to_tf(vm provider.VM, rs *terraform.ResourceState) error {
+// 	if vm.Name != "" {
+// 		rs.Attributes["name"] = vm.Name
+// 	}
 
-	rs.Attributes["cpus"] = string(vm.CPUs)
-	rs.Attributes["memory"] = vm.Memory
+// 	if vm.Description != "" {
+// 		rs.Attributes["description"] = vm.Description
+// 	}
 
-	rs.Attributes["upgrade_vhardware"] = strconv.FormatBool(vm.UpgradeVHardware)
-	rs.Attributes["tools_init_timeout"] = vm.ToolsInitTimeout.String()
-	rs.Attributes["gui"] = strconv.FormatBool(vm.LaunchGUI)
-	rs.Attributes["network_driver"] = vm.NetworkDriver
-	rs.Attributes["sharedfolders"] = strconv.FormatBool(vm.SharedFolders)
+// 	if vm.CPUs > 0 {
+// 		rs.Attributes["cpus"] = string(vm.CPUs)
+// 	}
 
-	networks := make([]string, len(vm.VSwitches))
-	for i, n := range vm.VSwitches {
-		networks[i] = n
-	}
+// 	if vm.Memory != "" {
+// 		rs.Attributes["memory"] = vm.Memory
+// 	}
 
-	//Converts networks array to a map and merges it with rs.Attributes
-	// flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
-	// 	"networks": networks,
-	// }))
+// 	timeout := vm.ToolsInitTimeout.Seconds()
+// 	if timeout > 0 {
+// 		rs.Attributes["tools_init_timeout"] = timeout
+// 	}
 
-	// flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
-	// 	"image": vm.Image,
-	// }))
+// 	rs.Attributes["upgrade_vhardware"] = strconv.FormatBool(vm.UpgradeVHardware)
+// 	rs.Attributes["gui"] = strconv.FormatBool(vm.LaunchGUI)
+// 	rs.Attributes["sharedfolders"] = strconv.FormatBool(vm.SharedFolders)
 
-	return nil
-}
+// 	// networks := make([]string, len(vm.VSwitches))
+// 	// for i, n := range vm.VSwitches {
+// 	// 	networks[i] = n
+// 	// }
+
+// 	//Converts networks array to a map and merges it with rs.Attributes
+// 	// flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
+// 	// 	"networks": networks,
+// 	// }))
+
+// 	// flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
+// 	// 	"image": vm.Image,
+// 	// }))
+
+// 	return nil
+// }
 
 // Maps Terraform attributes to provider's structs
 func tf_to_vix(rs *terraform.ResourceState, vm *provider.VM) error {
@@ -79,7 +92,6 @@ func tf_to_vix(rs *terraform.ResourceState, vm *provider.VM) error {
 	vm.Memory = rs.Attributes["memory"]
 	vm.ToolsInitTimeout, err = time.ParseDuration(rs.Attributes["tools_init_timeout"])
 	vm.UpgradeVHardware, err = strconv.ParseBool(rs.Attributes["upgrade_vhardware"])
-	vm.NetworkDriver = rs.Attributes["network_driver"]
 	vm.LaunchGUI, err = strconv.ParseBool(rs.Attributes["gui"])
 	vm.SharedFolders, err = strconv.ParseBool(rs.Attributes["sharedfolders"])
 
@@ -136,6 +148,8 @@ func resource_vix_vm_create(
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("[DEBUG] Resource ID: %s\n", id)
 	rs.ID = id
 
 	return rs, nil
@@ -196,7 +210,6 @@ func resource_vix_vm_diff(
 			"memory":             diff.AttrTypeUpdate,
 			"networks":           diff.AttrTypeUpdate,
 			"upgrade_vhardware":  diff.AttrTypeUpdate,
-			"network_driver":     diff.AttrTypeUpdate,
 			"sharedfolders":      diff.AttrTypeUpdate,
 			"gui":                diff.AttrTypeUpdate,
 		},
@@ -220,22 +233,29 @@ func resource_vix_vm_refresh(
 	vm.Provider = p.Config.Product
 	vm.VerifySSL = p.Config.VerifySSL
 
-	imgconf := flatmap.Expand(s.Attributes, "image").([]interface{})[0].(map[string]interface{})
-	vm.Image.URL = imgconf["url"].(string)
-	vm.Image.Checksum = imgconf["checksum"].(string)
-	vm.Image.ChecksumType = imgconf["checksum_type"].(string)
-	vm.Image.Password = imgconf["password"].(string)
-
 	running, err := vm.Refresh(vmxFile)
 	if err != nil {
 		return nil, err
 	}
 
+	// This is to let TF know the resource is gone
 	if !running {
 		return nil, nil
 	}
 
-	vix_to_tf(*vm, s)
+	// Refreshes only what makes sense, for example, it does not refresh
+	// settings that modify the behavior of this provider
+	s.Attributes["name"] = vm.Name
+	s.Attributes["description"] = vm.Description
+	s.Attributes["cpus"] = strconv.Itoa(int(vm.CPUs))
+	s.Attributes["memory"] = vm.Memory
+
+	//vix_to_tf(*vm, s)
+
+	// log.Println("[DEBUG] New resource state: ")
+	// for k, v := range s.Attributes {
+	// 	log.Printf("[DEBUG] %s => %s\n", k, v)
+	// }
 
 	return s, nil
 }

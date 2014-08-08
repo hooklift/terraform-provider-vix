@@ -51,8 +51,6 @@ type VM struct {
 	ToolsInitTimeout time.Duration
 	// Whether to launch the VM with graphical environment
 	LaunchGUI bool
-	// The network driver to use when attaching networks to this VM
-	NetworkDriver string
 	// Whether to enable or disable shared folders for this VM
 	SharedFolders bool
 }
@@ -118,9 +116,6 @@ func (v *VM) Create() (string, error) {
 		return "", err
 	}
 
-	// FIXME(c4milo): This has an edge case when a resource with the same
-	// name is declared with a different image box, it will return multiple
-	// vmx files.
 	pattern := filepath.Join(vmPath, "/**/*.vmx")
 
 	log.Printf("[DEBUG] Finding VMX file in %s", pattern)
@@ -133,11 +128,18 @@ func (v *VM) Create() (string, error) {
 	}
 
 	vmxFile := files[0]
+	if err = v.Update(vmxFile); err != nil {
+		return "", err
+	}
 
+	return vmxFile, nil
+}
+
+func (v *VM) Update(vmxFile string) error {
 	// Gets VIX instance
 	client, err := v.client()
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer client.Disconnect()
 
@@ -146,7 +148,7 @@ func (v *VM) Create() (string, error) {
 		log.Printf("[INFO] Registering VM in host's inventory...")
 		err = client.RegisterVm(vmxFile)
 		if err != nil {
-			return "", err
+			return err
 		}
 	}
 
@@ -154,12 +156,25 @@ func (v *VM) Create() (string, error) {
 
 	vm, err := client.OpenVm(vmxFile, v.Image.Password)
 	if err != nil {
-		return "", err
+		return err
+	}
+
+	running, err := vm.IsRunning()
+	if err != nil {
+		return err
+	}
+
+	log.Printf("[INFO] Virtual machine seems to be running, we need to power off in order to make changes.")
+	if running {
+		err = v.powerOff(vm)
+		if err != nil {
+			return err
+		}
 	}
 
 	memoryInMb, err := humanize.ParseBytes(v.Memory)
 	if err != nil {
-		log.Printf("[WARN] Unable to set memory size, defaulting to 1g: %s", err)
+		log.Printf("[WARN] Unable to set memory size, defaulting to 1gib: %s", err)
 		memoryInMb = 1024
 	} else {
 		memoryInMb = (memoryInMb / 1024) / 1024
@@ -171,18 +186,11 @@ func (v *VM) Create() (string, error) {
 	log.Printf("[DEBUG] Setting vcpus to %d", v.CPUs)
 	vm.SetNumberVcpus(uint8(v.CPUs))
 
+	log.Printf("[DEBUG] Setting name to %s", v.Name)
+	vm.SetDisplayName(v.Name)
+
 	log.Printf("[DEBUG] Setting description to %s", v.Description)
 	vm.SetAnnotation(v.Description)
-
-	running, err := vm.IsRunning()
-	if err != nil {
-		return "", err
-	}
-
-	if running {
-		log.Println("[INFO] Virtual machine is already powered on")
-		return vmxFile, nil
-	}
 
 	if v.UpgradeVHardware &&
 		client.Provider != vix.VMWARE_PLAYER {
@@ -190,7 +198,7 @@ func (v *VM) Create() (string, error) {
 		log.Println("[INFO] Upgrading virtual hardware...")
 		err = vm.UpgradeVHardware()
 		if err != nil {
-			return "", err
+			return err
 		}
 	}
 
@@ -206,18 +214,18 @@ func (v *VM) Create() (string, error) {
 
 	err = vm.PowerOn(options)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	log.Println("[INFO] Waiting for VMware Tools to initialize...")
 	err = vm.WaitForToolsInGuest(v.ToolsInitTimeout)
 	if err != nil {
-		log.Println("[WARN] VMware Tools initialization timed out.")
+		log.Println("[WARN] VMware Tools took too long to initialize or is not installed.")
 
 		if v.SharedFolders {
 			log.Println("[WARN] Enabling shared folders is not possible.")
 		}
-		return "", nil
+		return nil
 	}
 
 	if v.SharedFolders {
@@ -225,14 +233,36 @@ func (v *VM) Create() (string, error) {
 
 		err = vm.EnableSharedFolders(v.SharedFolders)
 		if err != nil {
-			return "", err
+			return err
 		}
 	}
-
-	return vmxFile, nil
+	return nil
 }
 
-func (v *VM) Update(vmxFile string) error {
+func (v *VM) powerOff(vm *vix.VM) error {
+	tstate, err := vm.ToolsState()
+	if err != nil {
+		return err
+	}
+
+	var powerOpts vix.VMPowerOption
+	log.Printf("Tools state %d", tstate)
+
+	if (tstate & vix.TOOLSSTATE_RUNNING) != 0 {
+		log.Printf("[INFO] VMware Tools is running, attempting a graceful shutdown...")
+		// if VMware Tools is running, attempt a graceful shutdown.
+		powerOpts |= vix.VMPOWEROP_FROM_GUEST
+	} else {
+		log.Printf("[INFO] VMware Tools is NOT running, shutting down the machine abruptly...")
+		powerOpts |= vix.VMPOWEROP_NORMAL
+	}
+
+	err = vm.PowerOff(powerOpts)
+	if err != nil {
+		return err
+	}
+	log.Printf("[DEBUG] Virtual machine is off.")
+
 	return nil
 }
 
@@ -271,25 +301,7 @@ func (v *VM) Destroy(vmxFile string) error {
 		return vm.Delete(vix.VMDELETE_KEEP_FILES)
 	}
 
-	tstate, err := vm.ToolsState()
-	if err != nil {
-		return err
-	}
-
-	var powerOpts vix.VMPowerOption
-	log.Printf("Tools state %d", tstate)
-
-	if (tstate & vix.TOOLSSTATE_RUNNING) != 0 {
-		log.Printf("[INFO] VMware Tools is running, attempting a graceful shutdown...")
-		// if VMware tools is running attempt a graceful shutdown
-		powerOpts |= vix.VMPOWEROP_FROM_GUEST
-	} else {
-		log.Printf("[INFO] VMware Tools is NOT running, shutting down the machine abruptly...")
-		powerOpts |= vix.VMPOWEROP_NORMAL
-	}
-
-	err = vm.PowerOff(powerOpts)
-	if err != nil {
+	if err = v.powerOff(vm); err != nil {
 		return err
 	}
 
@@ -324,11 +336,13 @@ func (v *VM) Refresh(vmxFile string) (bool, error) {
 	if err != nil {
 		return running, err
 	}
-	v.Memory = humanize.Bytes(uint64(memory))
+
+	// We need to convert memory value to megabytes so humanize can interpret it
+	// properly.
+	v.Memory = humanize.Bytes(uint64((memory * 1024) * 1024))
 	v.CPUs = uint(vcpus)
 	v.Name, err = vm.DisplayName()
 	v.Description, err = vm.Annotation()
 
-	log.Printf("[DEBUG] Refresh: %#v", v)
 	return running, err
 }
