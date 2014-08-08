@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -52,9 +53,7 @@ func FetchFile(config FetchConfig) (string, error) {
 	os.MkdirAll(config.DownloadPath, 0740)
 
 	filePath := filepath.Join(config.DownloadPath, filename)
-
-	unpack := false
-	vmPath := config.DownloadPath
+	vmPath := filepath.Join(config.DownloadPath, config.Checksum)
 
 	log.Printf("[DEBUG] Opening %s...", filePath)
 	file, err := os.Open(filePath)
@@ -71,9 +70,8 @@ func FetchFile(config FetchConfig) (string, error) {
 			return "", err
 		}
 		data.Close()
-
-		unpack = true
 	}
+	defer file.Close()
 
 	// We need to make sure the reader is pointing to the beginning of the file
 	// so verifying integrity does not fail
@@ -97,13 +95,17 @@ func FetchFile(config FetchConfig) (string, error) {
 		if err = VerifyChecksum(file, config.ChecksumType, config.Checksum); err != nil {
 			return "", err
 		}
-
-		unpack = true
 	}
-	defer file.Close()
 
-	// Only unpacks file if checksum changed or file does not exists
-	if unpack {
+	// If an unpacked VM folder does not exist or is empty then unpack image.
+	_, err = os.Stat(vmPath)
+	vmPathExist := err != nil && os.IsNotExist(err)
+
+	// There is no need to get the error as the slice will be empty anyways
+	finfo, _ := ioutil.ReadDir(vmPath)
+	vmPathEmpty := len(finfo) == 0
+
+	if !vmPathExist || vmPathEmpty {
 		// TODO(c4milo): Make sure the file is a tgz file before attempting
 		// to unpack it.
 		_, err = UnpackFile(file, vmPath)
