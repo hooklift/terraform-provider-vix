@@ -53,7 +53,7 @@ resource "vix_vm" "coreos" {
     }
 
     cpus = 1
-    memory = "1g"
+    memory = "1gib"
     /*networks = [
         "${vix_vnic.custom}",
         "${vix_vnic.bridged}",
@@ -65,7 +65,6 @@ resource "vix_vm" "coreos" {
 
     # Be aware that GUI does not work if VM is encrypted
     gui = true
-    network_driver = "vmxnet3"
 
     # Whether to enable or disable shared folders for this VM
     sharedfolders = true
