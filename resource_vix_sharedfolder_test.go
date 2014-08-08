@@ -1,1 +1,0 @@
-package terraform_vix
