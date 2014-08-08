@@ -275,6 +275,22 @@ func (v *VM) Destroy(vmxFile string) error {
 	}
 	defer client.Disconnect()
 
+	vm, err := client.OpenVm(vmxFile, v.Image.Password)
+	if err != nil {
+		return err
+	}
+
+	running, err := vm.IsRunning()
+	if err != nil {
+		return err
+	}
+
+	if running {
+		if err = v.powerOff(vm); err != nil {
+			return err
+		}
+	}
+
 	if client.Provider == vix.VMWARE_VI_SERVER ||
 		client.Provider == vix.VMWARE_SERVER {
 		log.Printf("[INFO] Unregistering VM from host's inventory...")
@@ -283,26 +299,6 @@ func (v *VM) Destroy(vmxFile string) error {
 		if err != nil {
 			return err
 		}
-	}
-
-	vm, err := client.OpenVm(vmxFile, v.Image.Password)
-	if err != nil {
-		return err
-	}
-	defer client.Disconnect()
-
-	running, err := vm.IsRunning()
-	if err != nil {
-		return err
-	}
-
-	if !running {
-		log.Printf("[INFO] Virtual machine is already powered off, deleting...")
-		return vm.Delete(vix.VMDELETE_KEEP_FILES)
-	}
-
-	if err = v.powerOff(vm); err != nil {
-		return err
 	}
 
 	return vm.Delete(vix.VMDELETE_KEEP_FILES)
