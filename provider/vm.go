@@ -92,6 +92,24 @@ func (v *VM) client() (*vix.Host, error) {
 	return host, nil
 }
 
+func (v *VM) SetDefaults() {
+	if v.CPUs <= 0 {
+		v.CPUs = 1
+	}
+
+	if v.Memory == "" {
+		v.Memory = "512mib"
+	}
+
+	if v.Description == "" {
+		v.Description = "Machine was created using Terraform VIX provider"
+	}
+
+	if v.ToolsInitTimeout.Seconds() <= 0 {
+		v.ToolsInitTimeout = time.Duration(30) * time.Second
+	}
+}
+
 func (v *VM) Create() (string, error) {
 	log.Printf("[DEBUG] Creating VM resource...")
 
@@ -136,6 +154,10 @@ func (v *VM) Create() (string, error) {
 }
 
 func (v *VM) Update(vmxFile string) error {
+	// Sets default values if some attributes were not set or have
+	// invalid values
+	v.SetDefaults()
+
 	// Gets VIX instance
 	client, err := v.client()
 	if err != nil {

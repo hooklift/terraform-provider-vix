@@ -37,48 +37,32 @@ func resource_vix_vm_validation() *config.Validator {
 }
 
 // Maps provider attributes to Terraform's resource state
-// func vix_to_tf(vm provider.VM, rs *terraform.ResourceState) error {
-// 	if vm.Name != "" {
-// 		rs.Attributes["name"] = vm.Name
-// 	}
+func vix_to_tf(vm provider.VM, rs *terraform.ResourceState) error {
+	rs.Attributes["name"] = vm.Name
+	rs.Attributes["description"] = vm.Description
+	rs.Attributes["cpus"] = string(vm.CPUs)
+	rs.Attributes["memory"] = vm.Memory
+	rs.Attributes["tools_init_timeout"] = vm.ToolsInitTimeout.String()
+	rs.Attributes["upgrade_vhardware"] = strconv.FormatBool(vm.UpgradeVHardware)
+	rs.Attributes["gui"] = strconv.FormatBool(vm.LaunchGUI)
+	rs.Attributes["sharedfolders"] = strconv.FormatBool(vm.SharedFolders)
 
-// 	if vm.Description != "" {
-// 		rs.Attributes["description"] = vm.Description
-// 	}
+	// networks := make([]string, len(vm.VSwitches))
+	// for i, n := range vm.VSwitches {
+	// 	networks[i] = n
+	// }
 
-// 	if vm.CPUs > 0 {
-// 		rs.Attributes["cpus"] = string(vm.CPUs)
-// 	}
+	//Converts networks array to a map and merges it with rs.Attributes
+	// flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
+	// 	"networks": networks,
+	// }))
 
-// 	if vm.Memory != "" {
-// 		rs.Attributes["memory"] = vm.Memory
-// 	}
+	// flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
+	// 	"image": vm.Image,
+	// }))
 
-// 	timeout := vm.ToolsInitTimeout.Seconds()
-// 	if timeout > 0 {
-// 		rs.Attributes["tools_init_timeout"] = timeout
-// 	}
-
-// 	rs.Attributes["upgrade_vhardware"] = strconv.FormatBool(vm.UpgradeVHardware)
-// 	rs.Attributes["gui"] = strconv.FormatBool(vm.LaunchGUI)
-// 	rs.Attributes["sharedfolders"] = strconv.FormatBool(vm.SharedFolders)
-
-// 	// networks := make([]string, len(vm.VSwitches))
-// 	// for i, n := range vm.VSwitches {
-// 	// 	networks[i] = n
-// 	// }
-
-// 	//Converts networks array to a map and merges it with rs.Attributes
-// 	// flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
-// 	// 	"networks": networks,
-// 	// }))
-
-// 	// flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
-// 	// 	"image": vm.Image,
-// 	// }))
-
-// 	return nil
-// }
+	return nil
+}
 
 // Maps Terraform attributes to provider's structs
 func tf_to_vix(rs *terraform.ResourceState, vm *provider.VM) error {
@@ -99,18 +83,20 @@ func tf_to_vix(rs *terraform.ResourceState, vm *provider.VM) error {
 		return err
 	}
 
-	if raw := flatmap.Expand(rs.Attributes, "networks"); raw != nil {
-		if networks, ok := raw.([]interface{}); ok {
-			for _, n := range networks {
-				name, ok := n.(string)
-				if !ok {
-					continue
-				}
+	// if raw := flatmap.Expand(rs.Attributes, "networks"); raw != nil {
+	// 	if networks, ok := raw.([]interface{}); ok {
+	// 		for _, n := range networks {
+	// 			name, ok := n.(string)
+	// 			if !ok {
+	// 				continue
+	// 			}
 
-				vm.VSwitches = append(vm.VSwitches, name)
-			}
-		}
-	}
+	// 			vm.VSwitches = append(vm.VSwitches, name)
+	// 		}
+	// 	}
+	// }
+
+	log.Printf("[DEBUG] image attrs -> %#v", rs.Attributes["image"])
 
 	// This is nasty but there doesn't seem to be a cleaner way to extract stuff
 	// from the TF configuration
@@ -217,6 +203,44 @@ func resource_vix_vm_diff(
 		ComputedAttrs: []string{
 			"ip_address",
 		},
+	}
+
+	vm := new(provider.VM)
+	vm.SetDefaults()
+
+	// Sets defaults in TF raw configuration so that they show up when running
+	// terraform plan on configuration files with only the minimum required
+	// attributes.
+	if !c.IsSet("description") {
+		c.Raw["description"] = vm.Description
+	}
+
+	if !c.IsSet("cpus") {
+		c.Raw["cpus"] = strconv.Itoa(int(vm.CPUs))
+	}
+
+	if !c.IsSet("memory") {
+		c.Raw["memory"] = vm.Memory
+	}
+
+	if !c.IsSet("tools_init_timeout") {
+		c.Raw["tools_init_timeout"] = vm.ToolsInitTimeout.String()
+	}
+
+	if !c.IsSet("upgrade_vhardware") {
+		c.Raw["upgrade_vhardware"] = strconv.FormatBool(vm.UpgradeVHardware)
+	}
+
+	if !c.IsSet("sharedfolders") {
+		c.Raw["sharedfolders"] = strconv.FormatBool(vm.SharedFolders)
+	}
+
+	if !c.IsSet("gui") {
+		c.Raw["gui"] = strconv.FormatBool(vm.LaunchGUI)
+	}
+
+	if !c.IsSet("mage.0.password") {
+		c.Raw["image.0.password"] = ""
 	}
 
 	return b.Diff(s, c)
