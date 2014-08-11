@@ -1,7 +1,9 @@
 package terraform_vix
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/hashicorp/terraform/helper/resource"
 )
@@ -13,6 +15,7 @@ var resourceMap *resource.Map
 func init() {
 	// Terraform is already adding the timestamp for us
 	log.SetFlags(log.Lshortfile)
+	log.SetPrefix(fmt.Sprintf("pid-%d-", os.Getpid()))
 
 	resourceMap = &resource.Map{
 		Mapping: map[string]resource.Resource{

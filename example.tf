@@ -39,7 +39,7 @@ resource "vix_sharedfolder" "myfolder" {
 }
 */
 
-resource "vix_vm" "coreos" {
+resource "vix_vm" "core01" {
     name = "core01"
     description = "Terraform VMWARE VIX test"
 
@@ -64,7 +64,7 @@ resource "vix_vm" "coreos" {
     tools_init_timeout = 30s
 
     # Be aware that GUI does not work if VM is encrypted
-    gui = true
+    # gui = true
 
     # Whether to enable or disable shared folders for this VM
     sharedfolders = true

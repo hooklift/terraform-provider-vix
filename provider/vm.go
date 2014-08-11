@@ -2,29 +2,17 @@ package provider
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/c4milo/govix"
-	"github.com/c4milo/terraform_vix/helper"
 	"github.com/dustin/go-humanize"
 )
-
-// The virtual machine image to install
-type Image struct {
-	// Image URL where to download from
-	URL string
-	// Checksum of the image, used to check integrity after downloading it
-	Checksum string
-	// Algorithm use to check the checksum
-	ChecksumType string
-	// Password to decrypt the virtual machine if it is encrypted. This is used by
-	// VIX to be able to open the virtual machine
-	Password string
-}
 
 // Virtual machine configuration
 type VM struct {
@@ -118,39 +106,77 @@ func (v *VM) Create() (string, error) {
 		return "", err
 	}
 
-	// FIXME(c4milo): There is an issue here whenever count is greater than 1
-	// please see: https://github.com/hashicorp/terraform/issues/141
-	vmPath := filepath.Join(usr.HomeDir, fmt.Sprintf(".terraform/vix/vms/%s", v.Name))
+	image := v.Image
 
-	imageConfig := helper.FetchConfig{
-		URL:          v.Image.URL,
-		Checksum:     v.Image.Checksum,
-		ChecksumType: v.Image.ChecksumType,
-		DownloadPath: vmPath,
+	imgPath := filepath.Join(usr.HomeDir, ".terraform/vix/images", image.Checksum)
+	if err = image.Download(imgPath); err != nil {
+		return "", err
+	}
+	defer image.file.Close()
+
+	// If an unpacked Gold VM folder does not exist or is empty then unpack image.
+	goldPath := filepath.Join(usr.HomeDir, filepath.Join(".terraform/vix/gold", image.Checksum))
+	_, err = os.Stat(goldPath)
+	goldPathExist := err == nil || err != os.ErrNotExist
+
+	// There is no need to get the error as the slice will be empty anyway
+	finfo, _ := ioutil.ReadDir(goldPath)
+	goldPathEmpty := len(finfo) == 0
+
+	if !goldPathExist || goldPathEmpty {
+		log.Printf("[DEBUG] Gold virtual machine does not exist or is empty: %s", goldPath)
+		// TODO(c4milo): Make sure the file is a tgz file before attempting
+		// to unpack it.
+		_, err = image.Unpack(goldPath)
+		if err != nil {
+			return "", err
+		}
 	}
 
-	vmPath, err = helper.FetchFile(imageConfig)
+	pattern := filepath.Join(goldPath, "/**/*.vmx")
+
+	log.Printf("[DEBUG] Finding Gold virtual machine vmx file in %s", pattern)
+	files, _ := filepath.Glob(pattern)
+
+	if len(files) == 0 {
+		return "", fmt.Errorf("[ERROR] vmx file was not found: %s", pattern)
+	}
+
+	vmxFile := files[0]
+	log.Printf("[DEBUG] Gold virtual machine vmx file found %v", vmxFile)
+
+	// Gets VIX instance
+	client, err := v.client()
+	if err != nil {
+		return "", err
+	}
+	defer client.Disconnect()
+
+	log.Printf("[INFO] Opening Gold virtual machine from %s", vmxFile)
+
+	vm, err := client.OpenVm(vmxFile, v.Image.Password)
 	if err != nil {
 		return "", err
 	}
 
-	pattern := filepath.Join(vmPath, "/**/*.vmx")
+	newvmx := filepath.Join(usr.HomeDir, ".terraform/vix/vms",
+		image.Checksum, v.Name, v.Name+".vmx")
 
-	log.Printf("[DEBUG] Finding VMX file in %s", pattern)
-	files, _ := filepath.Glob(pattern)
-
-	log.Printf("[DEBUG] VMX files found %v", files)
-
-	if len(files) == 0 {
-		return "", fmt.Errorf("[ERROR] VMX file was not found: %s", pattern)
+	if _, err = os.Stat(newvmx); err != nil && err != os.ErrExist {
+		log.Printf("[INFO] Cloning gold vm into %s...", newvmx)
+		_, err = vm.Clone(vix.CLONETYPE_LINKED, newvmx)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		log.Printf("[INFO] VM Clone %s already exist, moving on.", newvmx)
 	}
 
-	vmxFile := files[0]
-	if err = v.Update(vmxFile); err != nil {
+	if err = v.Update(newvmx); err != nil {
 		return "", err
 	}
 
-	return vmxFile, nil
+	return newvmx, nil
 }
 
 func (v *VM) Update(vmxFile string) error {
@@ -186,8 +212,8 @@ func (v *VM) Update(vmxFile string) error {
 		return err
 	}
 
-	log.Printf("[INFO] Virtual machine seems to be running, we need to power off in order to make changes.")
 	if running {
+		log.Printf("[INFO] Virtual machine seems to be running, we need to power off in order to make changes.")
 		err = v.powerOff(vm)
 		if err != nil {
 			return err

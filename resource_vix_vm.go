@@ -96,7 +96,7 @@ func tf_to_vix(rs *terraform.ResourceState, vm *provider.VM) error {
 	// 	}
 	// }
 
-	log.Printf("[DEBUG] image attrs -> %#v", rs.Attributes["image"])
+	//log.Printf("[DEBUG] image attrs -> %#v", rs.Attributes["image"])
 
 	// This is nasty but there doesn't seem to be a cleaner way to extract stuff
 	// from the TF configuration

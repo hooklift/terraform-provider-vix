@@ -1,5 +1,5 @@
-resource "vix_vm" "core02" {
-    name = "core02"
+resource "vix_vm" "core03" {
+    name = "core03"
     # gui = true
     image {
         url = "https://github.com/c4milo/dobby-boxes/releases/download/stable/coreos-stable-vmware.box"
