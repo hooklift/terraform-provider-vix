@@ -120,6 +120,8 @@ Since Terraform at its current state does not load yet external plugins, we are 
 
 * https://github.com/c4milo/terraform/commit/658f44dec9035ee9cef0b85f63d0c33c83acceea#diff-d41d8cd98f00b204e9800998ecf8427e
 
+* https://github.com/c4milo/terraform/commit/3b3095e9834ea5da86f791da6f563439b74783cd#diff-d41d8cd98f00b204e9800998ecf8427e
+
 * https://github.com/c4milo/terraform/commit/c4144afc8559050aa83a68a7f7d9518ada37cbbb#diff-d41d8cd98f00b204e9800998ecf8427e
 
 
