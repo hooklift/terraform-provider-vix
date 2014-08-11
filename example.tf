@@ -64,7 +64,7 @@ resource "vix_vm" "core01" {
     tools_init_timeout = 30s
 
     # Be aware that GUI does not work if VM is encrypted
-    # gui = true
+    gui = true
 
     # Whether to enable or disable shared folders for this VM
     sharedfolders = true
