@@ -114,7 +114,6 @@ func (v *VM) Create() (string, error) {
 	}
 	defer image.file.Close()
 
-	// If an unpacked Gold VM folder does not exist or is empty then unpack image.
 	goldPath := filepath.Join(usr.HomeDir, filepath.Join(".terraform/vix/gold", image.Checksum))
 	_, err = os.Stat(goldPath)
 	goldPathExist := err == nil || err != os.ErrNotExist
@@ -213,7 +212,8 @@ func (v *VM) Update(vmxFile string) error {
 	}
 
 	if running {
-		log.Printf("[INFO] Virtual machine seems to be running, we need to power off in order to make changes.")
+		log.Printf("[INFO] Virtual machine seems to be running, we need to " +
+			"power it off in order to make changes.")
 		err = v.powerOff(vm)
 		if err != nil {
 			return err
@@ -222,8 +222,8 @@ func (v *VM) Update(vmxFile string) error {
 
 	memoryInMb, err := humanize.ParseBytes(v.Memory)
 	if err != nil {
-		log.Printf("[WARN] Unable to set memory size, defaulting to 1gib: %s", err)
-		memoryInMb = 1024
+		log.Printf("[WARN] Unable to set memory size, defaulting to 512mib: %s", err)
+		memoryInMb = 512
 	} else {
 		memoryInMb = (memoryInMb / 1024) / 1024
 	}
@@ -268,7 +268,8 @@ func (v *VM) Update(vmxFile string) error {
 	log.Println("[INFO] Waiting for VMware Tools to initialize...")
 	err = vm.WaitForToolsInGuest(v.ToolsInitTimeout)
 	if err != nil {
-		log.Println("[WARN] VMware Tools took too long to initialize or is not installed.")
+		log.Println("[WARN] VMware Tools took too long to initialize or is not " +
+			"installed.")
 
 		if v.SharedFolders {
 			log.Println("[WARN] Enabling shared folders is not possible.")
@@ -301,7 +302,8 @@ func (v *VM) powerOff(vm *vix.VM) error {
 		// if VMware Tools is running, attempt a graceful shutdown.
 		powerOpts |= vix.VMPOWEROP_FROM_GUEST
 	} else {
-		log.Printf("[INFO] VMware Tools is NOT running, shutting down the machine abruptly...")
+		log.Printf("[INFO] VMware Tools is NOT running, shutting down the " +
+			"machine abruptly...")
 		powerOpts |= vix.VMPOWEROP_NORMAL
 	}
 
