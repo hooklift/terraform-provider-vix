@@ -1,6 +1,9 @@
 # VMware VIX provider for Terraform
 Allows you to define infrastructure for VMware Fusion, Workstation, Server and Player.
 
+## Mailing list
+**Google groups:** https://groups.google.com/group/terraform_vix
+
 ## Requirements
 * VMware Fusion or Workstation installed
 * **Govix:** The library used to interface with VMware
@@ -129,6 +132,3 @@ Since Terraform at its current state does not load yet external plugins, we are 
 * When launching multiple VM resources, make sure all of them have the same GUI setting, otherwise a race condition will kick in and `terraform apply` will fail. This issue is being tracked here https://github.com/c4milo/terraform_vix/issues/10
 
 * Terraform `count` attribute does not work with `vix_vm` resources as Terraform does not provide a way to get the resource index, causing the provider to fail. This issue is being tracked here https://github.com/hashicorp/terraform/issues/141
-
-# License
-Copyright 2014 Cloudescape. All rights reserved.
