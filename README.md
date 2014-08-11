@@ -119,11 +119,14 @@ resource "vix_vm" "core01" {
 Since Terraform at its current state does not load yet external plugins, we are building the plugin along with Terraform binary. The following were the changes made in Terraform to allow this:
 
 * https://github.com/c4milo/terraform/commit/658f44dec9035ee9cef0b85f63d0c33c83acceea#diff-d41d8cd98f00b204e9800998ecf8427e
+
 * https://github.com/c4milo/terraform/commit/c4144afc8559050aa83a68a7f7d9518ada37cbbb#diff-d41d8cd98f00b204e9800998ecf8427e
 
 
 ## Known issues
-* When launching multiple VM resources, make sure all of them have the same GUI setting, otherwise a race condition will kick in and `terraform apply` will fail. This issue is being track here https://github.com/c4milo/terraform_vix/issues/10
+* When launching multiple VM resources, make sure all of them have the same GUI setting, otherwise a race condition will kick in and `terraform apply` will fail. This issue is being tracked here https://github.com/c4milo/terraform_vix/issues/10
+
+* Terraform `count` attribute does not work with `vix_vm` resources as Terraform does not provide a way to get the resource index, causing the provider to fail. This issue is being tracked here https://github.com/hashicorp/terraform/issues/141
 
 # License
 Copyright 2014 Cloudescape. All rights reserved.
