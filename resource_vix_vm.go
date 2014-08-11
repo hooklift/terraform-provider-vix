@@ -267,8 +267,8 @@ func resource_vix_vm_refresh(
 		return nil, nil
 	}
 
-	// Refreshes only what makes sense, for example, it does not refresh
-	// settings that modify the behavior of this provider
+	// Refreshes only what makes sense, for example, we do not refresh settings
+	// that modify the behavior of this provider
 	s.Attributes["name"] = vm.Name
 	s.Attributes["description"] = vm.Description
 	s.Attributes["cpus"] = strconv.Itoa(int(vm.CPUs))
