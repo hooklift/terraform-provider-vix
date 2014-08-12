@@ -1,14 +1,18 @@
 package terraform_vix
 
 import (
+	"fmt"
 	"log"
+	"net"
 	"strconv"
 	"time"
 
+	"github.com/c4milo/govix"
 	"github.com/c4milo/terraform_vix/provider"
 	"github.com/hashicorp/terraform/flatmap"
 	"github.com/hashicorp/terraform/helper/config"
 	"github.com/hashicorp/terraform/helper/diff"
+	"github.com/hashicorp/terraform/helper/multierror"
 	"github.com/hashicorp/terraform/terraform"
 )
 
@@ -20,6 +24,8 @@ func resource_vix_vm_validation() *config.Validator {
 			"image.*.url",
 			"image.*.checksum",
 			"image.*.checksum_type",
+			"network_adapter.*.type",
+			"shared_folder.*.name",
 		},
 		Optional: []string{
 			"description",
@@ -28,9 +34,15 @@ func resource_vix_vm_validation() *config.Validator {
 			"memory",
 			"upgrade_vhardware",
 			"tools_init_timeout",
-			"networks.*",
 			"sharedfolders",
 			"sharedfolder.*",
+			"network_adapter.*.mac_address",
+			"network_adapter.*.vswitch",
+			"network_adapter.*.driver",
+			"shared_folder.*.enable",
+			"shared_folder.*.guest_path",
+			"shared_folder.*.host_path",
+			"shared_folder.*.readonly",
 			"gui",
 		},
 	}
@@ -47,19 +59,84 @@ func vix_to_tf(vm provider.VM, rs *terraform.ResourceState) error {
 	rs.Attributes["gui"] = strconv.FormatBool(vm.LaunchGUI)
 	rs.Attributes["sharedfolders"] = strconv.FormatBool(vm.SharedFolders)
 
-	// networks := make([]string, len(vm.VSwitches))
-	// for i, n := range vm.VSwitches {
-	// 	networks[i] = n
+	return nil
+}
+
+func net_tf_to_vix(rs *terraform.ResourceState, vm *provider.VM) error {
+	var err error
+	var errs []error
+
+	if _, ok := rs.Attributes["network_adapter.#"]; !ok {
+		return nil
+	}
+
+	tf_to_vix_network_type := func(attr string) (vix.NetworkType, error) {
+		switch attr {
+		case "bridged":
+			return vix.NETWORK_BRIDGED, nil
+		case "nat":
+			return vix.NETWORK_NAT, nil
+		case "hostonly":
+			return vix.NETWORK_HOSTONLY, nil
+		case "custom":
+			return vix.NETWORK_CUSTOM, nil
+		default:
+			return "", fmt.Errorf("[ERROR] Invalid virtual network adapter type: %s", attr)
+		}
+	}
+
+	tf_to_vix_virtual_device := func(attr string) (vix.VNetDevice, error) {
+		switch attr {
+		case "vlance":
+			return vix.NETWORK_DEVICE_VLANCE, nil
+		case "e1000":
+			return vix.NETWORK_DEVICE_E1000, nil
+		case "vmxnet3":
+			return vix.NETWORK_DEVICE_VMXNET3, nil
+		default:
+			return "", fmt.Errorf("[ERROR] Invalid virtual network device: %s", attr)
+		}
+	}
+
+	// tf_to_vix_vswitch := func(attr string) (vix.VSwitch, error) {
+	// 	return vix.VSwitch{}, nil
 	// }
 
-	//Converts networks array to a map and merges it with rs.Attributes
-	// flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
-	// 	"networks": networks,
-	// }))
+	adapters := flatmap.Expand(
+		rs.Attributes, "network_adapter").([]interface{})
 
-	// flatmap.Map(rs.Attributes).Merge(flatmap.Flatten(map[string]interface{}{
-	// 	"image": vm.Image,
-	// }))
+	for _, adapter := range adapters {
+		adapter := adapter.(map[string]interface{})
+		vnic := new(vix.NetworkAdapter)
+
+		if attr, ok := adapter["driver"].(string); ok && attr != "" {
+			vnic.Vdevice, err = tf_to_vix_virtual_device(attr)
+		}
+
+		if attr, ok := adapter["mac_address"].(string); ok && attr != "" {
+			vnic.MacAddress, err = net.ParseMAC(attr)
+
+		}
+
+		if attr, ok := adapter["type"].(string); ok && attr != "" {
+			vnic.ConnType, err = tf_to_vix_network_type(attr)
+		}
+
+		// if attr, ok := adapter["vswitch"].(string); ok && attr != "" {
+		// 	vnic.VSwitch, err = tf_to_vix_vswitch(attr)
+		// }
+
+		//log.Printf("[DEBUG] VNIC ==> %#v\n", vnic)
+		vm.VNetworkAdapters = append(vm.VNetworkAdapters, vnic)
+
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		return &multierror.Error{Errors: errs}
+	}
 
 	return nil
 }
@@ -67,6 +144,7 @@ func vix_to_tf(vm provider.VM, rs *terraform.ResourceState) error {
 // Maps Terraform attributes to provider's structs
 func tf_to_vix(rs *terraform.ResourceState, vm *provider.VM) error {
 	var err error
+
 	vm.Name = rs.Attributes["name"]
 	vm.Description = rs.Attributes["description"]
 
@@ -79,24 +157,12 @@ func tf_to_vix(rs *terraform.ResourceState, vm *provider.VM) error {
 	vm.LaunchGUI, err = strconv.ParseBool(rs.Attributes["gui"])
 	vm.SharedFolders, err = strconv.ParseBool(rs.Attributes["sharedfolders"])
 
+	// Maps any defined networks to VIX provider's data types
+	net_tf_to_vix(rs, vm)
+
 	if err != nil {
 		return err
 	}
-
-	// if raw := flatmap.Expand(rs.Attributes, "networks"); raw != nil {
-	// 	if networks, ok := raw.([]interface{}); ok {
-	// 		for _, n := range networks {
-	// 			name, ok := n.(string)
-	// 			if !ok {
-	// 				continue
-	// 			}
-
-	// 			vm.VSwitches = append(vm.VSwitches, name)
-	// 		}
-	// 	}
-	// }
-
-	//log.Printf("[DEBUG] image attrs -> %#v", rs.Attributes["image"])
 
 	// This is nasty but there doesn't seem to be a cleaner way to extract stuff
 	// from the TF configuration
@@ -117,18 +183,18 @@ func resource_vix_vm_create(
 	s *terraform.ResourceState,
 	d *terraform.ResourceDiff,
 	meta interface{}) (*terraform.ResourceState, error) {
+	p := meta.(*ResourceProvider)
+
 	// Merge the diff into the state so that we have all the attributes
 	// properly.
 	rs := s.MergeDiff(d)
 
 	vm := new(provider.VM)
+	vm.Provider = p.Config.Product
+	vm.VerifySSL = p.Config.VerifySSL
 
 	// Maps terraform.ResourceState attrbutes to provider.VM
 	tf_to_vix(rs, vm)
-
-	p := meta.(*ResourceProvider)
-	vm.Provider = p.Config.Product
-	vm.VerifySSL = p.Config.VerifySSL
 
 	id, err := vm.Create()
 	if err != nil {
@@ -145,16 +211,15 @@ func resource_vix_vm_update(
 	s *terraform.ResourceState,
 	d *terraform.ResourceDiff,
 	meta interface{}) (*terraform.ResourceState, error) {
+	p := meta.(*ResourceProvider)
 	rs := s.MergeDiff(d)
 
 	vm := new(provider.VM)
+	vm.Provider = p.Config.Product
+	vm.VerifySSL = p.Config.VerifySSL
 
 	// Maps terraform.ResourceState attrbutes to provider.VM
 	tf_to_vix(rs, vm)
-
-	p := meta.(*ResourceProvider)
-	vm.Provider = p.Config.Product
-	vm.VerifySSL = p.Config.VerifySSL
 
 	err := vm.Update(rs.ID)
 	if err != nil {
@@ -198,6 +263,8 @@ func resource_vix_vm_diff(
 			"upgrade_vhardware":  diff.AttrTypeUpdate,
 			"sharedfolders":      diff.AttrTypeUpdate,
 			"gui":                diff.AttrTypeUpdate,
+			"network_adapter":    diff.AttrTypeUpdate,
+			"shared_folder":      diff.AttrTypeUpdate,
 		},
 
 		ComputedAttrs: []string{
@@ -208,9 +275,8 @@ func resource_vix_vm_diff(
 	vm := new(provider.VM)
 	vm.SetDefaults()
 
-	// Sets defaults in TF raw configuration so that they show up when running
-	// terraform plan on configuration files with only the minimum required
-	// attributes.
+	// Sets defaults in TF raw configuration for minimal configurations so that
+	// they show up when running terraform plan.
 	if !c.IsSet("description") {
 		c.Raw["description"] = vm.Description
 	}
@@ -239,8 +305,29 @@ func resource_vix_vm_diff(
 		c.Raw["gui"] = strconv.FormatBool(vm.LaunchGUI)
 	}
 
-	if !c.IsSet("mage.0.password") {
+	if !c.IsSet("image.0.password") {
 		c.Raw["image.0.password"] = ""
+	}
+
+	// Sets defaults for network adapters so the plan can
+	// show what it is really going to be created upon applying
+	if adapters, ok := c.Get("network_adapter"); ok {
+		adapters := adapters.([]map[string]interface{})
+
+		for i, _ := range adapters {
+			attr := "network_adapter." + strconv.Itoa(i) + "."
+			if !c.IsSet(attr + "type") {
+				c.Raw[attr+"type"] = "nat"
+			}
+
+			if !c.IsSet(attr + "driver") {
+				c.Raw[attr+"driver"] = "e1000"
+			}
+
+			if !c.IsSet(attr + "mac_address") {
+				b.ComputedAttrs = append(b.ComputedAttrs, attr+"mac_address")
+			}
+		}
 	}
 
 	return b.Diff(s, c)

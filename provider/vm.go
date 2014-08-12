@@ -41,8 +41,11 @@ type VM struct {
 	LaunchGUI bool
 	// Whether to enable or disable shared folders for this VM
 	SharedFolders bool
+	// Network adapters
+	VNetworkAdapters []*vix.NetworkAdapter
 }
 
+// Creates VIX instance with VMware
 func (v *VM) client() (*vix.Host, error) {
 	var p vix.Provider
 
@@ -80,6 +83,7 @@ func (v *VM) client() (*vix.Host, error) {
 	return host, nil
 }
 
+// Sets default values for VM attributes
 func (v *VM) SetDefaults() {
 	if v.CPUs <= 0 {
 		v.CPUs = 1
@@ -98,6 +102,8 @@ func (v *VM) SetDefaults() {
 	}
 }
 
+// Downloads, extracts and opens Gold virtual machine, then it creates a clone
+// out of it.
 func (v *VM) Create() (string, error) {
 	log.Printf("[DEBUG] Creating VM resource...")
 
@@ -161,9 +167,16 @@ func (v *VM) Create() (string, error) {
 	newvmx := filepath.Join(usr.HomeDir, ".terraform/vix/vms",
 		image.Checksum, v.Name, v.Name+".vmx")
 
-	if _, err = os.Stat(newvmx); err != nil && err != os.ErrExist {
+	if _, err = os.Stat(newvmx); err != os.ErrExist {
 		log.Printf("[INFO] Cloning gold vm into %s...", newvmx)
-		_, err = vm.Clone(vix.CLONETYPE_LINKED, newvmx)
+		clonedVM, err := vm.Clone(vix.CLONETYPE_LINKED, newvmx)
+		if err != nil {
+			return "", err
+		}
+
+		// Makes sure the first time the VM is created it has no virtual network adapters
+		log.Printf("[DEBUG] Removing all virtual network adapters from cloned VM...")
+		err = clonedVM.RemoveAllNetworkAdapters()
 		if err != nil {
 			return "", err
 		}
@@ -178,6 +191,7 @@ func (v *VM) Create() (string, error) {
 	return newvmx, nil
 }
 
+// Opens and updates virtual machine resource
 func (v *VM) Update(vmxFile string) error {
 	// Sets default values if some attributes were not set or have
 	// invalid values
@@ -250,6 +264,31 @@ func (v *VM) Update(vmxFile string) error {
 		}
 	}
 
+	// log.Printf("[DEBUG] Loading all network adapters in memory...")
+	// curAdapters, err := vm.NetworkAdapters()
+	// if err != nil {
+	// 	return err
+	// }
+
+	log.Printf("[DEBUG] Removing all network adapters from vmx file...")
+	err = vm.RemoveAllNetworkAdapters()
+	if err != nil {
+		return err
+	}
+
+	log.Println("[DEBUG] Attaching virtual network adapters...")
+	for _, adapter := range v.VNetworkAdapters {
+		adapter.StartConnected = true
+		if adapter.ConnType == vix.NETWORK_BRIDGED {
+			adapter.LinkStatePropagation = true
+		}
+
+		err := vm.AddNetworkAdapter(adapter)
+		if err != nil {
+			return err
+		}
+	}
+
 	log.Println("[INFO] Powering virtual machine on...")
 	var options vix.VMPowerOption
 
@@ -288,6 +327,7 @@ func (v *VM) Update(vmxFile string) error {
 	return nil
 }
 
+// Powers off a virtual machine attempting a graceful shutdown.
 func (v *VM) powerOff(vm *vix.VM) error {
 	tstate, err := vm.ToolsState()
 	if err != nil {
@@ -316,6 +356,7 @@ func (v *VM) powerOff(vm *vix.VM) error {
 	return nil
 }
 
+// Destroys a virtual machine resource
 func (v *VM) Destroy(vmxFile string) error {
 	log.Printf("[DEBUG] Destroying VM resource %s...", vmxFile)
 
@@ -354,6 +395,7 @@ func (v *VM) Destroy(vmxFile string) error {
 	return vm.Delete(vix.VMDELETE_KEEP_FILES | vix.VMDELETE_FORCE)
 }
 
+// Refreshes state with VMware
 func (v *VM) Refresh(vmxFile string) (bool, error) {
 	log.Printf("[DEBUG] Syncing VM resource %s...", vmxFile)
 
