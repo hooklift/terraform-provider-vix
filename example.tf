@@ -60,6 +60,8 @@ resource "vix_vm" "core01" {
 
         # vswitch is only required when network type is "custom"
         vswitch = ${vix_vswitch.vmnet10.name}
+
+        # vmxnet3 requires VMware Tools
         driver = "vmxnet3"
     }*/
 
@@ -73,8 +75,8 @@ resource "vix_vm" "core01" {
     }
 
     shared_folder {
-        enable = false
         name = "Dev1"
+        enable = false
         guest_path = "/home/camilo/dev"
         host_path = "/Users/camilo/Development"
         readonly = false
