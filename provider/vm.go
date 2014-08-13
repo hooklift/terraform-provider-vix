@@ -169,17 +169,19 @@ func (v *VM) Create() (string, error) {
 
 	if _, err = os.Stat(newvmx); err != os.ErrExist {
 		log.Printf("[INFO] Cloning gold vm into %s...", newvmx)
-		clonedVM, err := vm.Clone(vix.CLONETYPE_LINKED, newvmx)
-		if err != nil {
+		_, err := vm.Clone(vix.CLONETYPE_LINKED, newvmx)
+		// If there is an error and the error is other than "The snapshot already exists"
+		// then return the error
+		if err != nil && err.(*vix.VixError).Code != 13004 {
 			return "", err
 		}
 
 		// Makes sure the first time the VM is created it has no virtual network adapters
-		log.Printf("[DEBUG] Removing all virtual network adapters from cloned VM...")
-		err = clonedVM.RemoveAllNetworkAdapters()
-		if err != nil {
-			return "", err
-		}
+		// log.Printf("[DEBUG] Removing all virtual network adapters from cloned VM...")
+		// err = clonedVM.RemoveAllNetworkAdapters()
+		// if err != nil {
+		// 	return "", err
+		// }
 	} else {
 		log.Printf("[INFO] VM Clone %s already exist, moving on.", newvmx)
 	}
