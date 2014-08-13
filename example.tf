@@ -82,3 +82,7 @@ resource "vix_vm" "core01" {
         readonly = false
     }
 }
+
+output "IP address" {
+    value = "${vix_vm.core01.ip_address}"
+}

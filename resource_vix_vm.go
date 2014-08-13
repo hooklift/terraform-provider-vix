@@ -266,7 +266,7 @@ func resource_vix_vm_create(
 	log.Printf("[DEBUG] Resource ID: %s\n", id)
 	rs.ID = id
 
-	return rs, nil
+	return resource_vix_vm_refresh(rs, meta)
 }
 
 func resource_vix_vm_update(
@@ -288,7 +288,7 @@ func resource_vix_vm_update(
 		return nil, err
 	}
 
-	return rs, nil
+	return resource_vix_vm_refresh(rs, meta)
 }
 
 func resource_vix_vm_destroy(
@@ -422,6 +422,7 @@ func resource_vix_vm_refresh(
 	s.Attributes["description"] = vm.Description
 	s.Attributes["cpus"] = strconv.Itoa(int(vm.CPUs))
 	s.Attributes["memory"] = vm.Memory
+	s.Attributes["ip_address"] = vm.IPAddress
 
 	err = net_vix_to_tf(vm, s)
 	if err != nil {

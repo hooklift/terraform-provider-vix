@@ -43,6 +43,8 @@ type VM struct {
 	SharedFolders bool
 	// Network adapters
 	VNetworkAdapters []*vix.NetworkAdapter
+	// VM IP address as reported by VIX
+	IPAddress string
 }
 
 // Creates VIX instance with VMware
@@ -435,6 +437,7 @@ func (v *VM) Refresh(vmxFile string) (bool, error) {
 	v.Name, err = vm.DisplayName()
 	v.Description, err = vm.Annotation()
 	v.VNetworkAdapters, err = vm.NetworkAdapters()
+	v.IPAddress, err = vm.IPAddress()
 
 	return running, err
 }
