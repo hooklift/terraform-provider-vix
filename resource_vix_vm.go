@@ -141,6 +141,68 @@ func net_tf_to_vix(rs *terraform.ResourceState, vm *provider.VM) error {
 	return nil
 }
 
+func net_vix_to_tf(vm *provider.VM, rs *terraform.ResourceState) error {
+
+	vix_to_tf_network_type := func(netType vix.NetworkType) string {
+		switch netType {
+		case vix.NETWORK_CUSTOM:
+			return "custom"
+		case vix.NETWORK_BRIDGED:
+			return "bridged"
+		case vix.NETWORK_HOSTONLY:
+			return "hostonly"
+		case vix.NETWORK_NAT:
+			return "nat"
+		default:
+			return ""
+		}
+	}
+
+	vix_to_tf_macaddress := func(adapter *vix.NetworkAdapter) string {
+		static := adapter.MacAddress.String()
+		generated := adapter.GeneratedMacAddress.String()
+
+		if static != "" {
+			return static
+		}
+
+		return generated
+	}
+
+	vix_to_tf_vdevice := func(vdevice vix.VNetDevice) string {
+		switch vdevice {
+		case vix.NETWORK_DEVICE_E1000:
+			return "e1000"
+		case vix.NETWORK_DEVICE_VLANCE:
+			return "vlance"
+		case vix.NETWORK_DEVICE_VMXNET3:
+			return "vmxnet3"
+		default:
+			return ""
+		}
+	}
+
+	numvnics := len(vm.VNetworkAdapters)
+	if numvnics <= 0 {
+		return nil
+	}
+
+	prefix := "network_adapter"
+
+	rs.Attributes[prefix+".#"] = strconv.Itoa(numvnics)
+	for i, adapter := range vm.VNetworkAdapters {
+		attr := fmt.Sprintf("%s.%d.", prefix, i)
+		rs.Attributes[attr+"type"] = vix_to_tf_network_type(adapter.ConnType)
+		rs.Attributes[attr+"mac_address"] = vix_to_tf_macaddress(adapter)
+		if adapter.ConnType == vix.NETWORK_CUSTOM {
+			rs.Attributes[attr+"vswitch"] = "TODO(c4milo)"
+		}
+		rs.Attributes[attr+"driver"] = vix_to_tf_vdevice(adapter.Vdevice)
+	}
+
+	return nil
+}
+
 // Maps Terraform attributes to provider's structs
 func tf_to_vix(rs *terraform.ResourceState, vm *provider.VM) error {
 	var err error
@@ -361,12 +423,12 @@ func resource_vix_vm_refresh(
 	s.Attributes["cpus"] = strconv.Itoa(int(vm.CPUs))
 	s.Attributes["memory"] = vm.Memory
 
-	//vix_to_tf(*vm, s)
+	err = net_vix_to_tf(vm, s)
+	if err != nil {
+		return nil, err
+	}
 
-	// log.Println("[DEBUG] New resource state: ")
-	// for k, v := range s.Attributes {
-	// 	log.Printf("[DEBUG] %s => %s\n", k, v)
-	// }
+	//vix_to_tf(*vm, s)
 
 	return s, nil
 }

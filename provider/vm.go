@@ -434,6 +434,7 @@ func (v *VM) Refresh(vmxFile string) (bool, error) {
 	v.CPUs = uint(vcpus)
 	v.Name, err = vm.DisplayName()
 	v.Description, err = vm.Annotation()
+	v.VNetworkAdapters, err = vm.NetworkAdapters()
 
 	return running, err
 }
