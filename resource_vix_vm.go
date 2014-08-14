@@ -37,6 +37,7 @@ func resource_vix_vm_validation() *config.Validator {
 			"sharedfolders",
 			"sharedfolder.*",
 			"network_adapter.*.mac_address",
+			"network_adapter.*.mac_address_type",
 			"network_adapter.*.vswitch",
 			"network_adapter.*.driver",
 			"shared_folder.*.enable",
@@ -114,8 +115,12 @@ func net_tf_to_vix(rs *terraform.ResourceState, vm *provider.VM) error {
 		}
 
 		if attr, ok := adapter["mac_address"].(string); ok && attr != "" {
-			vnic.MacAddress, err = net.ParseMAC(attr)
-
+			// Only set a MAC address if it is declared as static
+			// otherwise leave Govix to assign or continue using the generated
+			// one.
+			if addrtype, ok := adapter["mac_address_type"].(string); ok && addrtype == "static" {
+				vnic.MacAddress, err = net.ParseMAC(attr)
+			}
 		}
 
 		if attr, ok := adapter["type"].(string); ok && attr != "" {

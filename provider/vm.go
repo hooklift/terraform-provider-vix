@@ -287,6 +287,7 @@ func (v *VM) Update(vmxFile string) error {
 			adapter.LinkStatePropagation = true
 		}
 
+		log.Printf("[DEBUG] Adapter: %+v", adapter)
 		err := vm.AddNetworkAdapter(adapter)
 		if err != nil {
 			return err

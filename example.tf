@@ -57,6 +57,7 @@ resource "vix_vm" "core01" {
         # type can be either "custom", "nat", "bridged" or "hostonly"
         type = "custom"
         mac_address = "00:00:00:00:00"
+        mac_address_type = "static"
 
         # vswitch is only required when network type is "custom"
         vswitch = ${vix_vswitch.vmnet10.name}
@@ -72,6 +73,12 @@ resource "vix_vm" "core01" {
 
     network_adapter {
         type = "nat"
+        mac_address = "00:50:56:aa:bb:cc"
+        mac_address_type = "static"
+    }
+
+    network_adapter {
+        type = "hostonly"
     }
 
     shared_folder {
