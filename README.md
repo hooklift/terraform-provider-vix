@@ -8,14 +8,15 @@ Allows you to define infrastructure for VMware Fusion, Workstation, Server and P
 * VMware Fusion or Workstation installed
 * **Govix:** The library used to interface with VMware
 * **Godep:** Dependency manager
-* **Terraform:** We are using our own fork for now, which is located at https://github.com/c4milo/terraform. Clone it and change `c4milo` for `hashicorp`
+* **Terraform:** We are currently using our own fork while this PR gets merged: `https://github.com/hashicorp/terraform/pull/192`. So, run `go get https://github.com/c4milo/terraform` and checkout `loading-cli-config` branch
 
 The exact list of dependencies can be found in the `Godeps` file. To install dependencies run: `godep get`
 
 
 ## Development workflow
+Make sure you exported `DYLD_LIBRARY_PATH` or `LD_LIBRARY_PATH` with a path pointing to `vendor/libvix`
+
 1. Make changes in your local fork of terraform-provider-vix
-2. Compile Terraform from `$GOPATH/src/github.com/hashicorp/terraform`, running `make dev`
 3. Test your changes running `TF_LOG=1 terraform plan` or `TF_LOG=1 terraform apply` inside a directory that contains *.tf files declaring VIX resources.
 
 ## Provider configurations
@@ -91,7 +92,7 @@ resource "vix_vm" "core01" {
     network_adapter {
         # type can be either "custom", "nat", "bridged" or "hostonly"
 	    type = "custom"
-	    mac_address = "00:00:00:00:00"
+	    mac_address = "00:50:56:aa:bb:cc"
 
 	    # mac address type can be "static", "generated" or "vpx"
 	    mac_address_type = "static"
@@ -107,6 +108,16 @@ resource "vix_vm" "core01" {
     network_adapter {
 	    type = "bridged"
     }
+    
+    network_adapter {
+        type = "nat"
+        mac_address = "00:50:56:aa:bb:cc"
+        mac_address_type = "static"
+    }
+
+    network_adapter {
+        type = "hostonly"
+    }
 
     shared_folder {
         enable = false
@@ -117,15 +128,6 @@ resource "vix_vm" "core01" {
     }
 }
 ```
-
-## To be aware of
-Since Terraform at its current state does not load yet external plugins, we are building the plugin along with Terraform binary. The following were the changes made in Terraform to allow this:
-
-* https://github.com/c4milo/terraform/commit/658f44dec9035ee9cef0b85f63d0c33c83acceea#diff-d41d8cd98f00b204e9800998ecf8427e
-
-* https://github.com/c4milo/terraform/commit/3b3095e9834ea5da86f791da6f563439b74783cd#diff-d41d8cd98f00b204e9800998ecf8427e
-
-* https://github.com/c4milo/terraform/commit/c4144afc8559050aa83a68a7f7d9518ada37cbbb#diff-d41d8cd98f00b204e9800998ecf8427e
 
 
 ## Known issues
