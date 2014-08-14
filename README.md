@@ -2,7 +2,7 @@
 Allows you to define infrastructure for VMware Fusion, Workstation, Server and Player.
 
 ## Mailing list
-**Google groups:** https://groups.google.com/group/terraform_vix
+**Google groups:** https://groups.google.com/group/terraform-provider-vix
 
 ## Requirements
 * VMware Fusion or Workstation installed
@@ -14,7 +14,7 @@ The exact list of dependencies can be found in the `Godeps` file. To install dep
 
 
 ## Development workflow
-1. Make changes in your local fork of terraform_vix
+1. Make changes in your local fork of terraform-provider-vix
 2. Compile Terraform from `$GOPATH/src/github.com/hashicorp/terraform`, running `make dev`
 3. Test your changes running `TF_LOG=1 terraform plan` or `TF_LOG=1 terraform apply` inside a directory that contains *.tf files declaring VIX resources.
 
@@ -129,6 +129,6 @@ Since Terraform at its current state does not load yet external plugins, we are 
 
 
 ## Known issues
-* When launching multiple VM resources, make sure all of them have the same GUI setting, otherwise a race condition will kick in and `terraform apply` will fail. This issue is being tracked here https://github.com/c4milo/terraform_vix/issues/10
+* When launching multiple VM resources, make sure all of them have the same GUI setting, otherwise a race condition will kick in and `terraform apply` will fail. This issue is being tracked here https://github.com/c4milo/terraform-provider-vix/issues/10
 
 * Terraform `count` attribute does not work with `vix_vm` resources as Terraform does not provide a way to get the resource index, causing the provider to fail. This issue is being tracked here https://github.com/hashicorp/terraform/issues/141

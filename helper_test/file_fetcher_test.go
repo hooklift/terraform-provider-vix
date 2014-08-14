@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/c4milo/terraform_vix/helper"
+	"github.com/c4milo/terraform-provider-vix/helper"
 )
 
 func TestFetch(t *testing.T) {

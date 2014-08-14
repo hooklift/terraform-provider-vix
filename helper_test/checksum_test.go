@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/c4milo/terraform_vix/helper"
+	"github.com/c4milo/terraform-provider-vix/helper"
 )
 
 // For some unknown reason if we take bytes.NewBuffer([]byte("Test"))
