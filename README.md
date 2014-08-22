@@ -8,7 +8,7 @@ Allows you to define infrastructure for VMware Fusion, Workstation, Server and P
 * VMware Fusion or Workstation installed
 * **Govix:** The library used to interface with VMware
 * **Godep:** Dependency manager
-* **Terraform:** We are currently using our own fork while this PR gets merged: `https://github.com/hashicorp/terraform/pull/192`. So, run `go get https://github.com/c4milo/terraform` and checkout `loading-cli-config` branch
+* Terraform
 
 The exact list of dependencies can be found in the `Godeps` file. To install dependencies run: `godep get`
 
