@@ -171,7 +171,7 @@ func (v *VM) Create() (string, error) {
 
 	if _, err = os.Stat(newvmx); err != os.ErrExist {
 		log.Printf("[INFO] Cloning gold vm into %s...", newvmx)
-		_, err := vm.Clone(govix.CLONETYPE_LINKED, newvmx)
+		_, err := vm.Clone(govix.CLONETYPE_FULL, newvmx)
 		// If there is an error and the error is other than "The snapshot already exists"
 		// then return the error
 		if err != nil && err.(*govix.VixError).Code != 13004 {
