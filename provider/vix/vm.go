@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	govix "github.com/c4milo/govix"
+	govix "github.com/cloudescape/govix"
 	"github.com/dustin/go-humanize"
 )
 

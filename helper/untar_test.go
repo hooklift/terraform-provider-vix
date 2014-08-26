@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/c4milo/terraform-provider-vix/helper"
+	"github.com/cloudescape/terraform-provider-vix/helper"
 )
 
 func TestUntar(t *testing.T) {

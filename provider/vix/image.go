@@ -17,7 +17,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/c4milo/terraform-provider-vix/helper"
+	"github.com/cloudescape/terraform-provider-vix/helper"
 	"github.com/dustin/go-humanize"
 )
 

@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	govix "github.com/c4milo/govix"
-	"github.com/c4milo/terraform-provider-vix/provider/vix"
+	govix "github.com/cloudescape/govix"
+	"github.com/cloudescape/terraform-provider-vix/provider/vix"
 	"github.com/hashicorp/terraform/flatmap"
 	"github.com/hashicorp/terraform/helper/config"
 	"github.com/hashicorp/terraform/helper/diff"

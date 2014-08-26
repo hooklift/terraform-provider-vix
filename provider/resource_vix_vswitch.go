@@ -1,7 +1,7 @@
 package provider
 
 import (
-	"github.com/c4milo/govix"
+	"github.com/cloudescape/govix"
 	"github.com/hashicorp/terraform/helper/config"
 	"github.com/hashicorp/terraform/helper/diff"
 	"github.com/hashicorp/terraform/terraform"
