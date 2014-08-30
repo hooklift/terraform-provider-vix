@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-	plugin.Serve(new(provider.ResourceProvider))
+	plugin.Serve(provider.Provider())
 }

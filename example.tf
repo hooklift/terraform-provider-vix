@@ -1,6 +1,3 @@
-variable "password" {
-     default: ""
-}
 
 provider "vix" {
     # valid options are: "fusion", "workstation", "serverv1", "serverv2", "player"
@@ -8,7 +5,7 @@ provider "vix" {
     product = "fusion"
     verify_ssl = false
 
-    # clone_type can be "full" or "linked". Advantages of one over the other 
+    # clone_type can be "full" or "linked". Advantages of one over the other
     # are described here: https://www.vmware.com/support/ws5/doc/ws_clone_typeofclone.html
     # cloning_strategy = "linked"
 }
@@ -25,9 +22,9 @@ resource "vix_vm" "core01" {
     name = "core01"
     description = "Terraform VMWARE VIX test"
 
-    # Images are required to be packaged using tar and gzip (`*.tar.gz`), 
-    # the provider will download, verify, decompress and untar the image. 
-    # Ideally you will provide images that have VMware Tools installed already, 
+    # Images are required to be packaged using tar and gzip (`*.tar.gz`),
+    # the provider will download, verify, decompress and untar the image.
+    # Ideally you will provide images that have VMware Tools installed already,
     # otherwise the provider will be considerably limited for what it can do.
     image {
         url = "https://github.com/c4milo/dobby-boxes/releases/download/stable/coreos-stable-vmware.box"
@@ -35,12 +32,12 @@ resource "vix_vm" "core01" {
         checksum_type = "sha256"
 
         # If image is encrypted we need to provide a password
-        password = "${var.password}"
+        # password = "${var.password}"
     }
 
     cpus = 1
 
-    # Memory sizes must be provided using IEC sizes such as: kib, ki, mib, mi, 
+    # Memory sizes must be provided using IEC sizes such as: kib, ki, mib, mi,
     # gib or gi.
     memory = "1.0gib"
     upgrade_vhardware = false

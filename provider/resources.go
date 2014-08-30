@@ -19,15 +19,6 @@ func init() {
 
 	resourceMap = &resource.Map{
 		Mapping: map[string]resource.Resource{
-			"vix_vm": resource.Resource{
-				ConfigValidator: resource_vix_vm_validation(),
-				Create:          resource_vix_vm_create,
-				Destroy:         resource_vix_vm_destroy,
-				Diff:            resource_vix_vm_diff,
-				Refresh:         resource_vix_vm_refresh,
-				Update:          resource_vix_vm_update,
-			},
-
 			"vix_vswitch": resource.Resource{
 				ConfigValidator: resource_vix_vswitch_validation(),
 				Create:          resource_vix_vswitch_create,
