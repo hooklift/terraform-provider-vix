@@ -24,7 +24,7 @@ func resourceVixVm() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
-				Optional: false,
+				Required: true,
 				ForceNew: true,
 			},
 
@@ -97,7 +97,7 @@ func resourceVixVm() *schema.Resource {
 
 			"network_adapter": &schema.Schema{
 				Type:     schema.TypeList,
-				Required: false,
+				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"type": &schema.Schema{
@@ -126,7 +126,7 @@ func resourceVixVm() *schema.Resource {
 
 			"shared_folder": &schema.Schema{
 				Type:     schema.TypeList,
-				Required: false,
+				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": &schema.Schema{
@@ -196,7 +196,7 @@ func net_tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
 
 	for i := 0; i < adaptersCount; i++ {
 		prefix := fmt.Sprintf("network_adapter.%d", i)
-		adapter := adapters[i]
+		adapter := new(govix.NetworkAdapter)
 
 		if attr, ok := d.Get(prefix + "driver").(string); ok && attr != "" {
 			adapter.Vdevice, err = tf_to_vix_virtual_device(attr)
@@ -221,6 +221,7 @@ func net_tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
 		if err != nil {
 			errs = append(errs, err)
 		}
+		adapters = append(adapters, adapter)
 	}
 
 	if len(errs) > 0 {
@@ -236,7 +237,7 @@ func tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
 
 	vm.Name = d.Get("name").(string)
 	vm.Description = d.Get("description").(string)
-	vm.CPUs = d.Get("cpus").(uint)
+	vm.CPUs = uint(d.Get("cpus").(int))
 
 	vm.Memory = d.Get("memory").(string)
 	vm.UpgradeVHardware = d.Get("upgrade_vhardware").(bool)
@@ -252,7 +253,7 @@ func tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
 		return err
 	}
 
-	if v := d.Get("image").(*schema.Set); v.Len() > 0 {
+	if i := d.Get("image.#").(int); i > 0 {
 		prefix := "image.0."
 		vm.Image = vix.Image{
 			URL:          d.Get(prefix + "url").(string),
@@ -381,7 +382,9 @@ func resourceVixVmDelete(d *schema.ResourceData, meta interface{}) error {
 	vm.Provider = config.Product
 	vm.VerifySSL = config.VerifySSL
 
-	vm.Image.Password = d.Get("password").(string)
+	if password := d.Get("password"); password != nil {
+		vm.Image.Password = d.Get("password").(string)
+	}
 
 	return vm.Destroy(vmxFile)
 }

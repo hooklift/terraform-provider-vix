@@ -11,13 +11,14 @@ func Provider() *schema.Provider {
 		Schema: map[string]*schema.Schema{
 			"product": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: false,
+				Optional: true,
 			},
 			"verify_ssl": &schema.Schema{
 				Type:     schema.TypeBool,
-				Required: false,
+				Optional: true,
 			},
 		},
+
 		ResourcesMap: map[string]*schema.Resource{
 			"vix_vm": resourceVixVm(),
 			//"vix_vswitch": resourceVixVSwitch(),

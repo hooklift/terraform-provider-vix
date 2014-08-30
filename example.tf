@@ -38,7 +38,7 @@ resource "vix_vm" "core01" {
         // password = "${var.password}"
     }
 
-    cpus = 1
+    cpus = 2
 
     // Memory sizes must be provided using IEC sizes such as: kib, ki, mib, mi,
     // gib or gi.
