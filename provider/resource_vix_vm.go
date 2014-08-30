@@ -70,7 +70,7 @@ func resourceVixVm() *schema.Resource {
 			},
 
 			"image": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Required: true,
 				ForceNew: true,
 				Elem: &schema.Resource{
@@ -93,11 +93,10 @@ func resourceVixVm() *schema.Resource {
 						},
 					},
 				},
-				Set: resourceVixVmImageHash,
 			},
 
 			"network_adapter": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Required: false,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -123,11 +122,10 @@ func resourceVixVm() *schema.Resource {
 						},
 					},
 				},
-				Set: resourceVixVmNetAdapterHash,
 			},
 
 			"shared_folder": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Required: false,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -153,22 +151,9 @@ func resourceVixVm() *schema.Resource {
 						},
 					},
 				},
-				Set: resourceVixVmSharedFolderHash,
 			},
 		},
 	}
-}
-
-func resourceVixVmImageHash(v interface{}) int {
-	return 0
-}
-
-func resourceVixVmNetAdapterHash(v interface{}) int {
-	return 0
-}
-
-func resourceVixVmSharedFolderHash(v interface{}) int {
-	return 0
 }
 
 func net_tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
