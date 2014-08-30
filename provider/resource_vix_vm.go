@@ -192,10 +192,10 @@ func net_tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
 	var err error
 	var errs []error
 	adaptersCount := d.Get("network_adapter.#").(int)
-	adapters := make([]*govix.NetworkAdapter, 0, adaptersCount)
+	vm.VNetworkAdapters = make([]*govix.NetworkAdapter, 0, adaptersCount)
 
 	for i := 0; i < adaptersCount; i++ {
-		prefix := fmt.Sprintf("network_adapter.%d", i)
+		prefix := fmt.Sprintf("network_adapter.%d.", i)
 		adapter := new(govix.NetworkAdapter)
 
 		if attr, ok := d.Get(prefix + "driver").(string); ok && attr != "" {
@@ -221,7 +221,9 @@ func net_tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
 		if err != nil {
 			errs = append(errs, err)
 		}
-		adapters = append(adapters, adapter)
+
+		log.Printf("[DEBUG] Network adapter: %+v\n", adapter)
+		vm.VNetworkAdapters = append(vm.VNetworkAdapters, adapter)
 	}
 
 	if len(errs) > 0 {
