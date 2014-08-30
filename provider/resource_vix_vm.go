@@ -9,66 +9,165 @@ import (
 
 	govix "github.com/cloudescape/govix"
 	"github.com/cloudescape/terraform-provider-vix/provider/vix"
-	"github.com/hashicorp/terraform/flatmap"
-	"github.com/hashicorp/terraform/helper/config"
-	"github.com/hashicorp/terraform/helper/diff"
+
 	"github.com/hashicorp/terraform/helper/multierror"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func resource_vix_vm_validation() *config.Validator {
-	return &config.Validator{
-		Required: []string{
-			"name",
-			"image.*",
-			"image.*.url",
-			"image.*.checksum",
-			"image.*.checksum_type",
-			"network_adapter.*.type",
-			"shared_folder.*.name",
-		},
-		Optional: []string{
-			"description",
-			"image.*.password",
-			"cpus",
-			"memory",
-			"upgrade_vhardware",
-			"tools_init_timeout",
-			"sharedfolders",
-			"sharedfolder.*",
-			"network_adapter.*.mac_address",
-			"network_adapter.*.mac_address_type",
-			"network_adapter.*.vswitch",
-			"network_adapter.*.driver",
-			"shared_folder.*.enable",
-			"shared_folder.*.guest_path",
-			"shared_folder.*.host_path",
-			"shared_folder.*.readonly",
-			"gui",
+func resourceVixVm() *schema.Resource {
+	return &schema.Resource{
+		Create: resourceVixVmCreate,
+		Read:   resourceVixVmRead,
+		Update: resourceVixVmUpdate,
+		Delete: resourceVixVmDelete,
+
+		Schema: map[string]*schema.Schema{
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+
+			"cpus": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+
+			"memory": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+
+			"upgrade_vhardware": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
+			"tools_init_timeout": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+
+			"sharedfolders": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
+			"gui": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
+			"ip_address": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			"image": &schema.Schema{
+				Type:     schema.TypeList,
+				Required: true,
+				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"url": &schema.Schema{
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"checksum": &schema.Schema{
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"checksum_type": &schema.Schema{
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"password": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
+			},
+
+			"network_adapter": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"type": &schema.Schema{
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"mac_address": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"mac_address_type": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"vswitch": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"driver": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
+			},
+
+			"shared_folder": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": &schema.Schema{
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"enable": &schema.Schema{
+							Type:     schema.TypeBool,
+							Optional: true,
+						},
+						"guest_path": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"host_path": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"readonly": &schema.Schema{
+							Type:     schema.TypeBool,
+							Optional: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
 
-// Maps provider attributes to Terraform's resource state
-func vix_to_tf(vm vix.VM, rs *terraform.ResourceState) error {
-	rs.Attributes["name"] = vm.Name
-	rs.Attributes["description"] = vm.Description
-	rs.Attributes["cpus"] = string(vm.CPUs)
-	rs.Attributes["memory"] = vm.Memory
-	rs.Attributes["tools_init_timeout"] = vm.ToolsInitTimeout.String()
-	rs.Attributes["upgrade_vhardware"] = strconv.FormatBool(vm.UpgradeVHardware)
-	rs.Attributes["gui"] = strconv.FormatBool(vm.LaunchGUI)
-	rs.Attributes["sharedfolders"] = strconv.FormatBool(vm.SharedFolders)
-
-	return nil
-}
-
-func net_tf_to_vix(rs *terraform.ResourceState, vm *vix.VM) error {
-	var err error
-	var errs []error
-
-	if _, ok := rs.Attributes["network_adapter.#"]; !ok {
-		return nil
+func net_tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
+	tf_to_vix_virtual_device := func(attr string) (govix.VNetDevice, error) {
+		switch attr {
+		case "vlance":
+			return govix.NETWORK_DEVICE_VLANCE, nil
+		case "e1000":
+			return govix.NETWORK_DEVICE_E1000, nil
+		case "vmxnet3":
+			return govix.NETWORK_DEVICE_VMXNET3, nil
+		default:
+			return "", fmt.Errorf("[ERROR] Invalid virtual network device: %s", attr)
+		}
 	}
 
 	tf_to_vix_network_type := func(attr string) (govix.NetworkType, error) {
@@ -86,57 +185,45 @@ func net_tf_to_vix(rs *terraform.ResourceState, vm *vix.VM) error {
 		}
 	}
 
-	tf_to_vix_virtual_device := func(attr string) (govix.VNetDevice, error) {
-		switch attr {
-		case "vlance":
-			return govix.NETWORK_DEVICE_VLANCE, nil
-		case "e1000":
-			return govix.NETWORK_DEVICE_E1000, nil
-		case "vmxnet3":
-			return govix.NETWORK_DEVICE_VMXNET3, nil
-		default:
-			return "", fmt.Errorf("[ERROR] Invalid virtual network device: %s", attr)
-		}
-	}
-
 	// tf_to_vix_vswitch := func(attr string) (vix.VSwitch, error) {
 	// 	return vix.VSwitch{}, nil
 	// }
 
-	adapters := flatmap.Expand(
-		rs.Attributes, "network_adapter").([]interface{})
+	var err error
+	var errs []error
+	adaptersCount := d.Get("network_adapter.#").(int)
+	vm.VNetworkAdapters = make([]*govix.NetworkAdapter, 0, adaptersCount)
 
-	for _, adapter := range adapters {
-		adapter := adapter.(map[string]interface{})
-		vnic := new(govix.NetworkAdapter)
+	for i := 0; i < adaptersCount; i++ {
+		prefix := fmt.Sprintf("network_adapter.%d.", i)
+		adapter := new(govix.NetworkAdapter)
 
-		if attr, ok := adapter["driver"].(string); ok && attr != "" {
-			vnic.Vdevice, err = tf_to_vix_virtual_device(attr)
+		if attr, ok := d.Get(prefix + "driver").(string); ok && attr != "" {
+			adapter.Vdevice, err = tf_to_vix_virtual_device(attr)
 		}
 
-		if attr, ok := adapter["mac_address"].(string); ok && attr != "" {
+		if attr, ok := d.Get(prefix + "mac_address").(string); ok && attr != "" {
 			// Only set a MAC address if it is declared as static
 			// otherwise leave Govix to assign or continue using the generated
 			// one.
-			if addrtype, ok := adapter["mac_address_type"].(string); ok && addrtype == "static" {
-				vnic.MacAddress, err = net.ParseMAC(attr)
+			if addrtype, ok := d.Get(prefix + "mac_address_type").(string); ok && addrtype == "static" {
+				adapter.MacAddress, err = net.ParseMAC(attr)
 			}
 		}
 
-		if attr, ok := adapter["type"].(string); ok && attr != "" {
-			vnic.ConnType, err = tf_to_vix_network_type(attr)
+		if attr, ok := d.Get(prefix + "type").(string); ok && attr != "" {
+			adapter.ConnType, err = tf_to_vix_network_type(attr)
 		}
 
 		// if attr, ok := adapter["vswitch"].(string); ok && attr != "" {
 		// 	vnic.VSwitch, err = tf_to_vix_vswitch(attr)
 		// }
-
-		//log.Printf("[DEBUG] VNIC ==> %#v\n", vnic)
-		vm.VNetworkAdapters = append(vm.VNetworkAdapters, vnic)
-
 		if err != nil {
 			errs = append(errs, err)
 		}
+
+		log.Printf("[DEBUG] Network adapter: %+v\n", adapter)
+		vm.VNetworkAdapters = append(vm.VNetworkAdapters, adapter)
 	}
 
 	if len(errs) > 0 {
@@ -146,7 +233,42 @@ func net_tf_to_vix(rs *terraform.ResourceState, vm *vix.VM) error {
 	return nil
 }
 
-func net_vix_to_tf(vm *vix.VM, rs *terraform.ResourceState) error {
+// Maps Terraform attributes to provider's structs
+func tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
+	var err error
+
+	vm.Name = d.Get("name").(string)
+	vm.Description = d.Get("description").(string)
+	vm.CPUs = uint(d.Get("cpus").(int))
+
+	vm.Memory = d.Get("memory").(string)
+	vm.UpgradeVHardware = d.Get("upgrade_vhardware").(bool)
+	vm.LaunchGUI = d.Get("gui").(bool)
+	vm.SharedFolders = d.Get("sharedfolders").(bool)
+
+	vm.ToolsInitTimeout, err = time.ParseDuration(d.Get("tools_init_timeout").(string))
+
+	// Maps any defined networks to VIX provider's data types
+	net_tf_to_vix(d, vm)
+
+	if err != nil {
+		return err
+	}
+
+	if i := d.Get("image.#").(int); i > 0 {
+		prefix := "image.0."
+		vm.Image = vix.Image{
+			URL:          d.Get(prefix + "url").(string),
+			Checksum:     d.Get(prefix + "checksum").(string),
+			ChecksumType: d.Get(prefix + "checksum_type").(string),
+			Password:     d.Get(prefix + "password").(string),
+		}
+	}
+
+	return nil
+}
+
+func net_vix_to_tf(vm *vix.VM, d *schema.ResourceData) error {
 
 	vix_to_tf_network_type := func(netType govix.NetworkType) string {
 		switch netType {
@@ -194,247 +316,114 @@ func net_vix_to_tf(vm *vix.VM, rs *terraform.ResourceState) error {
 
 	prefix := "network_adapter"
 
-	rs.Attributes[prefix+".#"] = strconv.Itoa(numvnics)
+	d.Set(prefix+".#", strconv.Itoa(numvnics))
 	for i, adapter := range vm.VNetworkAdapters {
 		attr := fmt.Sprintf("%s.%d.", prefix, i)
-		rs.Attributes[attr+"type"] = vix_to_tf_network_type(adapter.ConnType)
-		rs.Attributes[attr+"mac_address"] = vix_to_tf_macaddress(adapter)
+		d.Set(attr+"type", vix_to_tf_network_type(adapter.ConnType))
+		d.Set(attr+"mac_address", vix_to_tf_macaddress(adapter))
 		if adapter.ConnType == govix.NETWORK_CUSTOM {
-			rs.Attributes[attr+"vswitch"] = "TODO(c4milo)"
+			d.Set(attr+"vswitch", "TODO(c4milo)")
 		}
-		rs.Attributes[attr+"driver"] = vix_to_tf_vdevice(adapter.Vdevice)
+		d.Set(attr+"driver", vix_to_tf_vdevice(adapter.Vdevice))
 	}
 
 	return nil
 }
 
-// Maps Terraform attributes to provider's structs
-func tf_to_vix(rs *terraform.ResourceState, vm *vix.VM) error {
-	var err error
+func resourceVixVmCreate(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(*Config)
 
-	vm.Name = rs.Attributes["name"]
-	vm.Description = rs.Attributes["description"]
+	vm := new(vix.VM)
+	vm.Provider = config.Product
+	vm.VerifySSL = config.VerifySSL
 
-	vcpus, err := strconv.ParseUint(rs.Attributes["cpus"], 0, 8)
-	vm.CPUs = uint(vcpus)
+	if err := tf_to_vix(d, vm); err != nil {
+		return err
+	}
 
-	vm.Memory = rs.Attributes["memory"]
-	vm.ToolsInitTimeout, err = time.ParseDuration(rs.Attributes["tools_init_timeout"])
-	vm.UpgradeVHardware, err = strconv.ParseBool(rs.Attributes["upgrade_vhardware"])
-	vm.LaunchGUI, err = strconv.ParseBool(rs.Attributes["gui"])
-	vm.SharedFolders, err = strconv.ParseBool(rs.Attributes["sharedfolders"])
-
-	// Maps any defined networks to VIX provider's data types
-	net_tf_to_vix(rs, vm)
-
+	id, err := vm.Create()
 	if err != nil {
 		return err
 	}
 
-	// This is nasty but there doesn't seem to be a cleaner way to extract stuff
-	// from the TF configuration
-	imgconf := flatmap.Expand(rs.Attributes, "image").([]interface{})[0].(map[string]interface{})
-
-	image := vix.Image{
-		URL:          imgconf["url"].(string),
-		Checksum:     imgconf["checksum"].(string),
-		ChecksumType: imgconf["checksum_type"].(string),
-		Password:     imgconf["password"].(string),
-	}
-	vm.Image = image
-
-	return nil
-}
-
-func resource_vix_vm_create(
-	s *terraform.ResourceState,
-	d *terraform.ResourceDiff,
-	meta interface{}) (*terraform.ResourceState, error) {
-	p := meta.(*ResourceProvider)
-
-	// Merge the diff into the state so that we have all the attributes
-	// properly.
-	rs := s.MergeDiff(d)
-
-	vm := new(vix.VM)
-	vm.Provider = p.Config.Product
-	vm.VerifySSL = p.Config.VerifySSL
-
-	// Maps terraform.ResourceState attrbutes to vix.VM
-	tf_to_vix(rs, vm)
-
-	id, err := vm.Create()
-	if err != nil {
-		return nil, err
-	}
-
 	log.Printf("[DEBUG] Resource ID: %s\n", id)
-	rs.ID = id
+	d.SetId(id)
 
-	return resource_vix_vm_refresh(rs, meta)
+	// Initialize the connection info
+	d.SetConnInfo(map[string]string{
+		"type": "ssh",
+		"host": vm.IPAddress,
+	})
+
+	return resourceVixVmRead(d, meta)
 }
 
-func resource_vix_vm_update(
-	s *terraform.ResourceState,
-	d *terraform.ResourceDiff,
-	meta interface{}) (*terraform.ResourceState, error) {
-	p := meta.(*ResourceProvider)
-	rs := s.MergeDiff(d)
+func resourceVixVmUpdate(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(*Config)
 
 	vm := new(vix.VM)
-	vm.Provider = p.Config.Product
-	vm.VerifySSL = p.Config.VerifySSL
+	vm.Provider = config.Product
+	vm.VerifySSL = config.VerifySSL
 
 	// Maps terraform.ResourceState attrbutes to vix.VM
-	tf_to_vix(rs, vm)
+	tf_to_vix(d, vm)
 
-	err := vm.Update(rs.ID)
+	err := vm.Update(d.Id())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return resource_vix_vm_refresh(rs, meta)
+	return resourceVixVmRead(d, meta)
 }
 
-func resource_vix_vm_destroy(
-	s *terraform.ResourceState,
-	meta interface{}) error {
-	p := meta.(*ResourceProvider)
-	vmxFile := s.ID
+func resourceVixVmDelete(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(*Config)
+	vmxFile := d.Id()
 
 	vm := new(vix.VM)
-	vm.Provider = p.Config.Product
-	vm.VerifySSL = p.Config.VerifySSL
+	vm.Provider = config.Product
+	vm.VerifySSL = config.VerifySSL
 
-	vm.Image.Password = s.Attributes["password"]
+	if password := d.Get("password"); password != nil {
+		vm.Image.Password = d.Get("password").(string)
+	}
 
 	return vm.Destroy(vmxFile)
 }
 
-func resource_vix_vm_diff(
-	s *terraform.ResourceState,
-	c *terraform.ResourceConfig,
-	meta interface{}) (*terraform.ResourceDiff, error) {
+func resourceVixVmRead(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(*Config)
 
-	b := &diff.ResourceBuilder{
-		// We have to choose whether a change in an attribute triggers a new
-		// resource creation or updates the existing resource.
-		Attrs: map[string]diff.AttrType{
-			"name":               diff.AttrTypeCreate,
-			"description":        diff.AttrTypeUpdate,
-			"tools_init_timeout": diff.AttrTypeUpdate,
-			"image":              diff.AttrTypeCreate,
-			"cpus":               diff.AttrTypeUpdate,
-			"memory":             diff.AttrTypeUpdate,
-			"networks":           diff.AttrTypeUpdate,
-			"upgrade_vhardware":  diff.AttrTypeUpdate,
-			"sharedfolders":      diff.AttrTypeUpdate,
-			"gui":                diff.AttrTypeUpdate,
-			"network_adapter":    diff.AttrTypeUpdate,
-			"shared_folder":      diff.AttrTypeUpdate,
-		},
-
-		ComputedAttrs: []string{
-			"ip_address",
-		},
-	}
+	vmxFile := d.Id()
 
 	vm := new(vix.VM)
-	vm.SetDefaults()
-
-	// Sets defaults in TF raw configuration for minimal configurations so that
-	// they show up when running terraform plan.
-	if !c.IsSet("description") {
-		c.Raw["description"] = vm.Description
-	}
-
-	if !c.IsSet("cpus") {
-		c.Raw["cpus"] = strconv.Itoa(int(vm.CPUs))
-	}
-
-	if !c.IsSet("memory") {
-		c.Raw["memory"] = vm.Memory
-	}
-
-	if !c.IsSet("tools_init_timeout") {
-		c.Raw["tools_init_timeout"] = vm.ToolsInitTimeout.String()
-	}
-
-	if !c.IsSet("upgrade_vhardware") {
-		c.Raw["upgrade_vhardware"] = strconv.FormatBool(vm.UpgradeVHardware)
-	}
-
-	if !c.IsSet("sharedfolders") {
-		c.Raw["sharedfolders"] = strconv.FormatBool(vm.SharedFolders)
-	}
-
-	if !c.IsSet("gui") {
-		c.Raw["gui"] = strconv.FormatBool(vm.LaunchGUI)
-	}
-
-	if !c.IsSet("image.0.password") {
-		c.Raw["image.0.password"] = ""
-	}
-
-	// Sets defaults for network adapters so the plan can
-	// show what it is really going to be created upon applying
-	if adapters, ok := c.Get("network_adapter"); ok {
-		adapters := adapters.([]map[string]interface{})
-
-		for i, _ := range adapters {
-			attr := "network_adapter." + strconv.Itoa(i) + "."
-			if !c.IsSet(attr + "type") {
-				c.Raw[attr+"type"] = "nat"
-			}
-
-			if !c.IsSet(attr + "driver") {
-				c.Raw[attr+"driver"] = "e1000"
-			}
-
-			if !c.IsSet(attr + "mac_address") {
-				b.ComputedAttrs = append(b.ComputedAttrs, attr+"mac_address")
-			}
-		}
-	}
-
-	return b.Diff(s, c)
-}
-
-func resource_vix_vm_refresh(
-	s *terraform.ResourceState,
-	meta interface{}) (*terraform.ResourceState, error) {
-	p := meta.(*ResourceProvider)
-
-	vmxFile := s.ID
-
-	vm := new(vix.VM)
-	vm.Provider = p.Config.Product
-	vm.VerifySSL = p.Config.VerifySSL
+	vm.Provider = config.Product
+	vm.VerifySSL = config.VerifySSL
 
 	running, err := vm.Refresh(vmxFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// This is to let TF know the resource is gone
 	if !running {
-		return nil, nil
+		return nil
 	}
 
 	// Refreshes only what makes sense, for example, we do not refresh settings
 	// that modify the behavior of this provider
-	s.Attributes["name"] = vm.Name
-	s.Attributes["description"] = vm.Description
-	s.Attributes["cpus"] = strconv.Itoa(int(vm.CPUs))
-	s.Attributes["memory"] = vm.Memory
-	s.Attributes["ip_address"] = vm.IPAddress
+	d.Set("name", vm.Name)
+	d.Set("description", vm.Description)
+	d.Set("cpus", vm.CPUs)
+	d.Set("memory", vm.Memory)
+	d.Set("ip_address", vm.IPAddress)
 
-	err = net_vix_to_tf(vm, s)
+	err = net_vix_to_tf(vm, d)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	//vix_to_tf(*vm, s)
 
-	return s, nil
+	return nil
 }
