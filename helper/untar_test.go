@@ -1,4 +1,4 @@
-package helper_test
+package helper
 
 import (
 	"archive/tar"
@@ -6,8 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
-
-	"github.com/cloudescape/terraform-provider-vix/helper"
 )
 
 func TestUntar(t *testing.T) {
@@ -47,6 +45,6 @@ func TestUntar(t *testing.T) {
 	ok(t, err)
 	defer os.RemoveAll(destDir)
 
-	_, err = helper.Untar(r, destDir)
+	_, err = Untar(r, destDir)
 	ok(t, err)
 }
