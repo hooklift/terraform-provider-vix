@@ -194,11 +194,10 @@ func (img *Image) Unpack(destPath string) (string, error) {
 
 	os.MkdirAll(destPath, 0740)
 
-	//unzip
-	log.Printf("[DEBUG] Unzipping file stream ...")
+	// unzip
+	log.Printf("[DEBUG] Unzipping file stream...")
 
 	// Makes sure the file cursor is at the beginning of the file
-
 	_, err := img.file.Seek(0, 0)
 	if err != nil {
 		return "", err
@@ -210,6 +209,6 @@ func (img *Image) Unpack(destPath string) (string, error) {
 	}
 	defer unzippedFile.Close()
 
-	//untar
+	// untar
 	return helper.Untar(unzippedFile, destPath)
 }
