@@ -1,77 +1,86 @@
 {
-	"ImportPath": "github.com/c4milo/terraform-provider-vix",
+	"ImportPath": "github.com/cloudescape/terraform-provider-vix",
 	"GoVersion": "go1.3.1",
 	"Deps": [
 		{
-			"ImportPath": "github.com/c4milo/govix",
-			"Rev": "f8365100f1fd40a882504f02c6a188acea2a97db"
+			"ImportPath": "github.com/c4milo/unzipit",
+			"Rev": "37db0f2aac97fd45c439503e2123da276fe859e6"
+		},
+		{
+			"ImportPath": "github.com/cloudescape/govix",
+			"Rev": "d5f0b9ea567d913f7778810215354e0d9f6b9044"
 		},
 		{
 			"ImportPath": "github.com/dustin/go-humanize",
-			"Rev": "3cd90eb3d932037b141d4daff9a012e1aee7e765"
+			"Rev": "cb7b800be3f0238405be0e57d481740cfc4fb285"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl",
+			"Rev": "26239b8eab901433e15c3c6d27e1f8065b0fbe83"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/config",
-			"Comment": "v0.1.1-31-gfd361c1",
-			"Rev": "fd361c1eb604ce4b997243a252fe987942507b27"
+			"Comment": "v0.2.1-11-gfc93ea4",
+			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/depgraph",
-			"Comment": "v0.1.1-31-gfd361c1",
-			"Rev": "fd361c1eb604ce4b997243a252fe987942507b27"
+			"Comment": "v0.2.1-11-gfc93ea4",
+			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/digraph",
-			"Comment": "v0.1.1-31-gfd361c1",
-			"Rev": "fd361c1eb604ce4b997243a252fe987942507b27"
+			"Comment": "v0.2.1-11-gfc93ea4",
+			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/flatmap",
-			"Comment": "v0.1.1-31-gfd361c1",
-			"Rev": "fd361c1eb604ce4b997243a252fe987942507b27"
+			"Comment": "v0.2.1-11-gfc93ea4",
+			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/helper/config",
-			"Comment": "v0.1.1-31-gfd361c1",
-			"Rev": "fd361c1eb604ce4b997243a252fe987942507b27"
+			"Comment": "v0.2.1-11-gfc93ea4",
+			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/helper/diff",
-			"Comment": "v0.1.1-31-gfd361c1",
-			"Rev": "fd361c1eb604ce4b997243a252fe987942507b27"
+			"Comment": "v0.2.1-11-gfc93ea4",
+			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/helper/multierror",
-			"Comment": "v0.1.1-31-gfd361c1",
-			"Rev": "fd361c1eb604ce4b997243a252fe987942507b27"
+			"Comment": "v0.2.1-11-gfc93ea4",
+			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/helper/resource",
-			"Comment": "v0.1.1-31-gfd361c1",
-			"Rev": "fd361c1eb604ce4b997243a252fe987942507b27"
+			"Comment": "v0.2.1-11-gfc93ea4",
+			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/terraform/helper/schema",
+			"Comment": "v0.2.1-11-gfc93ea4",
+			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/plugin",
-			"Comment": "v0.1.1-31-gfd361c1",
-			"Rev": "fd361c1eb604ce4b997243a252fe987942507b27"
+			"Comment": "v0.2.1-11-gfc93ea4",
+			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/rpc",
-			"Comment": "v0.1.1-31-gfd361c1",
-			"Rev": "fd361c1eb604ce4b997243a252fe987942507b27"
+			"Comment": "v0.2.1-11-gfc93ea4",
+			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/terraform",
-			"Comment": "v0.1.1-31-gfd361c1",
-			"Rev": "fd361c1eb604ce4b997243a252fe987942507b27"
+			"Comment": "v0.2.1-11-gfc93ea4",
+			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/copystructure",
 			"Rev": "d8968bce41ab42f33aeb143afa95e331cb1ba886"
-		},
-		{
-			"ImportPath": "github.com/mitchellh/go-libucl",
-			"Rev": "8da0f346ecb82446ebceafd6e8e9d9be4d549745"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/mapstructure",
