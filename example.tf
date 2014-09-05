@@ -24,8 +24,7 @@ resource "vix_vm" "core01" {
     description = "Terraform VMWARE VIX test"
 
     /*
-    * Images are required to be packaged using tar and gzip (`*.tar.gz`),
-    * the provider will download, verify, decompress and untar the image.
+    * The provider will download, verify, decompress and untar the image.
     * Ideally you will provide images that have VMware Tools installed already,
     * otherwise the provider will be considerably limited for what it can do.
     */
