@@ -4,3 +4,12 @@ go:
   - 1.2
   - 1.3
   - tip
+
+before_install:
+  - go get github.com/kr/godep
+  - export PATH=$HOME/gopath/bin:$PATH
+  - godep go get -v
+
+matrix:
+  allow_failures:
+    - go: tip
