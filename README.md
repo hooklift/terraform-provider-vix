@@ -63,7 +63,8 @@ resource "vix_vm" "core01" {
     name = "core01"
     description = "Terraform VMWARE VIX test"
 
-	# The provider will download, verify, decompress and untar the image. Ideally you will provide images that have VMware Tools installed already,
+	# The provider will download, verify, decompress and untar the image. 
+	# Ideally you will provide images that have VMware Tools installed already,
 	# otherwise the provider will be considerably limited for what it can do.
     image {
         url = "https://github.com/c4milo/dobby-boxes/releases/download/stable/coreos-stable-vmware.box"
