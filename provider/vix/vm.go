@@ -132,7 +132,8 @@ func (v *VM) Create() (string, error) {
 	goldPathEmpty := len(finfo) == 0
 
 	if !goldPathExist || goldPathEmpty {
-		log.Printf("[DEBUG] Gold virtual machine does not exist or is empty: %s", goldPath)
+		log.Println("[DEBUG] Gold virtual machine does not exist or is empty")
+		log.Printf("[DEBUG] Unpacking Gold virtual machine into %s\n", goldPath)
 		_, err = unzipit.Unpack(image.file, goldPath)
 		if err != nil {
 			return "", err
