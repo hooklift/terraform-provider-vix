@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/c4milo/unzipit"
 	govix "github.com/cloudescape/govix"
 	"github.com/dustin/go-humanize"
 )
@@ -132,9 +133,7 @@ func (v *VM) Create() (string, error) {
 
 	if !goldPathExist || goldPathEmpty {
 		log.Printf("[DEBUG] Gold virtual machine does not exist or is empty: %s", goldPath)
-		// TODO(c4milo): Make sure the file is a tgz file before attempting
-		// to unpack it.
-		_, err = image.Unpack(goldPath)
+		_, err = unzipit.Unpack(image.file, goldPath)
 		if err != nil {
 			return "", err
 		}
