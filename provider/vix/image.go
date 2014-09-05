@@ -1,7 +1,6 @@
 package vix
 
 import (
-	"compress/gzip"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -17,7 +16,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/cloudescape/terraform-provider-vix/helper"
 	"github.com/dustin/go-humanize"
 )
 
@@ -36,7 +34,7 @@ type Image struct {
 	file *os.File
 }
 
-// Downloads and unpacks a virtual machine
+// Downloads and a virtual machine image
 func (img *Image) Download(destPath string) error {
 	if img.URL == "" {
 		panic("URL is required")
@@ -108,7 +106,7 @@ func (img *Image) Download(destPath string) error {
 	return nil
 }
 
-// Gets an image through HTTP
+// Gets a VM image through HTTP
 func (img *Image) fetch(URL string) (io.ReadCloser, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -135,18 +133,18 @@ func (img *Image) fetch(URL string) (io.ReadCloser, error) {
 func (img *Image) write(reader io.Reader, filePath string) (*os.File, error) {
 	log.Printf("[DEBUG] Downloading file data to %s", filePath)
 
-	gzfile, err := os.Create(filePath)
+	compressedFile, err := os.Create(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	written, err := io.Copy(gzfile, reader)
+	written, err := io.Copy(compressedFile, reader)
 	if err != nil {
 		return nil, err
 	}
 	log.Printf("[DEBUG] %s written to %s", humanize.Bytes(uint64(written)), filePath)
 
-	return gzfile, nil
+	return compressedFile, nil
 }
 
 // Verifies the image package integrity after it is downloaded
@@ -184,31 +182,4 @@ func (img *Image) verify() error {
 	}
 
 	return nil
-}
-
-// Decompresses and untars image package into destination folder
-func (img *Image) Unpack(destPath string) (string, error) {
-	if img.file == nil {
-		panic("You must download an image first")
-	}
-
-	os.MkdirAll(destPath, 0740)
-
-	// unzip
-	log.Printf("[DEBUG] Unzipping file stream...")
-
-	// Makes sure the file cursor is at the beginning of the file
-	_, err := img.file.Seek(0, 0)
-	if err != nil {
-		return "", err
-	}
-
-	unzippedFile, err := gzip.NewReader(img.file)
-	if err != nil && err != io.EOF {
-		return "", err
-	}
-	defer unzippedFile.Close()
-
-	// untar
-	return helper.Untar(unzippedFile, destPath)
 }
