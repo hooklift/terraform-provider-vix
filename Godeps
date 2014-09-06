@@ -4,11 +4,11 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/c4milo/unzipit",
-			"Rev": "37db0f2aac97fd45c439503e2123da276fe859e6"
+			"Rev": "481fca4c016e36fa09229b950309d7e114cd57b8"
 		},
 		{
 			"ImportPath": "github.com/cloudescape/govix",
-			"Rev": "d5f0b9ea567d913f7778810215354e0d9f6b9044"
+			"Rev": "8fb1b04d0073ab01a4f666bf6e4608b72bb32527"
 		},
 		{
 			"ImportPath": "github.com/dustin/go-humanize",
