@@ -1,4 +1,6 @@
 # VMware VIX provider for Terraform
+[![Build Status](https://travis-ci.org/cloudescape/terraform-provider-vix.svg?branch=master)](https://travis-ci.org/cloudescape/terraform-provider-vix)
+
 Allows you to define infrastructure for VMware Fusion, Workstation, Server and Player.
 
 ## Mailing list
