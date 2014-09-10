@@ -10,6 +10,7 @@ before_install:
   - mkdir -p $HOME/gopath/src/github.com/cloudescape/govix; git clone https://github.com/cloudescape/govix.git $HOME/gopath/src/github.com/cloudescape/govix
   - go get github.com/dustin/go-humanize
   - mkdir -p $HOME/gopath/src/github.com/hashicorp/terraform; git clone https://github.com/hashicorp/terraform.git $HOME/gopath/src/github.com/hashicorp/terraform
+  - cd $HOME/gopath/src/github.com/hashicorp/terraform; make dev
 
 install: make build
 
