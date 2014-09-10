@@ -5,12 +5,9 @@ go:
   - 1.3
   - tip
 
-env:
-  - LD_LIBRARY_PATH=$GOPATH/src/github.com/cloudescape/govix/vendor/libvix
-
 install:
   - go get github.com/c4milo/unzipit
-  - go get github.com/cloudescape/govix
+  - LD_LIBRARY_PATH=$GOPATH/src/github.com/cloudescape/govix/vendor/libvix go get github.com/cloudescape/govix
   - go get github.com/dustin/go-humanize
   - go get github.com/hashicorp/terraform
 
