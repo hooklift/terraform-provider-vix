@@ -11,6 +11,7 @@ before_install:
   - go get github.com/dustin/go-humanize
   - go get github.com/mitchellh/gox
   - mkdir -p $HOME/gopath/src/github.com/hashicorp/terraform; git clone https://github.com/hashicorp/terraform.git $HOME/gopath/src/github.com/hashicorp/terraform
+  - export PATH="$HOME/gopath/bin:$PATH"
   - cd $HOME/gopath/src/github.com/hashicorp/terraform; make dev
 
 install: make build
