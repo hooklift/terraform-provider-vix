@@ -7,7 +7,7 @@ go:
 
 install:
   - go get github.com/c4milo/unzipit
-  - LD_LIBRARY_PATH=$GOPATH/src/github.com/cloudescape/govix/vendor/libvix go get github.com/cloudescape/govix
+  - mkdir -p $GOPATH/src/github.com/cloudescape/govix; git clone https://github.com/cloudescape/govix.git $GOPATH/src/github.com/cloudescape/govix
   - go get github.com/dustin/go-humanize
   - go get github.com/hashicorp/terraform
 
