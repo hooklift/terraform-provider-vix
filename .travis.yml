@@ -7,9 +7,9 @@ go:
 
 before_install:
   - go get github.com/c4milo/unzipit
-  - mkdir -p $GOPATH/src/github.com/cloudescape/govix; git clone https://github.com/cloudescape/govix.git $GOPATH/src/github.com/cloudescape/govix
+  - mkdir -p $HOME/gopath/src/github.com/cloudescape/govix; git clone https://github.com/cloudescape/govix.git $HOME/gopath/src/github.com/cloudescape/govix
   - go get github.com/dustin/go-humanize
-  - mkdir -p $GOPATH/src/github.com/hashicorp/terraform; git clone https://github.com/hashicorp/terraform.git $GOPATH/src/github.com/hashicorp/terraform
+  - mkdir -p $HOME/gopath/src/github.com/hashicorp/terraform; git clone https://github.com/hashicorp/terraform.git $HOME/gopath/src/github.com/hashicorp/terraform
 
 install: make build
 
