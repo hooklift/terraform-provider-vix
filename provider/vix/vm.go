@@ -89,7 +89,7 @@ func (v *VM) client() (*govix.Host, error) {
 // Sets default values for VM attributes
 func (v *VM) SetDefaults() {
 	if v.CPUs <= 0 {
-		v.CPUs = 1
+		v.CPUs = 2
 	}
 
 	if v.Memory == "" {
@@ -162,16 +162,18 @@ func (v *VM) Create() (string, error) {
 	log.Printf("[INFO] Opening Gold virtual machine from %s", vmxFile)
 
 	vm, err := client.OpenVm(vmxFile, v.Image.Password)
+
 	if err != nil {
 		return "", err
 	}
 
-	newvmx := filepath.Join(usr.HomeDir, ".terraform/vix/vms",
+	newvmx := filepath.Join(usr.HomeDir, ".terraform", "vix", "vms",
 		image.Checksum, v.Name, v.Name+".vmx")
 
 	if _, err = os.Stat(newvmx); err != os.ErrExist {
 		log.Printf("[INFO] Cloning gold vm into %s...", newvmx)
 		_, err := vm.Clone(govix.CLONETYPE_FULL, newvmx)
+
 		// If there is an error and the error is other than "The snapshot already exists"
 		// then return the error
 		if err != nil && err.(*govix.VixError).Code != 13004 {
@@ -250,7 +252,7 @@ func (v *VM) Update(vmxFile string) error {
 	vm.SetMemorySize(uint(memoryInMb))
 
 	log.Printf("[DEBUG] Setting vcpus to %d", v.CPUs)
-	vm.SetNumberVcpus(uint8(v.CPUs))
+	vm.SetNumberVcpus(v.CPUs)
 
 	log.Printf("[DEBUG] Setting name to %s", v.Name)
 	vm.SetDisplayName(v.Name)
