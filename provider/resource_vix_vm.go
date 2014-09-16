@@ -39,21 +39,25 @@ func resourceVixVm() *schema.Resource {
 			"cpus": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
+				Default:  "2",
 			},
 
 			"memory": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
+				Default:  "512mib",
 			},
 
 			"upgrade_vhardware": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default:  false,
 			},
 
 			"tools_init_timeout": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
+				Default:  "15s",
 			},
 
 			"sharedfolders": &schema.Schema{
@@ -64,6 +68,7 @@ func resourceVixVm() *schema.Resource {
 			"gui": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default:  false,
 			},
 
 			"ip_address": &schema.Schema{
@@ -122,6 +127,7 @@ func resourceVixVm() *schema.Resource {
 						"driver": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
+							Default:  "e1000",
 						},
 					},
 				},
