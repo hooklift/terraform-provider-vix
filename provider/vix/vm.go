@@ -44,6 +44,8 @@ type VM struct {
 	SharedFolders bool
 	// Network adapters
 	VNetworkAdapters []*govix.NetworkAdapter
+	// CD/DVD drives
+	CDDVDDrives []*govix.CDDVDDrive
 	// VM IP address as reported by VIX
 	IPAddress string
 }
@@ -270,19 +272,13 @@ func (v *VM) Update(vmxFile string) error {
 		}
 	}
 
-	// log.Printf("[DEBUG] Loading all network adapters in memory...")
-	// curAdapters, err := vm.NetworkAdapters()
-	// if err != nil {
-	// 	return err
-	// }
-
 	log.Printf("[DEBUG] Removing all network adapters from vmx file...")
 	err = vm.RemoveAllNetworkAdapters()
 	if err != nil {
 		return err
 	}
 
-	log.Println("[DEBUG] Attaching virtual network adapters...")
+	log.Println("[INFO] Attaching virtual network adapters...")
 	for _, adapter := range v.VNetworkAdapters {
 		adapter.StartConnected = true
 		if adapter.ConnType == govix.NETWORK_BRIDGED {
@@ -291,6 +287,20 @@ func (v *VM) Update(vmxFile string) error {
 
 		log.Printf("[DEBUG] Adapter: %+v", adapter)
 		err := vm.AddNetworkAdapter(adapter)
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Printf("[DEBUG] Removing all CD/DVD drives from vmx file...")
+	err = vm.RemoveAllCDDVDDrives()
+	if err != nil {
+		return err
+	}
+
+	log.Println("[INFO] Attaching CD/DVD drives... ")
+	for _, cdrom := range v.CDDVDDrives {
+		err := vm.AttachCDDVD(cdrom)
 		if err != nil {
 			return err
 		}

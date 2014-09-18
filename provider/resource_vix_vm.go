@@ -103,6 +103,23 @@ func resourceVixVm() *schema.Resource {
 				},
 			},
 
+			"cdrom": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"bus_type": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"image": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
+			},
+
 			"network_adapter": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -242,6 +259,27 @@ func net_tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
 	return nil
 }
 
+func cdrom_tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
+	cdromCount := d.Get("cdrom.#").(int)
+	vm.CDDVDDrives = make([]*govix.CDDVDDrive, 0, cdromCount)
+
+	for i := 0; i < cdromCount; i++ {
+		prefix := fmt.Sprintf("cdrom.%d.", i)
+		cdrom := new(govix.CDDVDDrive)
+
+		if attr, ok := d.Get(prefix + "bus_type").(string); ok && attr != "" {
+			cdrom.Bus = govix.BusType(attr)
+		}
+
+		if attr, ok := d.Get(prefix + "image").(string); ok && attr != "" {
+			cdrom.Filename = attr
+		}
+		vm.CDDVDDrives = append(vm.CDDVDDrives, cdrom)
+	}
+
+	return nil
+}
+
 // Maps Terraform attributes to provider's structs
 func tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
 	var err error
@@ -258,10 +296,9 @@ func tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
 	vm.ToolsInitTimeout, err = time.ParseDuration(d.Get("tools_init_timeout").(string))
 
 	// Maps any defined networks to VIX provider's data types
-	net_tf_to_vix(d, vm)
-
+	err = net_tf_to_vix(d, vm)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error mapping TF network adapter resource to VIX data types: %s", err)
 	}
 
 	if i := d.Get("image.#").(int); i > 0 {
@@ -272,6 +309,29 @@ func tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
 			ChecksumType: d.Get(prefix + "checksum_type").(string),
 			Password:     d.Get(prefix + "password").(string),
 		}
+	}
+
+	err = cdrom_tf_to_vix(d, vm)
+	if err != nil {
+		return fmt.Errorf("Error mapping TF cdrom resource to VIX data types: %s", err)
+	}
+
+	return nil
+}
+
+func cdrom_vix_to_tf(vm *vix.VM, d *schema.ResourceData) error {
+	numdrives := len(vm.CDDVDDrives)
+	if numdrives <= 0 {
+		return nil
+	}
+
+	prefix := "cdrom"
+
+	d.Set(prefix+".#", strconv.Itoa(numdrives))
+	for i, drive := range vm.CDDVDDrives {
+		attr := fmt.Sprintf("%s.%d.", prefix, i)
+		d.Set(attr+"bust_type", string(drive.Bus))
+		d.Set(attr+"image", drive.Filename)
 	}
 
 	return nil
@@ -432,7 +492,10 @@ func resourceVixVmRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	//vix_to_tf(*vm, s)
+	err = cdrom_vix_to_tf(vm, d)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

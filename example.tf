@@ -30,7 +30,7 @@ resource "vix_vm" "core01" {
     */
     image {
         url = "https://github.com/c4milo/dobby-boxes/releases/download/stable/coreos-stable-vmware.box"
-        checksum = "545fec52ef3f35eee6e906fae8665abbad62d2007c7655ffa2ff4133ea3038b8"
+        checksum = "5b20ba225b5d4e1a3c01e071f8c9f607ed6c6e1d88e6ed5a66387aaf75b9ee2b"
         checksum_type = "sha256"
 
         // If image is encrypted we need to provide a password
@@ -43,7 +43,7 @@ resource "vix_vm" "core01" {
     // gib or gi.
     memory = "1.0gib"
     upgrade_vhardware = false
-    tools_init_timeout = "30s"
+    tools_init_timeout = "15s"
 
     // Be aware that GUI does not work if the virtual machine is encrypted
     gui = true
@@ -79,6 +79,14 @@ resource "vix_vm" "core01" {
     network_adapter {
         type = "hostonly"
     }
+
+    cdrom {
+        bus_type = "scsi"
+        image = "/Users/camilo/Dropbox/Development/cloudescape/hooklift-boxes/cfgdrv.iso"
+    }
+
+    // Adds an IDE device by default and autodetects the host's CDROM
+    cdrom {}
 
     shared_folder {
         name = "Dev1"
