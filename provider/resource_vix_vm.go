@@ -18,12 +18,12 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func resourceVixVm() *schema.Resource {
+func resourceVIXVM() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceVixVmCreate,
-		Read:   resourceVixVmRead,
-		Update: resourceVixVmUpdate,
-		Delete: resourceVixVmDelete,
+		Create: resourceVIXVMCreate,
+		Read:   resourceVIXVMRead,
+		Update: resourceVIXVMUpdate,
+		Delete: resourceVIXVMDelete,
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
@@ -400,7 +400,7 @@ func net_vix_to_tf(vm *vix.VM, d *schema.ResourceData) error {
 	return nil
 }
 
-func resourceVixVmCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceVIXVMCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
 	vm := new(vix.VM)
@@ -425,10 +425,10 @@ func resourceVixVmCreate(d *schema.ResourceData, meta interface{}) error {
 		"host": vm.IPAddress,
 	})
 
-	return resourceVixVmRead(d, meta)
+	return resourceVIXVMRead(d, meta)
 }
 
-func resourceVixVmUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceVIXVMUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
 	vm := new(vix.VM)
@@ -443,10 +443,10 @@ func resourceVixVmUpdate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return resourceVixVmRead(d, meta)
+	return resourceVIXVMRead(d, meta)
 }
 
-func resourceVixVmDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceVIXVMDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 	vmxFile := d.Id()
 
@@ -461,7 +461,7 @@ func resourceVixVmDelete(d *schema.ResourceData, meta interface{}) error {
 	return vm.Destroy(vmxFile)
 }
 
-func resourceVixVmRead(d *schema.ResourceData, meta interface{}) error {
+func resourceVIXVMRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
 	vmxFile := d.Id()

@@ -4,10 +4,23 @@
 package provider
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/hashicorp/terraform/helper/schema"
 )
+
+type Config struct {
+	Product   string
+	VerifySSL bool
+}
+
+func init() {
+	// Terraform is already adding the timestamp for us
+	log.SetFlags(log.Lshortfile)
+	log.SetPrefix(fmt.Sprintf("pid-%d-", os.Getpid()))
+}
 
 func Provider() *schema.Provider {
 	return &schema.Provider{
@@ -23,8 +36,8 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"vix_vm": resourceVixVm(),
-			//"vix_vswitch": resourceVixVSwitch(),
+			"vix_vm":      resourceVIXVM(),
+			"vix_vswitch": resourceVIXVSwitch(),
 		},
 
 		ConfigureFunc: providerConfigure,
