@@ -169,11 +169,17 @@ func (v *VM) Create() (string, error) {
 		return "", err
 	}
 
-	newvmx := filepath.Join(usr.HomeDir, ".terraform", "vix", "vms",
-		image.Checksum, v.Name, v.Name+".vmx")
+	baseVMDir := filepath.Join(usr.HomeDir, ".terraform", "vix", "vms",
+		image.Checksum, v.Name)
+
+	newvmx := filepath.Join(baseVMDir, v.Name+".vmx")
 
 	if _, err = os.Stat(newvmx); err != os.ErrExist {
-		log.Printf("[INFO] Cloning gold vm into %s...", newvmx)
+		// If there is not a VMX file, make sure nothing else is in there either.
+		// We were seeing VIX 13004 errors when only a nvram file existed.
+		os.RemoveAll(baseVMDir)
+
+		log.Printf("[INFO] Cloning Gold virtual machine into %s...", newvmx)
 		_, err := vm.Clone(govix.CLONETYPE_FULL, newvmx)
 
 		// If there is an error and the error is other than "The snapshot already exists"
@@ -181,15 +187,8 @@ func (v *VM) Create() (string, error) {
 		if err != nil && err.(*govix.VixError).Code != 13004 {
 			return "", err
 		}
-
-		// Makes sure the first time the VM is created it has no virtual network adapters
-		// log.Printf("[DEBUG] Removing all virtual network adapters from cloned VM...")
-		// err = clonedVM.RemoveAllNetworkAdapters()
-		// if err != nil {
-		// 	return "", err
-		// }
 	} else {
-		log.Printf("[INFO] VM Clone %s already exist, moving on.", newvmx)
+		log.Printf("[INFO] Virtual Machine clone %s already exist, moving on.", newvmx)
 	}
 
 	if err = v.Update(newvmx); err != nil {
