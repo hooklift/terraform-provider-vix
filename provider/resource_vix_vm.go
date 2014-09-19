@@ -11,6 +11,7 @@ import (
 	"time"
 
 	govix "github.com/cloudescape/govix"
+	"github.com/cloudescape/govmx"
 	"github.com/cloudescape/terraform-provider-vix/provider/vix"
 
 	"github.com/hashicorp/terraform/helper/multierror"
@@ -268,7 +269,7 @@ func cdrom_tf_to_vix(d *schema.ResourceData, vm *vix.VM) error {
 		cdrom := new(govix.CDDVDDrive)
 
 		if attr, ok := d.Get(prefix + "bus_type").(string); ok && attr != "" {
-			cdrom.Bus = govix.BusType(attr)
+			cdrom.Bus = vmx.BusType(attr)
 		}
 
 		if attr, ok := d.Get(prefix + "image").(string); ok && attr != "" {
