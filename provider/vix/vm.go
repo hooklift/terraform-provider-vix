@@ -142,7 +142,7 @@ func (v *VM) Create() (string, error) {
 		}
 	}
 
-	pattern := filepath.Join(goldPath, "/**/*.vmx")
+	pattern := filepath.Join(goldPath, "**.vmx")
 
 	log.Printf("[DEBUG] Finding Gold virtual machine vmx file in %s", pattern)
 	files, _ := filepath.Glob(pattern)
@@ -174,7 +174,8 @@ func (v *VM) Create() (string, error) {
 
 	newvmx := filepath.Join(baseVMDir, v.Name+".vmx")
 
-	if _, err = os.Stat(newvmx); err != os.ErrExist {
+	if _, err = os.Stat(newvmx); os.IsNotExist(err) {
+		log.Printf("[INFO] Virtual machine clone not found: %s, err: %+v", newvmx, err)
 		// If there is not a VMX file, make sure nothing else is in there either.
 		// We were seeing VIX 13004 errors when only a nvram file existed.
 		os.RemoveAll(baseVMDir)
