@@ -10,6 +10,9 @@ export CGO_CFLAGS CGO_LDFLAGS DYLD_LIBRARY_PATH LD_LIBRARY_PATH
 install:
 	godep go install -v
 
+rebuild:
+	godep go build -a
+
 build:
 	godep go build
 
