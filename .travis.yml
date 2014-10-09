@@ -6,6 +6,7 @@ go:
   - tip
 
 before_install:
+  - go get github.com/kr/godep
   - go get github.com/c4milo/unzipit
   - mkdir -p $HOME/gopath/src/github.com/cloudescape/govix; git clone https://github.com/cloudescape/govix.git $HOME/gopath/src/github.com/cloudescape/govix
   - go get github.com/cloudescape/govmx
