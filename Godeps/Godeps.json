@@ -1,6 +1,9 @@
 {
 	"ImportPath": "github.com/cloudescape/terraform-provider-vix",
-	"GoVersion": "go1.3.1",
+	"GoVersion": "go1.3.3",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/c4milo/unzipit",
@@ -9,6 +12,10 @@
 		{
 			"ImportPath": "github.com/cloudescape/govix",
 			"Rev": "8fb1b04d0073ab01a4f666bf6e4608b72bb32527"
+		},
+		{
+			"ImportPath": "github.com/cloudescape/govmx",
+			"Rev": "a098ac41959418467a4b2484e59f7eb3ad3f6817"
 		},
 		{
 			"ImportPath": "github.com/dustin/go-humanize",
@@ -39,22 +46,7 @@
 			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},
 		{
-			"ImportPath": "github.com/hashicorp/terraform/helper/config",
-			"Comment": "v0.2.1-11-gfc93ea4",
-			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
-		},
-		{
-			"ImportPath": "github.com/hashicorp/terraform/helper/diff",
-			"Comment": "v0.2.1-11-gfc93ea4",
-			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
-		},
-		{
 			"ImportPath": "github.com/hashicorp/terraform/helper/multierror",
-			"Comment": "v0.2.1-11-gfc93ea4",
-			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
-		},
-		{
-			"ImportPath": "github.com/hashicorp/terraform/helper/resource",
 			"Comment": "v0.2.1-11-gfc93ea4",
 			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
 		},

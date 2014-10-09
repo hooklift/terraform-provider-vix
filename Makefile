@@ -8,13 +8,13 @@ LD_LIBRARY_PATH:=$(CURDIR)/vendor/libvix
 export CGO_CFLAGS CGO_LDFLAGS DYLD_LIBRARY_PATH LD_LIBRARY_PATH
 
 install:
-	go install -v
+	godep go install -v
 
 build:
-	go build
+	godep go build
 
 test:
-	go test ./...
+	godep go test ./...
 
 clean:
 	go clean ./...
