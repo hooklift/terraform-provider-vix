@@ -1,0 +1,161 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_WaitForToolsInGuest</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_WaitForToolsInGuest(VixHandle vmHandle,
+                          int timeoutInSeconds,
+                          VixEventProc *callbackProc,
+                          void *clientData);
+</pre>
+<p>
+This function
+signals the job handle 
+when VMware Tools has successfully started
+in the guest operating system. VMware Tools is a collection of services
+that run in the guest.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>timeoutInSeconds</i></dt>
+<dd>
+The timeout in seconds. If VMware Tools has not started
+                      by this time, the operation completes with an error.
+                      If the value of this argument is zero or negative, then
+                      this operation will wait indefinitely until the
+                      VMware Tools start running in the guest operating
+                      system.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+<ul>
+<li> This function 
+signals the job
+when VMware Tools has successfully started
+in the guest operating system. VMware Tools is a collection of services
+that run in the guest.
+<li> VMware Tools must be installed and running for some Vix functions to operate
+correctly. If VMware Tools is not installed in the guest operating system,
+or if the virtual machine is not powered on, this function reports an error
+to the job object.
+<li> The VIX_PROPERTY_VM_TOOLS_STATE property of the virtual machine handle is
+undefined until 
+VixVM_WaitForToolsInGuest()
+reports that VMware Tools is running.
+<li> This function should be called after calling any function that resets
+or reboots the state of the guest operating system, but before calling any
+functions that require VMware Tools to be running.  Doing so assures 
+that VMware Tools are once again up and running. Functions that reset
+the guest operating system in this way include:
+<ul>
+<li> VixVM_PowerOn
+<li> VixVM_Reset
+<li> VixVM_RevertToSnapshot
+</ul>
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+VixError err = VIX_OK;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+Vix_ReleaseHandle(jobHandle);
+jobHandle = VixVM_Open(hostHandle,
+                       "c:\\Virtual Machines\\vm1\\win2000.vmx",
+                       NULL, // callbackProc
+                       NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Power on the virtual machine before copying file.
+jobHandle = VixVM_PowerOn(vmHandle,
+                          0, // powerOnOptions
+                          VIX_INVALID_HANDLE, // propertyListHandle
+                          NULL, // callbackProc
+                          NULL); // clientData
+
+err = VixJob_Wait(jobHandle,VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Wait until guest is completely booted.
+jobHandle = VixVM_WaitForToolsInGuest(vmHandle,
+                                      300, // timeoutInSeconds
+                                      NULL, // callbackProc
+                                      NULL); // clientData
+
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+abort:
+Vix_ReleaseHandle(jobHandle);
+Vix_ReleaseHandle(vmHandle);
+VixHost_Disconnect(hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

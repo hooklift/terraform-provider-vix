@@ -1,0 +1,110 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixJob_CheckCompletion</b>
+<h1>Description</h1>
+<pre>
+VixError
+VixJob_CheckCompletion(VixHandle jobHandle,
+                       Bool *complete);
+</pre>
+<p>
+This function performs a non-blocking test for completion of an asynchronous
+operation.
+<h1>Parameters</h1>
+<dl>
+<dt><i>jobHandle</i></dt>
+<dd>
+The handle of a job object, returned from any asynchronous
+               Vix function.
+</dd>
+<dt><i>complete</i></dt>
+<dd>
+(output) An indicator of whether the job has completed.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixError. This function returns VIX_OK if it succeeded.
+<h1>Remarks</h1>
+This function performs a non-blocking test for completion of an asynchronous
+operation. It can be used to poll for completion in situations where a
+blocking function or a callback function is not desirable.
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+<h1>Example</h1>
+<pre>
+VixError err = VIX_OK;
+VixError err1 = VIX_OK;
+VixError err2 = VIX_OK;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+Bool jobCompleted;
+
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password,
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+Vix_ReleaseHandle(jobHandle);
+
+jobHandle = VixVM_Open(hostHandle,
+                       "c:\\Virtual Machines\\vm1\\win2000.vmx",
+                       NULL, // callbackProc
+                       NULL); // clientData
+
+jobCompleted = FALSE;
+while (!jobCompleted) {
+   err = VixJob_CheckCompletion(jobHandle, &jobCompleted);
+   if (VIX_OK != err) {
+      break;
+   }
+   // ...Do some processing, sleep, or pump user events...
+}
+
+// Get job results. (Same results as VixJob_Wait)
+err = Vix_GetProperties(jobHandle,
+                        VIX_PROPERTY_JOB_RESULT_ERROR_CODE,
+                        &err1,
+                        VIX_PROPERTY_JOB_RESULT_HANDLE,
+                        &vmHandle,
+                        VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+// Double-check error results from different functions.
+err2 = VixJob_GetError(jobHandle);
+ASSERT(err1 == err2);
+
+abort:
+Vix_ReleaseHandle(jobHandle);
+Vix_ReleaseHandle(vmHandle);
+VixHost_Disconnect(hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

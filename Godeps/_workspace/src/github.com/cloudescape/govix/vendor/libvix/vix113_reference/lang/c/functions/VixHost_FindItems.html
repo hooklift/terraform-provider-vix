@@ -1,0 +1,161 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixHost_FindItems</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixHost_FindItems(VixHandle hostHandle,
+                  VixFindItemType searchType,
+                  VixHandle searchCriteria,
+                  int32 timeout,
+                  VixEventProc *callbackProc,
+                  void *clientData);
+</pre>
+<p>
+This
+function
+asynchronously finds Vix objects and calls the application's
+callback function
+to report each object found. For example, when used to
+find all running virtual machines,
+VixHost_FindItems()
+returns a series
+of virtual machine file path names.
+<h1>Parameters</h1>
+<dl>
+<dt><i>hostHandle</i></dt>
+<dd>
+The host handle returned by VixHost_Connect().
+</dd>
+<dt><i>searchType</i></dt>
+<dd>
+The type of items to find. Values are listed in the
+                Types Reference under VixFindItemType.
+</dd>
+<dt><i>searchCriteria</i></dt>
+<dd>
+Must be 
+                    VIX_INVALID_HANDLE.
+</dd>
+<dt><i>timeout</i></dt>
+<dd>
+Must be -1.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A function to be invoked when VixHost_FindItems() completes.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A user-supplied parameter to be passed to the
+                callback function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous call.
+<h1>Remarks</h1>
+<ul>
+<li> When an object is found, VixHost_FindItems() passes the value
+VIX_EVENTTYPE_FIND_ITEM in the eventType parameter.
+<li> When an object is found, VixHost_FindItems() passes a property list object
+containing the location of the object found. The property list is passed
+as the value of the moreEventInfo parameter. The property list contains
+a single string value (VIX_PROPERTY_FOUND_ITEM_LOCATION), which is the
+URL of the item found.  For Server 2.0, ESX and vSphere, this
+value includes the datacenter.
+<li> When VixHost_FindItems() is done searching, it calls the callback function
+a final time and passes VIX_EVENTTYPE_CALLBACK_SIGNALLED as the event type.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+<h1>Example</h1>
+The following example prints the path name of every virtual machine currently
+running on the host.
+<pre>
+static VixHandle hostHandle = VIX_INVALID_HANDLE;
+
+void VixDiscoveryProc(VixHandle jobHandle,
+                      VixEventType eventType,
+                      VixHandle moreEventInfo,
+                      void *clientData)
+{
+   VixError err = VIX_OK;
+   char *url = NULL;
+
+   // Check callback event; ignore progress reports.
+   if (VIX_EVENTTYPE_FIND_ITEM != eventType) {
+      return;
+   }
+
+   // Found a virtual machine.
+   err = Vix_GetProperties(moreEventInfo,
+                           VIX_PROPERTY_FOUND_ITEM_LOCATION,
+                           &url,
+                           VIX_PROPERTY_NONE);
+   if (VIX_OK != err) {
+      // Handle the error...
+      goto abort;
+   }
+
+   printf("\nFound virtual machine: %s", url);
+
+abort:
+   Vix_FreeBuffer(url);
+}
+
+int main()
+{
+   VixHandle jobHandle = VIX_INVALID_HANDLE;
+   VixHandle hostHandle = VIX_INVALID_HANDLE;
+   VixError err;
+   jobHandle = VixHost_Connect(VIX_API_VERSION,
+                               VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                               NULL, // hostName
+                               0, // hostPort
+                               NULL, // userName
+                               NULL, // password,
+                               0, // options
+                               VIX_INVALID_HANDLE, // propertyListHandle
+                               NULL, // callbackProc
+                               NULL); // clientData
+   err = VixJob_Wait(jobHandle,
+                     VIX_PROPERTY_JOB_RESULT_HANDLE,
+                     &hostHandle,
+                     VIX_PROPERTY_NONE);
+   if (VIX_FAILED(err)) {
+      // Handle the error...
+      goto abort;
+   }
+
+   Vix_ReleaseHandle(jobHandle);
+
+   printf("\nLooking for running virtual machines");
+
+   jobHandle = VixHost_FindItems(hostHandle,
+                                 VIX_FIND_RUNNING_VMS,
+                                 VIX_INVALID_HANDLE, // searchCriteria
+                                 -1, // timeout
+                                 VixDiscoveryProc,
+                                 NULL);
+   err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+   if (VIX_FAILED(err)) {
+      // Handle the error...
+      goto abort;
+   }
+abort:
+   Vix_ReleaseHandle(jobHandle);
+   VixHost_Disconnect(hostHandle);
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

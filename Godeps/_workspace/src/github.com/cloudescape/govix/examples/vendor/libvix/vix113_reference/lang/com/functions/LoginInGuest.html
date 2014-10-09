@@ -1,0 +1,262 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>LoginInGuest</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+LoginInGuest([in] BSTR userName,
+             [in] BSTR password,
+             [in] LONG options,
+             [in] ICallback* jobDoneCallback,
+             [out,retval] IJob** loginJob);
+</pre>
+<p>
+This function establishes a guest operating system authentication context
+that can be used with guest functions for the given virtual machine handle.
+<h1>Parameters</h1>
+<dl>
+   userName - The name of a user account on the guest operating system.
+   password - The password of the account identified by userName.
+   options - Must be 0 or one of the following values:
+<ul>
+<li> VixCOM.Constants.VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT -
+</ul>
+directs guest commands invoked after the call to
+	     LoginInGuest() to be run from within the session of the
+	     user who is interactively logged into the guest operating system. See the remarks
+	     below for more information about
+	     VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT.
+   jobDoneCallback - An ICallback instance that will be called when the
+                  operation is complete.
+   loginJob - Returns an IJob object that describes the state of this
+              asynchronous operation.
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function validates the account name and password in the guest OS. You must 
+call this function before calling functions that perform operations on the guest OS,
+such as those below.  Otherwise you do not need to call this function.
+<li> Logins are supported on Linux and Windows.  To log in as a Windows Domain user,
+specify the 'userName' parameter in the form "domain\username".
+<li> This function does not respect access permissions on Windows 95, Windows 98, and
+Windows ME, due to limitations of the permissions model in those systems.
+<li> Other guest operating systems are not supported for login, including Solaris,
+FreeBSD, and Netware.
+VixCOM.Constants.VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT
+should be used to ensure that the functions
+CaptureScreenImage, OpenUrlInGuest, and RunProgramInGuest
+work correctly.
+<li> The following functions require that you call VixVM_LoginInGuest():
+<ul>
+<li> VixVM_RunProgramInGuest()
+<li> VixVM_ListProcessesInGuest()
+<li> VixVM_KillProcessInGuest()
+<li> VixVM_RunScriptInGuest()
+<li> VixVM_OpenUrlInGuest()
+<li> VixVM_CopyFileFromHostToGuest()
+<li> VixVM_CopyFileFromGuestToHost()
+<li> VixVM_DeleteFileInGuest()
+<li> VixVM_FileExistsInGuest()
+<li> VixVM_RenameFileInGuest()
+<li> VixVM_CreateTempFileInGuest()
+<li> VixVM_ListDirectoryInGuest()
+<li> VixVM_CreateDirectoryInGuest()
+<li> VixVM_DeleteDirectoryInGuest()
+<li> VixVM_DirectoryExistsInGuest()
+<li> VixVM_WriteVariable() when writing a VIX_GUEST_ENVIRONMENT_VARIABLE value.
+<li> VixVM_CaptureScreenImage()
+</ul>
+<li> All guest operations for a particular VM handle are done using the identity
+you provide to VixVM_LoginInGuest().  As a result, guest operations are restricted
+by file system privileges in the guest OS that apply to the user specified
+in VixVM_LoginInGuest().  For example, VixVM_DeleteDirectoryInGuest() might fail
+if the user named in VixVM_LoginInGuest() does not have access permissions
+to the directory in the guest OS.
+<li> VixVM_LoginInGuest() changes the behavior of Vix functions to use a user account.
+It does not log a user into a console session on the guest OS. As a result,
+you might not see the user logged in from within the guest OS.
+Moreover, operations such as rebooting the guest do not clear the guest credentials.
+<li> You must call VixVM_LoginInGuest() for each VM handle that uses guest operations.
+<li> The virtual machine must be powered on before calling this function.
+<li> VMware Tools must be installed and running on the guest OS
+before calling this function. You can call VixVM_WaitForToolsInGuest()
+to wait for the tools to run.
+<li> Once VixVM_LoginInGuest() has succeeded, the user session remains valid until
+<ul>
+<li> VixVM_LogoutFromGuest() is called successfully,
+<li> VixVM_LoginInGuest() is called successfully with different user credentials,
+<li> the virtual machine handle's reference count reaches 0, or
+<li> the client applications exits.
+</ul>
+<li> The following functions require that you call VM::LoginInGuest():
+<ul>
+<li> VM::RunProgramInGuest()
+<li> VM::ListProcessesInGuest()
+<li> VM::KillProcessInGuest()
+<li> VM::RunScriptInGuest()
+<li> VM::OpenUrlInGuest()
+<li> VM::CopyFileFromHostToGuest()
+<li> VM::CopyFileFromGuestToHost()
+<li> VM::DeleteFileInGuest()
+<li> VM::FileExistsInGuest()
+<li> VM::RenameFileInGuest()
+<li> VM::CreateTempFileInGuest()
+<li> VM::ListDirectoryInGuest()
+<li> VM::CreateDirectoryInGuest()
+<li> VM::DeleteDirectoryInGuest()
+<li> VM::DirectoryExistsInGuest()
+<li> VM::WriteVariable() when writing a VIX_GUEST_ENVIRONMENT_VARIABLE value.
+</ul>
+<li> All guest operations for a particular VM object are done using the identity
+you provide to VM::LoginInGuest().  As a result, guest operations are restricted
+by file system privileges in the guest OS that apply to the user specified
+in VM::LoginInGuest().  For example, VM::DeleteDirectoryInGuest() might fail
+if the user named in VM::LoginInGuest() does not have access permissions
+to the directory in the guest OS.
+<li> VM::LoginInGuest() changes the behavior of Vix functions to use a user account.
+It does not log in a user into a console session on the guest OS. As a result,
+you might not see the user logged in from within the guest OS.
+Moreover, operations such as rebooting the guest do not clear the guest credentials.
+<li> You must call VM::LoginInGuest() for each VM object that uses guest operations.
+<li> The virtual machine must be powered on before calling this function.
+<li> VMware Tools must be installed and running on the guest OS
+before calling this function. You can call VM::WaitForToolsInGuest()
+to wait for the tools to run.
+<li> Once VM::LoginInGuest() has succeeded, the user session remains valid until
+<ul>
+<li> VM::LogoutFromGuest() is called successfully,
+<li> VM::LoginInGuest() is called successfully with different user credentials,
+<li> the virtual machine object's reference count reaches 0, or
+<li> the client applications exits.
+</ul>
+<li> The special login type VIX_CONSOLE_USER_NAME is no longer supported.
+<li> Calling VixVM_LoginInGuest() with 0 as 'options' can be done at any time
+when the VMware Tools are running in the guest.
+<li> Calling VixVM_LoginInGuest() with the
+VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT flag can only be done when
+there is an interactive user logged into the guest OS. Specifically, the
+"interactive user" refers to the user who has
+logged into the guest OS through the console (for instance, the user who
+logged into the Windows log-in screen). The VIX user is the user whose
+credentials are being provided in the call to VixVM_LoginInGuest(). With
+VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT, there must be an
+interactive user logged into the guest when the call to VixVM_LoginInGuest()
+is made, and the VIX user must match the interactive user (they must have
+same account in the guest OS).
+<li> Using VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT will ensure that
+the environment in which guest commands are executed is as close as possible
+to the normal environment in which a user interacts with the guest OS.
+Without VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT, commands
+may be run in a more limited environment; however, omitting
+VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT will ensure that commands
+can be run regardless of whether an interactive user is present in the guest.
+<li> On Linux guest operating systems, the
+VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT flag requires that X11
+be installed and running.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+This example copies a compiled object file from a virtual machine to be
+run on the host.
+<pre>
+</pre>
+VBScript:
+<pre>
+Dim lib
+Dim host
+Dim job
+Dim vm
+Dim results
+
+Set lib = CreateObject("VixCOM.VixLib")
+
+' Connect to the local installation of Workstation. This also initializes the VIX API.
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION, Empty, 0, Empty, Empty, 0, Nothing, Nothing)
+
+' results needs to be initialized before it's used, even if it's just going to be overwritten.
+Set results = Nothing
+
+' Wait waits until the job started by an asynchronous function call has finished. It also
+' can be used to get various properties from the job. The first argument is an array
+' of VIX property IDs that specify the properties requested. When Wait returns, the 
+' second argument will be set to an array that holds the values for those properties,
+' one for each ID requested.
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+' The job result handle will be first element in the results array.
+Set host = results(0)
+
+' Open the virtual machine with the given .vmx file.
+Set job = host.OpenVM("c:\Virtual Machines\vm1\win2000.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set vm = results(0)
+
+' Power on the virtual machine we just opened. This will launch Workstation if it hasn't
+' already been started.
+Set job = vm.PowerOn(VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI, Nothing, Nothing)
+' WaitWithoutResults is just like Wait, except it does not get any properties. 
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+' Wait until VMware Tools are running within the guest, with a 300 second timeout.
+Set job = vm.WaitForToolsInGuest(300, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+' Change the username and password to match an account in the guest OS.
+Set job = vm.LoginInGuest("vixuser", "secret", 0, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set job = vm.CopyFileFromGuestToHost("c:\guestDir\helloworld.o", "c:\hostDir\helloworld.o", 0, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set job = vm.LogoutFromGuest(Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+
+host.Disconnect()
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

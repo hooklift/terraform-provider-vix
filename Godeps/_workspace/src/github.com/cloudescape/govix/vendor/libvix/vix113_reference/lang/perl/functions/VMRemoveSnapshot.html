@@ -1,0 +1,117 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMRemoveSnapshot</b>
+<h1>Description</h1>
+<pre>
+$err = VMRemoveSnapshot($vmHandle,
+                        $snapshotHandle,
+                        $options);
+HRESULT
+RemoveSnapshot([in] ISnapshot* snapshot,
+               [in] LONG options,
+               [in] ICallback* jobDoneCallback,
+               [out,retval] IJob** removeJob);
+</pre>
+<p>
+This function deletes all saved states for the specified snapshot.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>snapshotHandle</i></dt>
+<dd>
+A handle to a snapshot. Call VMGetRootSnapshot() to get a snapshot handle.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Flags to specify optional behavior. Any combination of the following
+             or 0:
+<ul>
+<li> VIX_SNAPSHOT_REMOVE_CHILDREN - Remove snapshots that are children
+of the given snapshot.
+</dd>
+</dl>
+</ul>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> This function deletes all saved states for the specified snapshot. If the
+snapshot was based on another snapshot, the base snapshot becomes the new
+root snapshot.
+<li> The VMware Server release of the VIX API can manage only a single snapshot for
+each virtual machine. A virtual machine imported from another VMware product
+can have more than one snapshot at the time it is imported. In that case,
+you can delete only a snapshot subsequently added using the VIX API.
+<li> Starting in VMware Workstation 6.5, snapshot operations are allowed on
+virtual machines that are part of a team.  Previously, this operation failed
+with error code VIX_PROPERTY_VM_IN_VMTEAM.  Team members snapshot independently
+so they can have different and inconsistent snapshot states.
+<li> This function is not supported when using the 
+VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+<li> If the virtual machine is open and powered off in the UI, this function
+may close the virtual machine in the UI before deleting the snapshot.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Server 1.0
+<h1>Example</h1>
+This example deletes every root snapshot belonging to a virtual machine.
+<pre>
+my $err = VIX_OK;
+my $hostHandle = VIX_INVALID_HANDLE;
+my $vmHandle = VIX_INVALID_HANDLE;
+my $snapshotHandle = VIX_INVALID_HANDLE;
+my $numRootSnapshots;
+my $i;
+
+($err, $hostHandle) = HostConnect(VIX_API_VERSION,
+                                  VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                  undef, # hostName
+                                  0, # hostPort
+                                  undef, # userName
+                                  undef, # password
+                                  0, # options
+                                  VIX_INVALID_HANDLE); # propertyListHandle
+
+die "HostConnect() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $vmHandle) = VMOpen($hostHandle,
+                           "c:\\Virtual Machines\\vm1\\win2000.vmx");
+die "VMOpen() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $numRootSnapshots) = VMGetNumRootSnapshots($vmHandle);
+die "VMGetNumRootSnapshots() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+for ($i = 0; $i &lt; $numRootSnapshots; $i++) {
+   ($err, $snapshotHandle) = VMGetRootSnapshot($vmHandle,
+                                               $i); # index
+   die "VMGetRootSnapshot() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+   $err = VMRemoveSnapshot($vmHandle, 
+                           $snapshotHandle,
+                           0);	# options
+   ReleaseHandle($snapshotHandle);
+}
+ReleaseHandle($vmHandle);
+HostDisconnect($hostHandle);
+                                          
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

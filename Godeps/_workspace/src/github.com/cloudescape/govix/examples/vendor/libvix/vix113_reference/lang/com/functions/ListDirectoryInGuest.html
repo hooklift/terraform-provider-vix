@@ -1,0 +1,93 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>ListDirectoryInGuest</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+ListDirectoryInGuest([in] BSTR pathName,
+                     [in] LONG options,
+                     [in] ICallback* jobDoneCallback,
+                     [out,retval] IJob** listJob);
+</pre>
+<p>
+This function lists a directory in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>pathname</i></dt>
+<dd>
+The path name of a directory to be listed.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>listJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> You must call VM::LoginInGuest() before calling this function.
+<li> Job::GetNumProperties() should be used to determine the number of results.
+<li> Job::GetNthProperties() can be used to get each result.
+<li> When the job is signaled, the following list of properties will be available
+on the returned IJob object:
+<ul>
+<li> VIX_PROPERTY_JOB_RESULT_ITEM_NAME: the file name
+<li> VIX_PROPERTY_JOB_RESULT_FILE_SIZE: file size as a 64-bit integer. The file size is zero for child directories.
+<li> VIX_PROPERTY_JOB_RESULT_FILE_FLAGS: file attribute flags
+The flags are:
+<ul>
+<li> VIX_FILE_ATTRIBUTES_DIRECTORY - Set if the pathname identifies a directory.
+<li> VIX_FILE_ATTRIBUTES_SYMLINK- Set if the pathname identifies a symbolic link file.
+</ul>
+<li> VIX_PROPERTY_JOB_RESULT_FILE_MOD_TIME: The modification time of the file or directory as a 64-bit integer specifying seconds since the epoch.
+</ul>
+<li> Only absolute paths should be used for files in the guest; the resolution of 
+relative paths is not specified.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+Set job = vm.ListDirectoryInGuest(pathname, 0, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+numResults = job.GetNumProperties(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_ITEM_NAME)
+For i = 0 to numResults-1
+   err = job.GetNthProperties(i, Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_ITEM_NAME), results)
+   If lib.ErrorIndicatesFailure(err) Then
+      WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+      WScript.Quit
+   End If
+   ' Print the names of files in the directory.
+   WScript.Echo(results(0))
+Next
+
+Set results = Nothing
+Set job = Nothing
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

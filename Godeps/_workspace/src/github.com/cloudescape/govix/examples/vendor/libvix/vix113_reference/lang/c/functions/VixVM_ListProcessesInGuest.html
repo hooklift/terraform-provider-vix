@@ -1,0 +1,104 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_ListProcessesInGuest</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_ListProcessesInGuest(VixHandle vmHandle,
+                           int options,
+                           VixEventProc *callbackProc,
+                           void *clientData);
+</pre>
+<p>
+This function lists the running processes in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+<ul>
+<li> You must call VixVM_LoginInGuest() before calling this function.
+<li> VixJob_GetNumProperties() should be used to determine the number of results.
+<li> VixJob_GetNthProperties() can be used to get each result.
+<li> When the job is signaled, the following list of properties will be available
+on the returned job handle:
+<ul>
+<li> VIX_PROPERTY_JOB_RESULT_ITEM_NAME: the process name
+<li> VIX_PROPERTY_JOB_RESULT_PROCESS_ID: the process id
+<li> VIX_PROPERTY_JOB_RESULT_PROCESS_OWNER: the process owner
+<li> VIX_PROPERTY_JOB_RESULT_PROCESS_COMMAND: the process command line
+<li> VIX_PROPERTY_JOB_RESULT_PROCESS_BEING_DEBUGGED: is the process being debugged?
+(always FALSE on Linux)
+<li> VIX_PROPERTY_JOB_RESULT_PROCESS_START_TIME: the process start time specifying seconds since the epoch
+</ul>
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+job = VixVM_ListProcessesInGuest(vm, 0, NULL, NULL);
+err = VixJob_Wait(job, VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   fprintf(stderr, "failed to list processes in vm '%s'(%"FMT64"d %s)\n",
+           vmpath, err, Vix_GetErrorText(err, NULL));
+   goto abort;
+}
+
+num = VixJob_GetNumProperties(job, VIX_PROPERTY_JOB_RESULT_ITEM_NAME);
+for (i = 0; i &lt; num; i++) {
+   char *processName;
+   uint64 pid;
+   char *owner;
+   char *cmdline;
+   Bool isDebugged;
+   int startTime;
+
+   err = VixJob_GetNthProperties(job, i,
+                     VIX_PROPERTY_JOB_RESULT_ITEM_NAME, &processName,
+                     VIX_PROPERTY_JOB_RESULT_PROCESS_ID, &pid,
+                     VIX_PROPERTY_JOB_RESULT_PROCESS_OWNER, &owner,
+                     VIX_PROPERTY_JOB_RESULT_PROCESS_COMMAND, &cmdline,
+		     VIX_PROPERTY_JOB_RESULT_PROCESS_BEING_DEBUGGED, &isDebugged,
+		     VIX_PROPERTY_JOB_RESULT_PROCESS_START_TIME, &startTime,
+                     VIX_PROPERTY_NONE);
+
+   printf("process #%d '%s' %"FMT64"d %s %s %s at %d\n",
+          i, processName, pid, owner, cmdline, (isDebugged) ? "debugged" : "", startTime);
+
+   Vix_FreeBuffer(processName);
+   Vix_FreeBuffer(owner);
+   Vix_FreeBuffer(cmdline);
+}
+
+Vix_ReleaseHandle(job);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

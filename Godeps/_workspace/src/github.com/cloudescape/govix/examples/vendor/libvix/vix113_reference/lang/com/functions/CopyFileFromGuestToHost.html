@@ -1,0 +1,159 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>CopyFileFromGuestToHost</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+CopyFileFromGuestToHost([in] BSTR guestPathName,
+                        [in] BSTR hostPathName,
+                        [in] LONG options,
+                        [in] IVixHandle* propertyList,
+                        [in] ICallback* jobDoneCallback,
+                        [out,retval] IJob** copyJob);
+</pre>
+<p>
+Copies a file or directory from the guest operating system to the local system (where the
+Vix client is running).
+<h1>Parameters</h1>
+<dl>
+<dt><i>guestPathName</i></dt>
+<dd>
+The path name of a file on a file system available
+                   to the guest.
+</dd>
+<dt><i>hostPathName</i></dt>
+<dd>
+The path name of a file on a file system available
+                  to the Vix client.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be NULL (C++), null (C#), or Nothing (VB).
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>copyJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this
+              asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> The virtual machine must be running while the file is copied
+from its guest operating system to the Vix client machine.
+<li> Existing files of the same name are overwritten,
+and folder contents are merged.
+<li> The copy operation requires VMware Tools to be installed and running
+in the guest operating system.
+<li> You must call VM::LoginInGuest() before calling this procedure.
+<li> The format of the file name depends on the guest or local operating system.
+For example, a path name for a Microsoft Windows guest or host requires
+backslash as a directory separator, whereas a Linux guest or host requires
+a forward slash. In C#, if the path name includes backslash characters, you
+need to precede each one with an escape character (as in "C:\\temp\\file.dat").
+Escape characters are not needed in VB or VBScript.
+<li> Only absolute paths should be used for files in the guest; the resolution of 
+relative paths is not specified.
+<li> If any file fails to be copied, Vix aborts the operation,
+does not attempt to copy the remaining files, and returns an error.
+<li> In order to copy a file from a mapped network drive in a Windows guest operating
+system, it is necessary to call
+LoginInGuest() with the VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT flag set.
+Using the interactive session option incurs an overhead in file transfer
+speed.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+This example copies a compiled object file from a virtual machine to be
+run on the host.
+<pre>
+</pre>
+VBScript:
+<pre>
+Dim lib
+Dim host
+Dim job
+Dim vm
+Dim results
+
+Set lib = CreateObject("VixCOM.VixLib")
+
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION, Empty, 0, Empty, Empty, 0, Nothing, Nothing)
+
+' results needs to be initialized before it's used, even if it's just going to be overwritten.
+Set results = Nothing
+
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set host = results(0)
+
+Set job = host.OpenVM("c:\Virtual Machines\vm1\win2000.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set vm = results(0)
+
+Set job = vm.PowerOn(VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set job = vm.WaitForToolsInGuest(300, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set job = vm.LoginInGuest("vixuser", "secret", 0, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set job = vm.CopyFileFromGuestToHost("c:\guestDir\helloworld.o", "c:\hostDir\helloworld.o", 0, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+
+host.Disconnect()
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

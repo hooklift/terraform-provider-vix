@@ -1,0 +1,46 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>CheckCompletion</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+CheckCompletion([out] VARIANT_BOOL* isComplete,
+                [out,retval] ULONGLONG* error);
+</pre>
+<p>
+This function performs a non-blocking test for completion of an asynchronous
+operation.
+<h1>Parameters</h1>
+<dl>
+<dt><i>complete</i></dt>
+<dd>
+(output) An indicator of whether the job has completed.
+</dd>
+<dt><i>error</i></dt>
+<dd>
+This function returns VIX_OK if it succeeded.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+This function performs a non-blocking test for completion of an asynchronous
+operation. It can be used to poll for completion in situations where a
+blocking function or a callback function is not desirable.
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0.
+<h1>Example</h1>
+<pre>
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

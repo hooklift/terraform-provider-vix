@@ -1,0 +1,57 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>ErrorCode</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+ErrorCode([in] ULONGLONG err,
+          [out,retval] USHORT* errorCode);
+</pre>
+<p>
+Get the part of the error value that represents the VIX error code. The error
+value returned from VIX functions contains multiple components; the least significant
+16 bits are set to the error code. These error codes are described in the section on
+"Error Codes."
+<h1>Parameters</h1>
+<dl>
+<dt><i>err</i></dt>
+<dd>
+An error value returned from a VIX functions.
+</dd>
+<dt><i>errorCode</i></dt>
+<dd>
+The error code that 'err' contains.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0.
+<h1>Example</h1>
+In VBScript:
+<pre>
+Dim job
+Dim err
+Dim readOnly
+
+' Power on the virtual machine in headless mode.
+Set job = vm.PowerOn(VixCOM.Constants.VIX_POWEROP_NORMAL, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorCode(err) = VixCOM.Constants.VIX_E_CANNOT_START_READ_ONLY_VM Then
+   readOnly = TRUE
+Else
+   readOnly = FALSE
+End If
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

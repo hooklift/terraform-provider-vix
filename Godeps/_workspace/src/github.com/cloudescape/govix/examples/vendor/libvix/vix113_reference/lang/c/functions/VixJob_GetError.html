@@ -1,0 +1,70 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixJob_GetError</b>
+<h1>Description</h1>
+<pre>
+VixError
+VixJob_GetError(VixHandle jobHandle);
+</pre>
+<p>
+Retrieves the error code from a job that has completed.
+<h1>Parameters</h1>
+<dl>
+<dt><i>jobHandle</i></dt>
+<dd>
+The handle of a job object, returned from any
+               asynchronous Vix function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixError. The result returned by a completed asynchronous function.
+<h1>Remarks</h1>
+<ul>
+<li> Applications should call this function only after an asynchronous job has
+completed.
+<li> The error code returned by this function is the same as the error code
+returned by
+VixJob_Wait().
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+<h1>Example</h1>
+<pre>
+VixError err = VIX_OK;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password,
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+                            VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+
+err = VixJob_GetError(jobHandle);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+abort:
+Vix_ReleaseHandle(jobHandle);
+VixHost_Disconnect(hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

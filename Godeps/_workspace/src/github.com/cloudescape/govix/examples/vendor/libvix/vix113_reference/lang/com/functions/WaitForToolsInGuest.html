@@ -1,0 +1,209 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>WaitForToolsInGuest</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+WaitForToolsInGuest([in] LONG timeoutInSeconds,
+                    [in] ICallback* jobDoneCallback,
+                    [out,retval] IJob** waitJob);
+</pre>
+<p>
+This function
+signals the IJob object
+when VMware Tools has successfully started
+in the guest operating system. VMware Tools is a collection of services
+that run in the guest.
+<h1>Parameters</h1>
+<dl>
+<dt><i>timeoutInSeconds</i></dt>
+<dd>
+The timeout in seconds. If VMware Tools has not started
+                      by this time, the operation completes with an error.
+                      If the value of this argument is zero or negative, then
+                      this operation will wait indefinitely until the
+                      VMware Tools start running in the guest operating
+                      system.
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>waitJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function 
+when VMware Tools has successfully started
+in the guest operating system. VMware Tools is a collection of services
+that run in the guest.
+<li> VMware Tools must be installed and running for some Vix functions to operate
+correctly. If VMware Tools is not installed in the guest operating system,
+or if the virtual machine is not powered on, this function reports an error
+to the job object.
+<li> The VIX_PROPERTY_VM_TOOLS_STATE property of the virtual machine handle is
+undefined until 
+VM::WaitForToolsInGuest()
+reports that VMware Tools is running.
+<li> This function should be called after calling any function that resets
+or reboots the state of the guest operating system, but before calling any
+functions that require VMware Tools to be running.  Doing so assures 
+that VMware Tools are once again up and running. Functions that reset
+the guest operating system in this way include:
+<ul>
+<li> PowerOn
+<li> Reset
+<li> RevertToSnapshot
+</ul>
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+VBScript:
+<pre>
+Dim lib
+Dim job
+Dim err
+Dim results
+Dim host
+Dim vm
+
+Set lib = CreateObject("VixCOM.VixLib")
+
+Set results = Nothing
+
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION, Empty, 0, Empty, Empty, 0, Nothing, Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+
+Set host = results(0)
+
+Set job = host.OpenVM("c:\Virtual Machines\vm1\win2000.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set vm = results(0)
+
+Set job = vm.PowerOn(VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set job = vm.WaitForToolsInGuest(0, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+
+host.Disconnect()
+</pre>
+C#:
+<pre>
+class Program
+{
+
+   static void Main(string[] args)  
+   {
+      VixCOM.VixLibClass lib = new VixCOM.VixLibClass();
+      UInt64 err;
+      object results = null;
+
+      VixCOM.IJob job = lib.Connect(VixCOM.Constants.VIX_API_VERSION,
+                                    VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                    null,
+                                    0,
+                                    null,
+                                    null,
+                                    0,
+                                    null,
+                                    null);
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE },
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IHost host = (VixCOM.IHost)((object[])results)[0];
+      CloseVixObject(job);
+
+      job = host.OpenVM("c:\\Virtual Machines\\vm1\\win2000.vmx", null);
+
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE }, 
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IVM2 vm = (VixCOM.IVM2)((object[])results)[0];
+      CloseVixObject(job);
+
+      job = vm.PowerOn(VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI, null, null);
+      job.WaitWithoutResults();
+      if (lib.ErrorIndicatesFailure(err))
+      {
+         // Handle the error... 
+      }
+      CloseVixObject(job);
+
+      // Wait up to 300 seconds for tools to start
+      job = vm.WaitForToolsInGuest(300, null);
+      err = job.WaitWithoutResults();
+      if (lib.ErrorIndicatesFailure(err))
+      {
+         // Handle the error... 
+      }
+      CloseVixObject(job);
+
+      // Execute other commands here
+
+      CloseVixObject(vm);
+     
+      host.Disconnect();
+   }
+
+   static void CloseVixObject(Object vixObject)
+   {
+      try
+      {
+         ((IVixHandle2)vixObject).Close();
+      }
+      catch(Exception)
+      {
+         //Close is not supported in this version of Vix COM - Ignore
+      }
+   }
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

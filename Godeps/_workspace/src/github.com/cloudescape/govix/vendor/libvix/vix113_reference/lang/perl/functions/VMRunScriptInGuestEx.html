@@ -1,0 +1,157 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMRunScriptInGuestEx</b>
+<h1>Description</h1>
+<pre>
+($err, %procInfo) = VMRunScriptInGuestEx($vmHandle,
+                                         $interpreter,
+                                         $scriptText,
+                                         $options,
+                                         $propertyListHandle);
+</pre>
+<p>
+This function runs a script in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>interpreter</i></dt>
+<dd>
+The path to the script interpreter,
+                 or NULL to use cmd.exe as the interpreter on Windows.
+</dd>
+<dt><i>scriptText</i></dt>
+<dd>
+The text of the script.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Run options for the program. See the remarks below.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be 
+   VIX_INVALID_HANDLE.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<p>
+%procInfo is a hash containing information about the newly created process.
+<h1>Remarks</h1>
+<ul>
+<li> This function runs the script in the guest operating system.
+<li> The current working directory for the script executed in the guest is not defined.
+Absolute paths should be used for files in the guest, including the path
+to the interpreter, and any files referenced in the script text.
+<li> You must call
+VMLoginInGuest()
+before calling this function.
+<li> If the options parameter is 0, this function will
+return
+when the program exits in the guest operating system.
+Alternatively, you can pass
+VIX_RUNPROGRAM_RETURN_IMMEDIATELY
+as the
+value of the options parameter, and this function
+</ul>
+returns
+  as soon as the program starts in the guest.
+<ul>
+<li> Depending on the behavior of the guest operating system, there may be a
+short delay after the job completes before the process is visible in the
+guest operating system.
+<li> When VMRunScriptInGuestEx returns, %procInfo will contain information
+about the new process.
+<ul>
+<li> PROCESS_ID: the process id.
+<li> ELAPSED_TIME: the process elapsed time in seconds;
+<li> EXIT_CODE: the process exit code.
+</ul>
+If the option parameter is VIX_RUNPROGRAM_RETURN_IMMEDIATELY, the latter two will
+both be undef.
+<li> If the total size of the specified interpreter and the script text is larger
+than 60536 bytes, then the error VIX_E_ARGUMENT_TOO_BIG is returned.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+
+my $err = VIX_OK;
+my $hostHandle = VIX_INVALID_HANDLE;
+my $vmHandle = VIX_INVALID_HANDLE;
+
+($err, $hostHandle) = HostConnect(VIX_API_VERSION,
+                                  VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                  undef, # hostName
+                                  0, # hostPort
+                                  undef, # userName
+                                  undef, # password
+                                  0, # options
+                                  VIX_INVALID_HANDLE); # propertyListHandle
+
+die "HostConnect() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $vmHandle) = VMOpen($hostHandle,
+                           "c:\\Virtual Machines\\vm1\\win2000.vmx");
+die "VMOpen() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+                       
+$err = VMPowerOn($vmHandle,
+                 0, # powerOnOptions
+                 VIX_INVALID_HANDLE);  # propertyListHandle
+die "VMPowerOn() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+
+$err = VMWaitForToolsInGuest($vmHandle,
+                             300); # timeoutInSeconds
+die "VMWaitForToolsInGuest() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+$err = VMLoginInGuest($vmHandle,
+                      "vixuser", # userName
+                      "secret", # password
+                      0); # options
+die "VMLoginInGuest() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+#
+#  Perl script to reverse the lines in a file
+#
+my $scripttext = 
+"if (!open IN, \"&lt;\", \"in.txt\") { die \"failed to open input file\"};\n" .
+"if (!open OUT, \"&gt;\", \"out.txt\") { die \"failed to open output file\"};\n" .
+"@input = &lt;IN&gt;;\n" .
+"@reverse = reverse @input;\n" .
+"print OUT @reverse;\n";
+
+# Run the target program.
+my %procInfo;
+($err, %procInfo) =  VMRunScriptInGuestEx($vmHandle,
+                                          "c:\\perl\\perl.exe",
+			                  $scripttext,
+                                          0, # options
+                                          VIX_INVALID_HANDLE);
+die "VMRunScriptInGuestEx() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+print "Process id $procInfo{'PROCESS_ID'}, Exit code $procInfo{'EXIT_CODE'}, Elapsed time $procInfo{'ELAPSED_TIME'} \n";
+
+
+ReleaseHandle($vmHandle);
+HostDisconnect($hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

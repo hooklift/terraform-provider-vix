@@ -1,0 +1,133 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMCopyFileFromGuestToHost</b>
+<h1>Description</h1>
+<pre>
+$err = VMCopyFileFromGuestToHost($vmHandle,
+                                 $guestPathName,
+                                 $hostPathName,
+                                 $options,
+                                 $propertyListHandle);
+</pre>
+<p>
+Copies a file or directory from the guest operating system to the local system (where the
+Vix client is running).
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>guestPathName</i></dt>
+<dd>
+The path name of a file on a file system available
+                   to the guest.
+</dd>
+<dt><i>hostPathName</i></dt>
+<dd>
+The path name of a file on a file system available
+                  to the Vix client.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be VIX_INVALID_HANDLE.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> The virtual machine must be running while the file is copied
+from its guest operating system to the Vix client machine.
+<li> Existing files of the same name are overwritten,
+and folder contents are merged.
+<li> The copy operation requires VMware Tools to be installed and running
+in the guest operating system.
+<li> You must call VMLoginInGuest() before calling this procedure.
+<li> The format of the file name depends on the guest or host operating system.
+For example, a path name for a Microsoft Windows guest or host requires
+backslash as a directory separator, whereas a Linux guest or host requires
+a forward slash. If the path name includes backslash characters, you need
+to precede each one with an escape character.
+<li> Only absolute paths should be used for files in the guest; the resolution of 
+relative paths is not specified.
+<li> If any file fails to be copied, Vix aborts the operation,
+does not attempt to copy the remaining files, and returns an error.
+<li> In order to copy a file from a mapped network drive in a Windows guest operating
+system, it is necessary to call
+VMLoginInGuest() with the VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT flag set.
+Using the interactive session option incurs an overhead in file transfer
+speed.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+This example copies a compiled object file from a virtual machine to be
+run on the host.
+<pre>
+my $err = VIX_OK;
+my $hostHandle = VIX_INVALID_HANDLE;
+my $vmHandle = VIX_INVALID_HANDLE;
+
+($err, $hostHandle) = HostConnect(VIX_API_VERSION,
+                                  VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                  undef, # hostName
+                                  0, # hostPort
+                                  undef, # userName
+                                  undef, # password
+                                  0, # options
+                                  VIX_INVALID_HANDLE); # propertyListHandle
+
+die "HostConnect() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $vmHandle) = VMOpen($hostHandle,
+                           "c:\\Virtual Machines\\vm1\\win2000.vmx");
+die "VMOpen() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+                       
+$err = VMPowerOn($vmHandle,
+                 0, # powerOnOptions
+                 VIX_INVALID_HANDLE);  # propertyListHandle
+die "VMPowerOn() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+
+$err = VMWaitForToolsInGuest($vmHandle,
+                             300); # timeoutInSeconds
+die "VMWaitForToolsInGuest() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+$err = VMLoginInGuest($vmHandle,
+                      "vixuser", # userName
+                      "secret", # password
+                      0); # options
+die "VMLoginInGuest() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+$err = VMCopyFileFromGuestToHost($vmHandle, 
+				 "c:\\guestDir\\helloworld.o",  # src name
+				 "c:\\hostDir\\helloworld.o", # dest name
+				 0, # options
+				 VIX_INVALID_HANDLE); # propertyListHandle
+die "VMCopyFileFromGuestToHost() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+ReleaseHandle($vmHandle);
+HostDisconnect($hostHandle);
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

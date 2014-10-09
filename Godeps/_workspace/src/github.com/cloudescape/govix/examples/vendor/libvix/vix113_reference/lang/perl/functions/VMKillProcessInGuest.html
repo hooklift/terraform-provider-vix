@@ -1,0 +1,55 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMKillProcessInGuest</b>
+<h1>Description</h1>
+<pre>
+$err = VMKillProcessInGuest($vmHandle,
+                            $pid,
+                            $options);
+</pre>
+<p>
+This function terminates a process in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>pid</i></dt>
+<dd>
+The ID of the process to be killed.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> You must call VMLoginInGuest() before calling this function.
+<li> Depending on the behavior of the guest operating system, there may be
+a short delay after the job completes before the process truly disappears.
+<li> Because of differences in how various Operating Systems handle process
+IDs, Vix may return either VIX_E_INVALID_ARG or VIX_E_NO_SUCH_PROCESS for
+invalid process IDs.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br></body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

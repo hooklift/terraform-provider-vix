@@ -1,0 +1,93 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMPowerOff</b>
+<h1>Description</h1>
+<pre>
+$err = VMPowerOff($vmHandle,
+                  $powerOffOptions);
+</pre>
+<p>
+This function powers off a virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>powerOffOptions</i></dt>
+<dd>
+Must be VIX_VMPOWEROP_NORMAL or VIX_VMPOWEROP_FROM_GUEST.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> This function powers off a virtual machine.
+<li> If you call this function while the virtual machine is suspended or powered off,
+the operation returns a VIX_E_VM_NOT_RUNNING error.
+If suspended, the virtual machine remains suspended and is not powered off.
+If powered off, you can safely ignore the error.
+<li> If you pass VIX_VMPOWEROP_NORMAL as an option,
+the virtual machine is powered off at the hardware level.
+Any state of the guest that was not committed to disk will be lost.
+<li> If you pass VIX_VMPOWEROP_FROM_GUEST as an option, the function tries to
+power off the guest OS, ensuring a clean shutdown of the guest. This option
+requires that VMware Tools be installed and running in the guest.
+<li> After VMware Tools begin running in the guest, and
+VMWaitForToolsInGuest
+returns, there is a short delay before VIX_VMPOWEROP_FROM_GUEST becomes available.
+During this time a job may return error 3009, VIX_E_POWEROP_SCRIPTS_NOT_AVAILABLE.
+As a workaround, add a short sleep after the WaitForTools call.
+<li> On a Solaris guest with UFS file system on the root partition, the
+VIX_VMPOWEROP_NORMAL parameter causes an error screen at next power on,
+which requires user intervention to update the Solaris boot archive by
+logging into the failsafe boot session from the GRUB menu. Hence, although UFS
+file systems are supported, VMware recommends using the ZFS file system for
+Solaris guests.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Server 1.0
+<h1>Example</h1>
+<pre>
+my $err = VIX_OK;
+my $hostHandle = VIX_INVALID_HANDLE;
+my $vmHandle = VIX_INVALID_HANDLE;
+
+($err, $hostHandle) = HostConnect(VIX_API_VERSION,
+                                  VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                  undef, # hostName
+                                  0, # hostPort
+                                  undef, # userName
+                                  undef, # password
+                                  0, # options
+                                  VIX_INVALID_HANDLE); # propertyListHandle
+
+die "HostConnect() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $vmHandle) = VMOpen($hostHandle,
+                           "c:\\Virtual Machines\\vm1\\win2000.vmx");
+die "VMOpen() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+                       
+# Assume this virtual machine is already running
+$err = VMPowerOff($vmHandle,
+                   VIX_VMPOWEROP_FROM_GUEST); # powerOnOptions
+die "VMPowerOff() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

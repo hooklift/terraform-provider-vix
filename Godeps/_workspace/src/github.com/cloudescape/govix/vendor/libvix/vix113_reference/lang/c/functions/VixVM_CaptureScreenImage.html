@@ -1,0 +1,109 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_CaptureScreenImage</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_CaptureScreenImage(VixHandle vmHandle,
+                         int captureType,
+                         VixHandle additionalProperties,
+                         VixEventProc *callbackProc,
+                         void *clientdata);
+</pre>
+<p>
+This function captures the screen of the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+The handle to the VM.
+</dd>
+<dt><i>captureType</i></dt>
+<dd>
+the data format.  Must be VIX_CAPTURESCREENFORMAT_PNG
+</dd>
+<dt><i>additionalProperties</i></dt>
+<dd>
+must be VIX_INVALID_HANDLE
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+This function captures the current screen image and returns
+it as a job result property of type 'blob'.
+When a blob is returned as a job property, it is returned as two values: first an 'int' containing the blob size in bytes, then a pointer to the blob.
+<p>
+The image size is also available as a separate job result property.
+<p>
+These properties are available from the job handle as a result of
+the function call:
+<p>
+<ul>
+<li> VIX_PROPERTY_JOB_RESULT_SCREEN_IMAGE_DATA:
+a blob property containing the bytes making up the image
+<li> VIX_PROPERTY_JOB_RESULT_SCREEN_IMAGE_SIZE:
+an int containing the size of the image, in bytes
+<p>
+</ul>
+The caller is responsible for calling
+Vix_FreeBuffer() to free the screen image buffer when no longer needed.
+<p>
+For security reasons, this function requires 
+a successful call to
+VixVM_LoginInGuest
+must be made.
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Workstation 6.5
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+
+job = VixVM_CaptureScreenImage(vm,
+                               VIX_CAPTURESCREENFORMAT_PNG,
+                               VIX_INVALID_HANDLE,
+                               NULL,
+                               NULL);
+err = VixJob_Wait(job,
+                  VIX_PROPERTY_JOB_RESULT_SCREEN_IMAGE_DATA,
+                  &byte_count, &screen_bits,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   fprintf(stderr, "failed to capture screen in guest vm '%s'(%"FMT64"d %s)\n",
+           vmpath,
+           err,
+           Vix_GetErrorText(err, NULL));
+   goto abort;
+}
+Vix_ReleaseHandle(job);
+
+printf("got image back, %d bytes\n", byte_count);
+FILE *fp = fopen("screen.png", "wb+");
+if (fp) {
+   fwrite(screen_bits, byte_count, 1, fp);
+   fclose(fp);
+}
+// Free blob memory when done.
+Vix_FreeBuffer(screen_bits);
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

@@ -1,0 +1,45 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>Vix_GetErrorText</b>
+<h1>Description</h1>
+<pre>
+const char *
+Vix_GetErrorText(VixError err,
+                 const char *locale);
+</pre>
+<p>
+Returns a human-readable string that describes the error.
+<h1>Parameters</h1>
+<dl>
+<dt><i>err</i></dt>
+<dd>
+A Vix error code returned by any other Vix function.
+</dd>
+<dt><i>locale</i></dt>
+<dd>
+Must be NULL.
+</dd>
+</dl>
+<h1>Return Value</h1>
+A human-readable string that describes the error.
+<h1>Remarks</h1>
+<ul>
+<li> This translates an error code, which is an enumerated type, to a
+user-readable string.
+<li> The returned string is a constant string. Do not try to free it by calling
+Vix_FreeBuffer().
+<li> The locale is not used, and must be NULL. Only U.S. English is
+supported in this release.
+</ul>
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

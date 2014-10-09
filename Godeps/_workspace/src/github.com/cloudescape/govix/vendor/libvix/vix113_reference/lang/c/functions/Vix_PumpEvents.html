@@ -1,0 +1,71 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<div class="deprecated">This function was removed in version 1.11.</div><h1>Name</h1>
+<b>Vix_PumpEvents</b>
+<h1>Description</h1>
+<pre>
+void
+Vix_PumpEvents(VixHandle hostHandle,
+               VixPumpEventsOptions options);
+</pre>
+<p>
+This function is deprecated.  
+Vix_PumpEvents
+is used in single threaded applications that require
+the Vix library to be single threaded.  Tasks that would normally
+be executed in a separate thread by the Vix library will be executed
+when
+Vix_PumpEvents()
+is called.
+<h1>Parameters</h1>
+<dl>
+<dt><i>hostHandle</i></dt>
+<dd>
+The handle to the local host object.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+</dl>
+<h1>Return Value</h1>
+None.
+<h1>Remarks</h1>
+<ul>
+<li> This function is deprecated and may be removed from future versions of the 
+VIX API.
+<li> This option is designed for client applications that want to receive
+events on only one thread, such as a thread that manages the user
+interface. In this case, open the local host handle with the
+VIX_HOSTOPTION_USE_EVENT_PUMP
+option, and call
+Vix_PumpEvents()
+in the
+main event loop. If you fail to call
+Vix_PumpEvents(),
+Vix asynchronous
+actions will not execute.
+<li> If you do not open your local host with the
+VIX_HOSTOPTION_USE_EVENT_PUMP
+option, calling
+Vix_PumpEvents(),
+has no effect.
+If you do not open your local host with the
+VIX_HOSTOPTION_USE_EVENT_PUMP
+option, the VIX API creates a small pool of threads for executing
+asynchronous operations. Events can be posted from those worker threads, so
+your code must be thread-safe.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

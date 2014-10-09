@@ -1,0 +1,71 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_GetNamedSnapshot</b>
+<h1>Description</h1>
+<pre>
+VixError
+VixVM_GetNamedSnapshot(VixHandle vmHandle,
+                       const char *name,
+                       VixHandle *snapshotHandle);
+</pre>
+<p>
+This
+function
+returns the handle of the snapshot matching the
+given name in the virtual machine referenced by vmHandle.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>name</i></dt>
+<dd>
+Identifies a snapshot name.
+</dd>
+<dt><i>snapshotHandle</i></dt>
+<dd>
+An output parameter that receives a handle to a snapshot.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixError.
+<h1>Remarks</h1>
+<ul>
+<li> This function returns a handle to the snapshot with matching name.
+When the snapshot name is a duplicate, it returns error 13017 VIX_E_SNAPSHOT_NONUNIQUE_NAME.
+<li> When there are multiple snapshots with the same name, or the same path to that name,
+you cannot specify a unique name, but you can to use the UI to rename duplicates.
+<li> You can specify the snapshot name as a path using '/' or '\\' as path separators,
+including snapshots in the tree above the named snapshot, for example 'a/b/c' or 'x/x'.
+Do not mix '/' and '\\' in the same path expression.
+<li> The snapshotHandle returned by this function is reference counted.
+The calling application is responsible for releasing the handle.
+<li> This function is not supported when using the 
+VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+VixHandle snapshotHandle;
+VixError err;
+
+err = VixVM_GetNamedSnapshot(vmHandle, "snapshot 3",
+                             &snapshotHandle);
+
+// remove/revert, otherwise use the snapshot
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

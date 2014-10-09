@@ -1,0 +1,180 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_LogoutFromGuest</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_LogoutFromGuest(VixHandle vmHandle,
+                      VixEventProc *callbackProc,
+                      void *clientData);
+</pre>
+<p>
+This function removes any guest operating system authentication context
+created by a previous call to 
+VixVM_LoginInGuest().
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+<ul>
+<li> This function has no effect and returns success if 
+VixVM_LoginInGuest()
+has not been called.
+<li> If you call this function while guest operations are in progress,
+subsequent operations may fail with a permissions error.
+It is best to wait for guest operations to complete before logging out.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+This example copies a compiled object file from a virtual machine to be
+run on the host.
+<pre>
+VixError err = VIX_OK;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+Vix_ReleaseHandle(jobHandle);
+
+jobHandle = VixVM_Open(hostHandle,
+                       "c:\\Virtual Machines\\vm1\\win2000.vmx",
+                       NULL, // callbackProc
+                       NULL); // clientData
+                       
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Power on the virtual machine before copying file.
+jobHandle = VixVM_PowerOn(vmHandle,
+                          0, // powerOnOptions
+                          VIX_INVALID_HANDLE, // propertyListHandle
+                          NULL, // callbackProc
+                          NULL); // clientData
+
+err = VixJob_Wait(jobHandle,VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Wait until guest is completely booted.
+jobHandle = VixVM_WaitForToolsInGuest(vmHandle,
+                                      300, // timeoutInSeconds
+                                      NULL, // callbackProc
+                                      NULL); // clientData
+
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Authenticate for guest operations.
+jobHandle = VixVM_LoginInGuest(vmHandle,
+                               "vixuser", // userName
+                               "secret", // password
+                               0, // options
+                               NULL, // callbackProc
+                               NULL); // clientData
+
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Copy the file.
+jobHandle = VixVM_CopyFileFromGuestToHost(vmHandle,
+                                          "c:\\guestDir\\helloworld.o",  // src name
+                                          "c:\\hostDir\\helloworld.o", // dest name
+                                          0, // options
+                                          VIX_INVALID_HANDLE, // propertyListHandle
+                                          NULL, // callbackProc
+                                          NULL); // clientData
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Clear the authentication
+jobHandle = VixVM_LogoutFromGuest(vmHandle,
+                                  NULL, // callbackProc
+                                  NULL); // clientData
+
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+abort:
+Vix_ReleaseHandle(jobHandle);
+Vix_ReleaseHandle(vmHandle);
+VixHost_Disconnect(hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

@@ -1,0 +1,85 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_EnableSharedFolders</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_EnableSharedFolders(VixHandle vmHandle,
+                          Bool enabled,      
+                          int options,       
+                          VixEventProc *callbackProc,
+                          void *clientData);
+</pre>
+<p>
+This function enables or disables all shared folders as a feature for a virtual
+machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>enabled</i></dt>
+<dd>
+TRUE if enabling shared folders is desired.  FALSE otherwise.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+<ul>
+<li> This function enables/disables all shared folders as a feature on a virtual 
+machine.  In order to access shared folders on a guest, the feature has to be 
+enabled, and in addition, the individual shared folder has to be enabled.
+<li> It is not necessary to call VixVM_LoginInGuest() before calling this function.
+<li> In this release, this function requires the virtual machine to be powered on
+with VMware Tools installed.  
+<li> Shared folders are not supported for the following guest operating systems:  
+Windows ME, Windows 98, Windows 95, Windows 3.x, and DOS.
+</ul>
+<h1>Side Effects</h1>
+<ul>
+<li> On Linux virtual machines, calling this function will automatically mount 
+shared folder(s) in the guest.
+</ul>
+<h1>Requirements</h1>
+vix.h, since VMware Workstation 6.0, not available on Server 2.0.
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+VixHandle jobHandle;
+VixError err;
+
+jobHandle = VixVM_EnableSharedFolders(vmHandle, 
+                                      TRUE,
+                                      0,
+                                      NULL, 
+                                      NULL);
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+Vix_ReleaseHandle(jobHandle);
+if (VIX_OK != err) {
+   // handle error
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

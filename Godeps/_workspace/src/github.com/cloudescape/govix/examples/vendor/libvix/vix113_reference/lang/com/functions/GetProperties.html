@@ -1,0 +1,91 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>GetProperties</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+GetProperties([in] VARIANT propertyIDs,
+              [in,out] VARIANT* propertiesArray,
+              [out,retval] ULONGLONG* error);
+</pre>
+<p>
+This
+method
+allows you to get one or more properties from a handle.
+For a list of property IDs, see Topics &gt; Types &gt; VixPropertyID.
+<h1>Parameters</h1>
+<dl>
+<dt><i>propertyIDs</i></dt>
+<dd>
+An array of propertyIDs to identify the properties
+                 to fetch. 
+</dd>
+<dt><i>propertiesArray</i></dt>
+<dd>
+An returned array that stores the properties
+                     identified by the array "propertyIDs". Each 
+                     element in "propertiesArray" matches the 
+                     corresponding identifier in "propertiesArray";
+                     for example, if the first element in the "propertyIDs" array 
+                     is VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE,
+                     the first element in "propertiesArray" will be the
+                     object that is the result of this job, if one exists.
+</dd>
+<dt><i>error</i></dt>
+<dd>
+This returns VIX_OK if the method call succeeded, otherwise the
+           return value indicates an error.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<p>
+When 
+GetProperties()
+returns an error, the values of the output parameters are indeterminate.
+<h1>Remarks</h1>
+<ul>
+<li> This function allows you to get one or more properties from a handle.
+You may use this function on any type of handle, but only specific
+properties are defined for each handle.
+<li> The value of
+VixCOM.Constants.VIX_PROPERTY_VM_TOOLS_STATE
+is valid only after calling 
+WaitForToolsInGuest.
+<li> This function does not apply in VBScript, since it is not possible
+to access the IVixHandle interface of an object.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0.
+<h1>Example</h1>
+<pre>
+</pre>
+C#:
+<pre>
+VixCOM.IVM vm;
+UInt64 err;
+
+//  ...Open the virtual machine and get a handle...
+
+int[] propertyIDs = new int[] {VixCOM.Constants.VIX_PROPERTY_VM_POWER_STATE, VixCOM.Constants.VIX_PROPERTY_VM_VMX_PATHNAME};
+object properties = null;
+err = ((VixCOM.IVixHandle)vm).GetProperties(propertyIDs, ref properties);
+if (lib.ErrorIndicatesFailure(err)) {
+   // Handle the error...
+}
+
+int vmPowerState = ((object[])properties)[0]; // VixCOM.Constants.VIX_PROPERTY_VM_POWER_STATE
+string vmPathName = ((object[])properties)[1]; // VixCOM.Constants.VIX_PROPERTY_VM_VMX_PATHNAME
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

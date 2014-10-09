@@ -1,0 +1,118 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>SetProperty</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+SetProperty([in] LONG propertyID,
+            [in] VARIANT propertyData,
+            [out,retval] ULONGLONG* error)
+</pre>
+<p>
+Sets the data for the property identified by propertyID. For a list of property IDs, see Topics &gt; Types &gt; VixPropertyID.
+<h1>Parameters</h1>
+<dl>
+<dt><i>propertyID</i></dt>
+<dd>
+This identifies which property to set.
+</dd>
+<dt><i>propertyData</i></dt>
+<dd>
+The property identified by propertyID will be set to this data.
+</dd>
+<dt><i>error</i></dt>
+<dd>
+This returns VIX_OK if the method call succeeded, otherwise the return value indicates an error.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> If the property does not exist in the property list, it is created. If the property already exists, the existing data is overwritten.
+<li> Property Lists are not supported in VBScript
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware VIX API 1.10.1.
+<h1>Example</h1>
+C#
+<pre>
+/*
+ * This example opens an encrypted VM by specifying the
+ * encryption password in a property list.
+ */
+
+// Connects to the Workstation Host
+IJob connectJob = vix.Connect(Constants.VIX_API_VERSION,
+                              Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                              "",
+                              0,
+                              "",
+                              "",
+                              0,
+                              null,
+                              null);
+
+object[] connectProperties = { Constants.VIX_PROPERTY_JOB_RESULT_HANDLE };
+object hosts = null;
+ulong err = connectJob.Wait(connectProperties, ref hosts);
+if (vix.ErrorIndicatesFailure(err))
+{
+  ((IVixHandle2)connectJob).Close();
+  throw new Exception(vix.GetErrorText(err, null));
+}
+
+IHost3 host = (IHost3)((object[])hosts)[0];
+
+// Encrypted VM Path
+string vmx = "C:\\VMs\\winxpprowithsp2\\winxpprowithsp2.vmx";
+
+// Creates an empty property list
+Console.WriteLine("Opening {0}", vmx);
+IPropertyList propertyList;
+err = host.CreatePropertyList(out propertyList);
+if (vix.ErrorIndicatesFailure(err))
+{
+  ((IVixHandle2)connectJob).Close();
+  throw new Exception(vix.GetErrorText(err, null));
+}
+
+// Adds a new value to the property list containing the encryption password
+propertyList.SetProperty(Constants.VIX_PROPERTY_VM_ENCRYPTION_PASSWORD,
+                         "password");
+
+//Open the encrypted VM providing the property list
+IJob openJob = host.OpenVMEx(vmx, 0, propertyList, null);
+object[] openProperties = { Constants.VIX_PROPERTY_JOB_RESULT_HANDLE };
+object openResults = null;
+
+err = openJob.Wait(openProperties, ref openResults);
+if (vix.ErrorIndicatesFailure(err))
+{
+  ((IVixHandle2)openJob).Close();
+  throw new Exception(vix.GetErrorText(err, null));
+}
+
+Console.WriteLine("Opened {0}", vmx);
+IVM2 vm = (IVM2)((object[])openResults)[0];
+
+// Run the rest of your vm operations here
+
+// Close each object to prevent leaks
+((IVixHandle2) vm).Close();
+propertyList.Close();
+
+host.Disconnect();
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

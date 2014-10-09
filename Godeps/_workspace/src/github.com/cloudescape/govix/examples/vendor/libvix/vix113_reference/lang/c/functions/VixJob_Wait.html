@@ -1,0 +1,111 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixJob_Wait</b>
+<h1>Description</h1>
+<pre>
+VixError
+VixJob_Wait(VixHandle jobHandle,
+            VixPropertyID firstPropertyID,
+            ...);
+</pre>
+<p>
+Wait for a particular job to complete.
+Unsuitable for asynchronous operations with
+callback procedure.
+<h1>Parameters</h1>
+<dl>
+<dt><i>jobHandle</i></dt>
+<dd>
+The handle of a job object, returned from any asynchronous
+               Vix function.
+</dd>
+<dt><i>firstPropertyID</i></dt>
+<dd>
+The identity of a property, or else VIX_PROPERTY_NONE.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixError. The error resulting from the asynchronous operation that returned
+the job handle.
+<h1>Remarks</h1>
+<ul>
+<li> This function blocks until the job completes.
+<li> If one or more property IDs are passed, their values are returned by this
+function. A property is requested by passing its ID in one parameter,
+followed by a reference to a storage location of the same type as the
+property value. After the last reference, terminate the list with the
+value VIX_PROPERTY_NONE.
+<li> The error code returned by this function is the same as the error code
+returned by
+VixJob_GetError().
+<li> The error code returned by this function is also available in the
+VIX_JOB_RESULT_ERROR_CODE
+property of the job object.
+<li> Do not use
+VixJob_Wait()
+to complete a job for which you have passed a
+callback routine.
+The completion order in such a situation is undefined,
+and you cannot rely on the resulting property values.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+<h1>Example</h1>
+<pre>
+VixError err = VIX_OK;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+int errorLineNum;
+
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password,
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+jobHandle = VixVM_Open(hostHandle,
+                       "c:\\Virtual Machines\\vm1\\win2000.vmx",
+                       NULL, // callbackProc
+                       NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+abort:
+Vix_ReleaseHandle(jobHandle);
+Vix_ReleaseHandle(vmHandle);
+VixHost_Disconnect(hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

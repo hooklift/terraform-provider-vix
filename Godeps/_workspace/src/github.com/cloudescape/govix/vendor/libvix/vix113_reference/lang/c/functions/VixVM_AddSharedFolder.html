@@ -1,0 +1,192 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_AddSharedFolder</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_AddSharedFolder(VixHandle vmHandle,
+                      const char *shareName,
+                      const char *hostPathName,
+                      VixMsgSharedFolderOptions flags,
+                      VixEventProc *callbackProc,
+                      void *clientData);
+</pre>
+<p>
+This function mounts a new shared folder in the virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>shareName</i></dt>
+<dd>
+Specifies the guest path name of the new shared folder.
+</dd>
+<dt><i>hostPathName</i></dt>
+<dd>
+Specifies the host path of the shared folder.
+</dd>
+<dt><i>flags</i></dt>
+<dd>
+The folder options.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous
+operation.
+<h1>Remarks</h1>
+<ul>
+<li> This function creates a local mount point in the guest file system and
+mounts a shared folder exported by the host.
+<li> Shared folders will only be accessible inside the guest operating system if
+shared folders are enabled for the virtual machine.  See the documentation
+for VixVM_EnableSharedFolders().
+<li> The folder options include:
+<ul>
+<li> VIX_SHAREDFOLDER_WRITE_ACCESS - Allow write access.
+</ul>
+<li> Only absolute paths should be used for files in the guest; the resolution of
+relative paths is not specified.
+<li> The hostPathName argument must specify a path to a directory that exists on
+the host, or an error will result.
+<li> If a shared folder with the same name exists before calling this function,
+the job handle returned by this function will return VIX_E_ALREADY_EXISTS.
+<li> It is not necessary to call VixVM_LoginInGuest() before calling this function.
+<li> When creating shared folders in a Windows guest, there might be a delay
+before contents of a shared folder are visible to functions such as
+VixVM_FileExistsInGuest and VixVM_RunProgramInGuest.
+<li> Shared folders are not supported for the following guest operating systems:
+Windows ME, Windows 98, Windows 95, Windows 3.x, and DOS.
+<li> In this release, this function requires the virtual machine to be powered on
+with VMware Tools installed.
+<li> To determine in which directory in the guest the shared folder will be,
+query the VIX_PROPERTY_GUEST_SHAREDFOLDERS_SHARES_PATH property
+on the virtual machine handle. When the virtual machine is powered on and
+the VMware Tools are running, this property will contain the path to the
+parent directory of the shared folders for that virtual machine.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Workstation 6.0, not available on Server 2.0.
+<h1>Example</h1>
+This example shows how to power on a virtual machine, wait until the VMware
+Tool are running in the guest, add a shared folder named "WorkDir", and then
+run a program that resides inside the shared folder in the guest.
+<pre>
+VixHandle jobHandle;
+VixError err;
+const char shareName[] = "WorkDir";
+const char programExecutableName[] = "myApp";
+char *sharesPath;
+char *guestPath;
+size_t guestPathLength;
+
+jobHandle = VixVM_PowerOn(vmHandle,
+                          VIX_VMPOWEROP_NORMAL,
+                          VIX_INVALID_HANDLE,
+                          NULL,
+                          NULL);
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+Vix_ReleaseHandle(jobHandle);
+if (VIX_OK != err) {
+   // handle error
+}
+
+jobHandle = VixVM_WaitForToolsInGuest(vmHandle,
+                                      180,
+                                      NULL,
+                                      NULL);
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+Vix_ReleaseHandle(jobHandle);
+if (VIX_OK != err) {
+   // handle error
+}
+
+jobHandle = VixVM_AddSharedFolder(vmHandle,
+                                  shareName,
+                                  "/work",
+                                  VIX_SHAREDFOLDER_WRITE_ACCESS,
+                                  NULL, NULL);
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+Vix_ReleaseHandle(jobHandle);
+if (VIX_OK != err) {
+   // handle error
+}
+
+jobHandle = VixVM_LoginInGuest(vmHandle,
+                               "user",
+                               "password",
+                               0,
+                               NULL,
+                               NULL);
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+Vix_ReleaseHandle(jobHandle);
+if (VIX_OK != err) {
+   // handle error
+}
+
+err = Vix_GetProperties(vmHandle,
+                        VIX_PROPERTY_GUEST_SHAREDFOLDERS_SHARES_PATH,
+                        &sharesPath,
+                        VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // handle error
+}
+
+guestPathLength = strlen(sharesPath) + 1 +            // + 1 for '/'
+                  strlen(shareName) + 1 +             // + 1 for '/'
+                  strlen(programExecutableName) + 1;  // + 1 for '\0'
+guestPath = malloc(guestPathLength);
+
+snprintf(guestPath, guestPathLength, "%s/%s/%s",
+         sharesPath, shareName, programExecutableName);
+
+Vix_FreeBuffer(sharesPath);
+
+jobHandle = VixVM_RunProgramInGuest(vmHandle,
+                                    guestPath,
+                                    "",
+                                    0,
+                                    VIX_INVALID_HANDLE,
+                                    NULL,
+                                    NULL);
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+Vix_ReleaseHandle(jobHandle);
+if (VIX_OK != err) {
+   free(guestPath);
+   guestPath = NULL;
+   // handle error
+}
+
+free(guestPath);
+
+jobHandle = VixVM_LogoutFromGuest(vmHandle,
+                                  NULL,
+                                  NULL);
+Vix_ReleaseHandle(jobHandle);
+if (VIX_OK != err) {
+   free(guestPath);
+   // handle error
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

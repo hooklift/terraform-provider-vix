@@ -1,0 +1,125 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMRevertToSnapshot</b>
+<h1>Description</h1>
+<pre>
+$err = VMRevertToSnapshot($vmHandle,
+                          $snapshotHandle,
+                          $options,
+                          $propertyListHandle);
+</pre>
+<p>
+Restores the virtual machine to the state when the specified snapshot was
+created.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>snapshotHandle</i></dt>
+<dd>
+A handle to a snapshot. Call VMGetRootSnapshot() to get a snapshot handle.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Any applicable VixVMPowerOpOptions. If the virtual machine was
+             powered on when the snapshot was created, then this will determine
+             how the virtual machine is powered back on. To prevent the virtual
+             machine from being powered on regardless of the power state when
+             the snapshot was created, use the
+             VIX_VMPOWEROP_SUPPRESS_SNAPSHOT_POWERON flag.
+             VIX_VMPOWEROP_SUPPRESS_SNAPSHOT_POWERON is mutually exclusive to all
+             other VixVMPowerOpOptions.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be
+   VIX_INVALID_HANDLE.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> Restores the virtual machine to the state when the specified snapshot was
+created. This function can power on, power off, or suspend a virtual machine.
+The resulting power state reflects the power state when the snapshot was
+created.
+<li> When you revert a powered on virtual machine and want it to display in the 
+Workstation user interface,
+options must have the VIX_VMPOWEROP_LAUNCH_GUI flag, unless the 
+VIX_VMPOWEROP_SUPPRESS_SNAPSHOT_POWERON is used.
+<li> The VIX_PROPERTY_VM_TOOLS_STATE property of the virtual machine handle is
+undefined after the snapshot is reverted. 
+<li> Starting in VMware Workstation 6.5, snapshot operations are allowed on
+virtual machines that are part of a team.  Previously, this operation failed
+with error code VIX_PROPERTY_VM_IN_VMTEAM.  Team members snapshot independently
+so they can have different and inconsistent snapshot states.
+<li> This function is not supported when using the 
+VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+<li> If the virtual machine is open and powered off in the UI, this function
+now closes the virtual machine in the UI before reverting to the snapshot.
+To refresh this property, you must wait for tools in the guest.
+<li> After reverting to a snapshot, you must call
+VMWaitForToolsInGuest
+before executing guest operations or querying guest properties.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Server 1.0
+<h1>Example</h1>
+This example reverts to the root snapshot belonging to a virtual machine.
+<pre>
+my $err = VIX_OK;
+my $hostHandle = VIX_INVALID_HANDLE;
+my $vmHandle = VIX_INVALID_HANDLE;
+my $snapshotHandle = VIX_INVALID_HANDLE;
+my $numRootSnapshots = 0;
+
+($err, $hostHandle) = HostConnect(VIX_API_VERSION,
+                                  VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                  undef, # hostName
+                                  0, # hostPort
+                                  undef, # userName
+                                  undef, # password
+                                  0, # options
+                                  VIX_INVALID_HANDLE); # propertyListHandle
+
+die "HostConnect() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $vmHandle) = VMOpen($hostHandle,
+                           "c:\\Virtual Machines\\vm1\\win2000.vmx");
+die "VMOpen() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $snapshotHandle) = VMGetRootSnapshot($vmHandle,
+                                            0); # index
+die "VMGetRootSnapshot() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+$err = VMRevertToSnapshot($vmHandle, 
+                          $snapshotHandle,
+                          VIX_VMPOWEROP_NORMAL,		# options
+                          VIX_INVALID_HANDLE);		# property handle
+die "VMRevertToSnapshot() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+ReleaseHandle($snapshotHandle);
+ReleaseHandle($vmHandle);
+HostDisconnect($hostHandle);
+                                          
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

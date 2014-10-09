@@ -1,0 +1,200 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_ReadVariable</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_ReadVariable(VixHandle vmHandle,
+                   int variableType,
+                   const char *name,
+                   int options,
+                   VixEventProc *callbackProc,
+                   void *clientData);
+</pre>
+<p>
+This function reads variables from the virtual machine state. This includes
+the virtual machine configuration, environment variables in the guest,
+and VMware "Guest Variables".
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>variableType</i></dt>
+<dd>
+The type of variable to read. The currently supported values are:
+<ul>
+<li> VIX_VM_GUEST_VARIABLE -          A "Guest Variable". This is a runtime-only value; it is never 
+stored persistently. This is the same guest variable that is 
+exposed through the VMControl APIs, and is a simple way to pass 
+runtime values in and out of the guest. 
+<li> VIX_VM_CONFIG_RUNTIME_ONLY -     The configuration state of the virtual machine. This is the .vmx file
+that is stored on the host. You can read this and it will return the 
+persistent data. If you write to this, it will only be a runtime 
+change, so changes will be lost when the VM powers off.
+<li> VIX_GUEST_ENVIRONMENT_VARIABLE - An environment variable in the guest of
+the VM. On a Windows NT series guest,
+writing these values is saved persistently
+so they are immediately visible to
+every process. On a Linux or Windows 9X
+guest, writing these values is not
+persistent so they are only visible to
+the VMware tools process.
+</ul>
+</dd>
+<dt><i>name</i></dt>
+<dd>
+The name of the variable.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+must be 0.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+<ul>
+<li> You must call 
+VixVM_LoginInGuest() 
+before calling this function to read a VIX_GUEST_ENVIRONMENT_VARIABLE value.
+You do not have to call 
+VixVM_LoginInGuest() 
+to use this function to read a VIX_VM_GUEST_VARIABLE or a
+VIX_VM_CONFIG_RUNTIME_ONLY value.
+<li> The result of the call is in the property VIX_PROPERTY_JOB_RESULT_VM_VARIABLE_STRING on the returning jobHandle.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since Workstation 6.0
+<h1>Example</h1>
+This example writes and reads a variable you may define, called "myTestVariable".
+<pre>
+VixError err = VIX_OK;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+char *readValue = NULL;
+
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+Vix_ReleaseHandle(jobHandle);
+
+jobHandle = VixVM_Open(hostHandle,
+                       "c:\\Virtual Machines\\vm1\\win2000.vmx",
+                       NULL, // callbackProc
+                       NULL); // clientData
+                       
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Power on the virtual machine before copying file.
+jobHandle = VixVM_PowerOn(vmHandle,
+                          0, // powerOnOptions
+                          VIX_INVALID_HANDLE, // propertyListHandle
+                          NULL, // callbackProc
+                          NULL); // clientData
+
+err = VixJob_Wait(jobHandle,VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Wait until guest is completely booted.
+jobHandle = VixVM_WaitForToolsInGuest(vmHandle,
+                                      300, // timeoutInSeconds
+                                      NULL, // callbackProc
+                                      NULL); // clientData
+
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+                               
+jobHandle = VixVM_WriteVariable(vmHandle,
+                                VIX_VM_GUEST_VARIABLE,
+                                "myTestVariable",
+                                "newValue",
+                                0, // options
+                                NULL, // callbackProc
+                                NULL); // clientData);
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}                              
+                              
+jobHandle = VixVM_ReadVariable(vmHandle,
+                               VIX_VM_GUEST_VARIABLE,
+                               "myTestVariable",
+                               0, // options
+                               NULL, // callbackProc
+                               NULL); // clientData);
+err = VixJob_Wait(jobHandle, 
+                  VIX_PROPERTY_JOB_RESULT_VM_VARIABLE_STRING,
+                  &readValue,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+abort:
+Vix_FreeBuffer(readValue);
+Vix_ReleaseHandle(jobHandle);
+Vix_ReleaseHandle(vmHandle);
+VixHost_Disconnect(hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

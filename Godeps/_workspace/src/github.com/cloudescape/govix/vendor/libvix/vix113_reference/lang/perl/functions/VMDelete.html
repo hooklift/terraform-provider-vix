@@ -1,0 +1,85 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMDelete</b>
+<h1>Description</h1>
+<pre>
+$err = VMDelete($vmHandle,
+                $deleteOptions);
+</pre>
+<p>
+This function permanently deletes a virtual machine from your host system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>deleteOptions</i></dt>
+<dd>
+For VMware Server 2.0 and ESX, this value must be VIX_VMDELETE_DISK_FILES.
+                   For all other versions it can be either 0 or VIX_VMDELETE_DISK_FILES.
+                   When option is VIX_VMDELETE_DISK_FILES, deletes all associated files.
+                   When option is 0, does not delete *.vmdk virtual disk file(s).
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> This function permanently deletes a virtual machine from your host system.
+You can accomplish the same effect by deleting all virtual machine files
+using the host file system. This function simplifies the task by deleting
+all VMware files in a single function call. If a deleteOptions value of 0
+is specified, the virtual disk (vmdk) files will not be deleted.
+This function does not delete other user files in the virtual machine folder.
+<li> This function is successful only if the virtual machine is powered off
+or suspended.
+<li> Deleting a virtual machine that is the parent of a linked clone renders
+the linked clone useless.
+<li> Calling VMDelete() on a virtual machine handle does not release the
+virtual machine handle.  You still need to call ReleaseHandle() on the
+virtual machine handle.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Server 1.0
+<h1>Example</h1>
+<pre>
+my $err = VIX_OK;
+my $hostHandle = VIX_INVALID_HANDLE;
+my $vmHandle = VIX_INVALID_HANDLE;
+
+($err, $hostHandle) = HostConnect(VIX_API_VERSION,
+                                  VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                  undef, # hostName
+                                  0, # hostPort
+                                  undef, # userName
+                                  undef, # password
+                                  0, # options
+                                  VIX_INVALID_HANDLE); # propertyListHandle
+
+die "HostConnect() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $vmHandle) = VMOpen($hostHandle,
+                           "c:\\Virtual Machines\\vm1\\win2000.vmx");
+die "VMOpen() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+                       
+$err = VMDelete($vmHandle, VIX_VMDELETE_DISK_FILES);
+die "VMDelete() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

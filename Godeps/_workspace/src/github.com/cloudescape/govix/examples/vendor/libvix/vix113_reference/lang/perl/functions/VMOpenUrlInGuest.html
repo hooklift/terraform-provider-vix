@@ -1,0 +1,74 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<div class="deprecated">This function was removed in version 1.11.</div><h1>Name</h1>
+<b>VMOpenUrlInGuest</b>
+<h1>Description</h1>
+<pre>
+$err = VMOpenUrlInGuest($vmHandle,
+                        $url,
+                        $windowState,
+                        $propertyListHandle);
+</pre>
+<p>
+This function is deprecated.
+This function opens a browser window on the specified URL in the
+guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>url</i></dt>
+<dd>
+The URL to be opened.
+</dd>
+<dt><i>windowState</i></dt>
+<dd>
+Must be 0.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be 
+VIX_INVALID_HANDLE.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> This function is deprecated and may be removed from future versions of the 
+VIX API.
+<li> This function opens the URL in the guest operating system.
+<li> You must call 
+VMLoginInGuest() 
+with
+VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT
+in the options, and enable autologin on the guest operating system,
+before calling this function.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+
+$err = VMOpenUrlInGuest($vmHandle, "http://www.vmware.com", 0,
+                        VIX_INVALID_HANDLE):
+die "VMOpenUrlInGuest() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

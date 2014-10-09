@@ -1,0 +1,100 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>AddSharedFolder</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+AddSharedFolder([in] BSTR shareName,
+                [in] BSTR hostPathName,
+                [in] LONG flags,
+                [in] ICallback* jobDoneCallback,
+                [out,retval] IJob** addJob);
+</pre>
+<p>
+This function mounts a new shared folder in the virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>shareName</i></dt>
+<dd>
+Specifies the guest path name of the new shared folder.
+</dd>
+<dt><i>hostPathName</i></dt>
+<dd>
+Specifies the host path of the shared folder.
+</dd>
+<dt><i>flags</i></dt>
+<dd>
+The folder options.
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>addJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this
+              asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function creates a local mount point in the guest file system and
+mounts a shared folder exported by the host.
+<li> Shared folders will only be accessible inside the guest operating system if
+shared folders are enabled for the virtual machine.  See the documentation
+for VM::EnableSharedFolders().
+<li> The folder options include:
+<ul>
+<li> VIX_SHAREDFOLDER_WRITE_ACCESS - Allow write access.
+</ul>
+<li> Only absolute paths should be used for files in the guest; the resolution of
+relative paths is not specified.
+<li> The hostPathName argument must specify a path to a directory that exists on
+the host, or an error will result.
+<li> If a shared folder with the same name exists before calling this function,
+the IJob object returned by this function will return VIX_E_ALREADY_EXISTS.
+<li> It is not necessary to call VM::LoginInGuest() before calling this function.
+<li> When creating shared folders in a Windows guest, there might be a delay
+before contents of a shared folder are visible to functions such as
+FileExistsInGuest and RunProgramInGuest.
+<li> Shared folders are not supported for the following guest operating systems:
+Windows ME, Windows 98, Windows 95, Windows 3.x, and DOS.
+<li> In this release, this function requires the virtual machine to be powered on
+with VMware Tools installed.
+<li> To determine in which directory in the guest the shared folder will be,
+query the VIX_PROPERTY_GUEST_SHAREDFOLDERS_SHARES_PATH property
+on the virtual machine handle. When the virtual machine is powered on and
+the VMware Tools are running, this property will contain the path to the
+parent directory of the shared folders for that virtual machine.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<h1>Example</h1>
+VBScript:
+<pre>
+Dim job
+Dim err
+
+Set job = vm.AddSharedFolder("WorkDir", "/work", VixCOM.Constants.VIX_SHAREDFOLDER_WRITE_ACCESS, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set job = Nothing
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

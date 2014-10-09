@@ -1,0 +1,130 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>LogoutFromGuest</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+LogoutFromGuest([in] ICallback* jobDoneCallback,
+                [out,retval] IJob** logoutJob);
+</pre>
+<p>
+This function removes any guest operating system authentication context
+created by a previous call to 
+VM::LoginInGuest().
+<h1>Parameters</h1>
+<dl>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>logoutJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function has no effect and returns success if 
+VM::LoginInGuest()
+has not been called.
+<li> If you call this function while guest operations are in progress,
+subsequent operations may fail with a permissions error.
+It is best to wait for guest operations to complete before logging out.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+This example copies a compiled object file from a virtual machine to be
+run on the host.
+<pre>
+Dim lib
+Dim host
+Dim job
+Dim vm
+Dim result
+
+Set lib = CreateObject("VixCOM.VixLib")
+
+' Connect to the local installation of Workstation. This also initializes the VIX API.
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION, Empty, 0, Empty, Empty, 0, Nothing, Nothing)
+
+' results needs to be initialized before it's used, even if it's just going to be overwritten.
+Set results = Nothing
+
+' Wait waits until the job started by an asynchronous function call has finished. It also
+' can be used to get various properties from the job. The first argument is an array
+' of VIX property IDs that specify the properties requested. When Wait returns, the 
+' second argument will be set to an array that holds the values for those properties,
+' one for each ID requested.
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+' The job result handle will be first element in the results array.
+Set host = results(0)
+
+' Open the virtual machine with the given .vmx file.
+Set job = host.OpenVM("C:\VMs\winxpprowithsp2\winxpprowithsp2.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set vm = results(0)
+
+' Power on the virtual machine we just opened. This will launch Workstation if it hasn't
+' already been started.
+Set job = vm.PowerOn(VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI, Nothing, Nothing)
+' WaitWithoutResults is just like Wait, except it does not get any properties. 
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+' Wait until VMware Tools are running within the guest, with a 300 second timeout.
+Set job = vm.WaitForToolsInGuest(300, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set job = vm.LoginInGuest("User", "Password", 0, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set job = vm.CopyFileFromGuestToHost("c:\guestDir\helloworld.o", "c:\hostDir\helloworld.o", 0, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+
+host.Disconnect()
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

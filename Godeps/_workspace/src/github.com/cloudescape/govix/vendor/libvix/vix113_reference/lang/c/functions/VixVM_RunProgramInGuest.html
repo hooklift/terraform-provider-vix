@@ -1,0 +1,228 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_RunProgramInGuest</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_RunProgramInGuest(VixHandle vmHandle,
+                        const char *guestProgramName,
+                        const char *commandLineArgs,
+                        VixRunProgramOptions options,
+                        VixHandle propertyListHandle,
+                        VixEventProc *callbackProc,
+                        void *clientData);
+</pre>
+<p>
+This function runs a program in the guest operating system. The program must
+be stored on a file system available to the guest before calling this function.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>guestProgramName</i></dt>
+<dd>
+The path name of an executable file on the guest
+                      operating system.
+</dd>
+<dt><i>commandLineArgs</i></dt>
+<dd>
+A string to be passed as command line arguments to the
+                     executable identified by guestProgramName.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Run options for the program. See the remarks below.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be VIX_INVALID_HANDLE.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+<ul>
+<li> This function runs a program in the guest operating system. The program must
+be stored on a file system available to the guest before calling this
+function.
+<li> The current working directory for the program in the guest is not defined.
+Absolute paths should be used for files in the guest, including 
+guestProgramName and any command-line arguments.
+<li> You must call VixVM_LoginInGuest() before calling this function.
+<li> If the program to run in the guest is intended to be visible to the user in
+the guest, such as an application with a graphical user interface, you must
+call VixVM_LoginInGuest() with VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT as the option
+before calling this function. This will ensure that 
+the program is run within a graphical session that is visible to the user.
+<li> If the options parameter is 0, this function will report completion to
+the job handle when the program exits in the guest operating system.
+Alternatively, you can pass VIX_RUNPROGRAM_RETURN_IMMEDIATELY as the
+value of the options parameter, and this function reports completion 
+to the job handle as soon as the program starts in the guest.
+<li> For Windows guest operating systems, when running a program with a graphical
+user interface, you can pass VIX_RUNPROGRAM_ACTIVATE_WINDOW
+as the value of the options parameter. This option will ensure that the 
+application's window is visible and not minimized on the guest's screen. 
+This can be combined with the VIX_RUNPROGRAM_RETURN_IMMEDIATELY
+flag using the bitwise inclusive OR operator (|).
+VIX_RUNPROGRAM_ACTIVATE_WINDOW has no effect on Linux guest operating
+systems.
+<li> On a Linux guest operating system, if you are running a program with a
+graphical user interface, it must know what X Windows display to use,
+for example host:0.0, so it can make the program visible on that display.
+Do this by passing the -display argument to the program, if it supports
+that argument, or by setting the DISPLAY environment variable on the guest.
+See documentation on
+VixVM_WriteVariable.
+<li> When the job is signaled, the following properties will be available on
+the returned job handle:
+<ul>
+<li> VIX_PROPERTY_JOB_RESULT_PROCESS_ID: the process id; however, if the guest
+has an older version of Tools (those released with Workstation 6 and 
+earlier) and the VIX_RUNPROGRAM_RETURN_IMMEDIATELY
+flag is used, then the process ID will not be returned from the guest and
+this property will not be set on the job handle, so attempting to access
+this property will result in VIX_E_UNRECOGNIZED_PROPERTY being returned;
+<li> VIX_PROPERTY_JOB_RESULT_GUEST_PROGRAM_ELAPSED_TIME: the process elapsed time in seconds;
+<li> VIX_PROPERTY_JOB_RESULT_GUEST_PROGRAM_EXIT_CODE: the process exit code.
+</ul>
+If the option parameter is VIX_RUNPROGRAM_RETURN_IMMEDIATELY, the latter two will
+both be 0.
+<li> Depending on the behavior of the guest operating system, there may be a
+short delay after the job completes before the process is visible in the
+guest operating system.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+VixError err = VIX_OK;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+Vix_ReleaseHandle(jobHandle);
+jobHandle = VixVM_Open(hostHandle,
+                       "c:\\Virtual Machines\\vm1\\win2000.vmx",
+                       NULL, // callbackProc
+                       NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+jobHandle = VixVM_PowerOn(vmHandle,
+                          0, // powerOnOptions
+                          VIX_INVALID_HANDLE, // propertyListHandle
+                          NULL, // callbackProc
+                          NULL); // clientData
+
+err = VixJob_Wait(jobHandle,VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Wait until guest is completely booted.
+jobHandle = VixVM_WaitForToolsInGuest(vmHandle,
+                                      300, // timeoutInSeconds
+                                      NULL, // callbackProc
+                                      NULL); // clientData
+
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Authenticate for guest operations.
+jobHandle = VixVM_LoginInGuest(vmHandle,
+                               "vixuser", // userName
+                               "secret", // password
+                               0, // options
+                               NULL, // callbackProc
+                               NULL); // clientData
+
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Run the target program.
+jobHandle = VixVM_RunProgramInGuest(vmHandle,
+                                    "c:\\myProgram.exe",
+                                    "/flag arg1 arg2",
+                                    0, // options,
+                                    VIX_INVALID_HANDLE, // propertyListHandle,
+                                    NULL, // callbackProc,
+                                    NULL); // clientData
+
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+abort:
+Vix_ReleaseHandle(jobHandle);
+Vix_ReleaseHandle(vmHandle);
+VixHost_Disconnect(hostHandle);
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

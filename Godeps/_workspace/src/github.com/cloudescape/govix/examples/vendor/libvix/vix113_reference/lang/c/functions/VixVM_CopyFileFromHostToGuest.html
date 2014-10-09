@@ -1,0 +1,203 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_CopyFileFromHostToGuest</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_CopyFileFromHostToGuest(VixHandle vmHandle,
+                              const char* hostPathName,
+                              const char* guestPathName,
+                              int options,
+                              VixHandle propertyListHandle,
+                              VixEventProc *callbackProc,
+                              void *clientData);
+</pre>
+<p>
+Copies a file or directory from the local system (where the Vix client is running) to the
+guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>hostPathName</i></dt>
+<dd>
+The path name of a file on a file system available
+                  to the Vix client.
+</dd>
+<dt><i>guestPathName</i></dt>
+<dd>
+The path name of a file on a file system available
+                   to the guest.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be VIX_INVALID_HANDLE.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+<ul>
+<li> The virtual machine must be running while the file is copied
+from the Vix client machine to the guest operating system.
+<li> Existing files of the same name are overwritten,
+and folder contents are merged.
+<li> The copy operation requires VMware Tools to be installed and running
+in the guest operating system.
+<li> You must call VixVM_LoginInGuest() before calling this function.
+<li> The format of the file name depends on the guest or local operating system.
+For example, a path name for a Microsoft Windows guest or host requires
+backslash as a directory separator, whereas a Linux guest or host requires
+a forward slash. If the path name includes backslash characters, you need
+to precede each one with an escape character.
+<li> Only absolute paths should be used for files in the guest; the resolution of 
+relative paths is not specified.
+<li> If any file fails to be copied, Vix aborts the operation,
+does not attempt to copy the remaining files, and returns an error.
+<li> In order to copy a file to a mapped network drive in a Windows guest operating
+system, it is necessary to call
+VixVM_LoginInGuest() with the VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT flag set.
+Using the interactive session option incurs an overhead in file transfer
+speed.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+This example copies a source file from the host so it can be compiled in a
+virtual machine.
+<pre>
+VixError err = VIX_OK;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+Vix_ReleaseHandle(jobHandle);
+jobHandle = VixVM_Open(hostHandle,
+                       "c:\\Virtual Machines\\vm1\\win2000.vmx",
+                       NULL, // callbackProc
+                       NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Power on the virtual machine before copying file.
+jobHandle = VixVM_PowerOn(vmHandle,
+                          0, // powerOnOptions
+                          VIX_INVALID_HANDLE, // propertyListHandle
+                          NULL, // callbackProc
+                          NULL); // clientData
+
+err = VixJob_Wait(jobHandle,VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Wait until guest is completely booted.
+jobHandle = VixVM_WaitForToolsInGuest(vmHandle,
+                                      300, // timeoutInSeconds
+                                      NULL, // callbackProc
+                                      NULL); // clientData
+
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Authenticate for guest operations.
+jobHandle = VixVM_LoginInGuest(vmHandle,
+                               "vixuser", // userName
+                               "secret", // password
+                               0, // options
+                               NULL, // callbackProc
+                               NULL); // clientData
+
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+// Copy the file.
+jobHandle = VixVM_CopyFileFromHostToGuest(vmHandle,
+                                          "c:\\hostDir\\helloworld.c",  // src name
+                                          "c:\\guestDir\\helloworld.c", // dest name
+                                          0, // options
+                                          VIX_INVALID_HANDLE, // propertyListHandle
+                                          NULL, // callbackProc
+                                          NULL); // clientData
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+
+Vix_ReleaseHandle(jobHandle);
+
+abort:
+Vix_ReleaseHandle(jobHandle);
+Vix_ReleaseHandle(vmHandle);
+VixHost_Disconnect(hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

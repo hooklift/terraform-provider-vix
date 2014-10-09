@@ -1,0 +1,117 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<div class="deprecated">This function was removed in version 1.11.</div><h1>Name</h1>
+<b>EndRecording</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+EndRecording(LONG options,
+             IVixHandle* propertyList,
+             ICallback* jobDoneCallback,
+             IJob** recordingJob);
+</pre>
+<p>
+This function stops recording a virtual machine's activity.
+<h1>Parameters</h1>
+<dl>
+<dt><i>options</i></dt>
+<dd>
+Must be zero.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be NULL (C++), null (C#), or Nothing (VB).
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                     operation is complete.
+</dd>
+<dt><i>recordingJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this
+                  asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> Record-replay functionality has been deprecated and this function may be removed from future versions of the VIX API.
+<li> This operation only works on a virtual machine that is recording.
+<li> This function is not supported when using the 
+VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+</ul>
+<h1>Side Effects</h1>
+<ul>
+<li> This function disrupts communication with VMware Tools.
+Any outstanding Vix related guest operation may be aborted. Users will
+need to call 
+WaitForToolsInGuest
+before performing additional operations in the guest.
+</ul>
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.5
+<h1>Example</h1>
+<pre>
+
+</pre>
+The following example shows how to record the execution of a virtual machine
+while a program is running, then stop the recording once the program exits, and
+then replay that recording.
+<p>
+VBScript:
+<pre>
+' Start the recording
+Set job = vm.BeginRecording("Recording of testApp", "Testing a new feature", _
+                            0, Nothing, Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+recording = results(0)
+
+' Run the program
+Set job = vm.RunProgramInGuest("C:\testApp.exe", "", 0, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+' By default, RunProgramInGuest waits until the program has finished running.
+
+' Stop the recording.
+Set job = vm.EndRecording(0, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+' Power off the virtual machine before replaying the recording.
+Set job = vm.PowerOff(0, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set job = vm.BeginReplay(recording, 0, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set results = Nothing
+Set job = Nothing
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

@@ -1,0 +1,55 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>WaitWithoutResults</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+WaitWithoutResults([out,retval] ULONGLONG* error);
+</pre>
+<p>
+Wait for a particular job to complete, without checking any of
+the properties of that job.
+<h1>Parameters</h1>
+<dl>
+<dt><i>error</i></dt>
+<dd>
+The error resulting from the asynchronous operation that returned
+           the job handle.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function blocks until the job completes.
+<li> The error code returned by this function is the same as the error code
+returned by Job::GetError().
+<li> The error code returned by this function is also available in the
+VIX_JOB_RESULT_ERROR_CODE property of the job object.
+<li> Do not use WaitWithoutResults() to complete a job for which you have passed an
+ICallback instance. The completion order in such a situation is undefined,
+and you cannot rely on the resulting property values.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0.
+<h1>Example</h1>
+<pre>
+Dim job
+Dim err
+
+' Power on the virtual machine in headless mode.
+Set job = vm.PowerOn(VixCOM.Constants.VIX_POWEROP_NORMAL, Nothing, Nothing)
+err = job.WaitWithoutResults()
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

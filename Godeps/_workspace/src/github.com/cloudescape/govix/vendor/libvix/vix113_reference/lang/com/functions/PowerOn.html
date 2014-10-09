@@ -1,0 +1,197 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>PowerOn</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+PowerOn([in] LONG powerOnOptions,
+        [in] IVixHandle* propertyList,
+        [in] ICallback* jobDoneCallback,
+        [out,retval] IJob** powerJob);
+</pre>
+<p>
+Powers on a virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>powerOnOptions</i></dt>
+<dd>
+VixCOM.Constants.VIX_VMPOWEROP_NORMAL or
+                    VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be NULL (C++), null (C#), or Nothing (VB).
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>powerJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this
+              asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function powers on a virtual machine.
+It is an asynchronous operation,
+and the IJob object will be signalled when the operation completes.
+<li> This operation completes when the virtual machine has started to boot. 
+If the VMware Tools have been installed on this guest operating system,
+you can call VM::WaitForToolsInGuest to determine when the guest has finished booting.
+<li> After powering on, you must call
+VM::WaitForToolsInGuest
+before executing guest operations or querying guest properties.
+<li> In Server 1.0, when you power on a virtual machine, the virtual machine is powered on
+independent of a console window. If a console window is open, it remains open.
+Otherwise, the virtual machine is powered on without a console window.
+<li> To display a virtual machine with a Workstation user interface, you must connect to 
+powerOnOptions must have the VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI flag, and you
+must be connected to the host with the VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION
+flag. If there is an existing instance of the Workstation user interface, the virtual machine 
+will power on in a new tab within that instance. Otherwise, a new instance of 
+Workstation will open, and the virtual machine will power on there.
+<li> To display a virtual machine with a Player user interface,
+powerOnOptions must have the VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI flag, and you
+must be connected to the host with the VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_PLAYER
+flag. A new instance of Player will always open, and the virtual machine will power on there.
+<li> This function can also be used to resume execution of a suspended virtual
+machine.
+<li> The VIX_VMPOWEROP_LAUNCH_GUI option is not supported for encrypted
+virtual machines; attempting to power on with this option
+results in VIX_E_NOT_SUPPORTED.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+</pre>
+VBScript:
+<pre>
+Dim lib
+Dim host
+Dim vm
+Dim err
+Dim results
+Dim job
+
+Set lib = CreateObject("VixCOM.VixLib")
+
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION, Empty, 0, Empty, Empty, 0, Nothing, Nothing)
+
+' results needs to be initialized before it's used, even if it's just going to be overwritten.
+Set results = Nothing
+
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set host = results(0)
+
+Set job = host.OpenVM("C:\VMs\winxppro\winxppro.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set vm = results(0)
+
+Set job = vm.PowerOn(VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI, Nothing, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+'Execute other commands here
+
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+
+host.Disconnect()
+</pre>
+C#:
+<pre>
+class Program
+{
+
+   static void Main(string[] args)  
+   {
+      VixCOM.VixLibClass lib = new VixCOM.VixLibClass();
+      UInt64 err;
+      object results = null;
+      
+      VixCOM.IJob job = lib.Connect(VixCOM.Constants.VIX_API_VERSION,
+                                    VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                    null,
+                                    0,
+                                    null,
+                                    null,
+                                    0,
+                                    null,
+                                    null);
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE },
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IHost host = (VixCOM.IHost)((object[])results)[0];
+      CloseVixObject(job);
+
+      job = host.OpenVM("C:\\VMs\\winxppro\\winxppro.vmx", null);
+
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE }, 
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IVM2 vm = (VixCOM.IVM2)((object[])results)[0];
+      CloseVixObject(job);
+
+      job = vm.PowerOn(VixCOM.Constants.VIX_VMPOWEROP_LAUNCH_GUI, null, null);
+      job.WaitWithoutResults();
+      if (lib.ErrorIndicatesFailure(err))
+      {
+         // Handle the error... 
+      }
+      CloseVixObject(job);
+
+      // Execute other commands here
+
+      CloseVixObject(vm);
+     
+      host.Disconnect();
+   }
+
+   static void CloseVixObject(Object vixObject)
+   {
+      try
+      {
+         ((IVixHandle2)vixObject).Close();
+      }
+      catch(Exception)
+      {
+         //Close is not supported in this version of Vix COM - Ignore
+      }
+   }
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

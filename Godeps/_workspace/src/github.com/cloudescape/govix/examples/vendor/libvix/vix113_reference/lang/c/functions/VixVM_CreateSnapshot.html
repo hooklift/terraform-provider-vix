@@ -1,0 +1,180 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_CreateSnapshot</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_CreateSnapshot(VixHandle vmHandle,
+                     const char *name,
+                     const char *description,
+                     int options,
+                     VixHandle propertyListHandle,
+                     VixEventProc *callbackProc,
+                     void *clientData);
+</pre>
+<p>
+This
+function
+saves a copy of the virtual machine state as a snapshot object.
+The handle of the snapshot object is returned in the job object properties.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>name</i></dt>
+<dd>
+A user-defined name for the snapshot; need not be unique.
+</dd>
+<dt><i>description</i></dt>
+<dd>
+A user-defined description for the snapshot.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Flags to specify how the snapshot should be created. Any
+             combination of the following or 0 to exclude memory:
+<ul>
+<li> VIX_SNAPSHOT_INCLUDE_MEMORY - Captures the full state of a
+running virtual machine, including the memory.
+</ul>
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be VIX_INVALID_HANDLE.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+<ul>
+<li> This function creates a child snapshot of the current snapshot.
+<li> If a virtual machine is suspended, you cannot snapshot it more than once.
+<li> If a powered-on virtual machine gets a snapshot created with option 0 (exclude memory),
+the power state is not saved, so reverting to the snapshot sets powered-off state.
+<li> The 'name' and 'description' parameters can be set but not retrieved
+using the VIX API.
+<li> VMware Server supports only a single snapshot for each virtual machine.
+The following considerations apply to VMware Server:
+<ul>
+<li> If you call this function a second time for the same virtual machine
+without first deleting the snapshot, the second call will overwrite
+the previous snapshot.
+<li> A virtual machine imported to VMware Server from another VMware product
+might have more than one snapshot at the time it is imported.
+In that case, you can use this function to add a new snapshot to the
+series.
+</ul>
+<li> Starting in VMware Workstation 6.5, snapshot operations are allowed on
+virtual machines that are part of a team.  Previously, this operation failed
+with error code VIX_PROPERTY_VM_IN_VMTEAM.  Team members snapshot independently
+so they can have different and inconsistent snapshot states.
+<li> This function is not supported when using the
+VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+<li> If the virtual machine is open and powered off in the UI, this function
+now closes the virtual machine in the UI before creating the snapshot.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+VixError err = VIX_OK;
+VixHandle hostHandle = VIX_INVALID_HANDLE;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle vmHandle = VIX_INVALID_HANDLE;
+VixHandle snapshotHandle = VIX_INVALID_HANDLE;
+
+jobHandle = VixHost_Connect(VIX_API_VERSION,
+                            VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                            NULL, // hostName
+                            0, // hostPort
+                            NULL, // userName
+                            NULL, // password
+                            0, // options
+                            VIX_INVALID_HANDLE, // propertyListHandle
+                            NULL, // callbackProc
+                            NULL); // clientData
+
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &hostHandle,
+                  VIX_PROPERTY_NONE);
+
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+// Release handle after use:
+Vix_ReleaseHandle(jobHandle);
+jobHandle = VixVM_Open(hostHandle,
+                       "c:\\Virtual Machines\\vm1\\win2000.vmx",
+                       NULL, // callbackProc
+                       NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &vmHandle,
+                  VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+// Release handle after use:
+Vix_ReleaseHandle(jobHandle);
+
+// Power on the virtual machine before copying file.
+jobHandle = VixVM_PowerOn(vmHandle,
+                          0, // powerOnOptions
+                          VIX_INVALID_HANDLE, // propertyListHandle
+                          NULL, // callbackProc
+                          NULL); // clientData
+
+err = VixJob_Wait(jobHandle,VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+   goto abort;
+}
+// Release handle after use:
+Vix_ReleaseHandle(jobHandle);
+
+// Create snapshot in powered-on state.
+jobHandle = VixVM_CreateSnapshot(vmHandle,
+                                 NULL, // name
+                                 NULL, // description
+                                 VIX_SNAPSHOT_INCLUDE_MEMORY, // options
+                                 VIX_INVALID_HANDLE, // propertyListHandle
+                                 NULL, // callbackProc
+                                 NULL); // clientData
+err = VixJob_Wait(jobHandle,
+                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+                  &snapshotHandle,
+                  VIX_PROPERTY_NONE);
+
+abort:
+Vix_ReleaseHandle(jobHandle);
+Vix_ReleaseHandle(snapshotHandle);
+Vix_ReleaseHandle(vmHandle);
+VixHost_Disconnect(hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

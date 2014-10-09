@@ -1,0 +1,52 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixToolsState</b>
+<h1>Description</h1>
+These are the possible values reported for VIX_PROPERTY_VM_TOOLS_STATE.
+They represent runtime information about the VMware Tools suite in the guest operating system.  To test the value of the property, use the Vix_GetProperties() function.
+<h1>Values</h1>
+<dl>
+<dt><i>VIX_TOOLSSTATE_UNKNOWN</i></dt>
+<dd>
+Indicates that Vix is unable to determine the VMware Tools status.
+<p>
+</dd>
+<dt><i>VIX_TOOLSSTATE_RUNNING</i></dt>
+<dd>
+Indicates that VMware Tools is running in the guest operating system.
+<p>
+</dd>
+<dt><i>VIX_TOOLSSTATE_NOT_INSTALLED</i></dt>
+<dd>
+Indicates that VMware Tools is not installed in the guest operating system.
+</dd>
+</dl>
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+<h1>Example</h1>
+This example retrieves the Tools state of a virtual machine.
+<pre>
+VixError err = VIX_OK;
+VixHandle myVM = VIX_INVALID_HANDLE;
+VixToolsState toolsState = 0;
+
+// ...Open the virtual machine and get a handle...
+
+// Test the Tools state.
+err = Vix_GetProperties(myVM,
+                        VIX_PROPERTY_VM_TOOLS_STATE,
+                        &toolsState,
+                        VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+  // Handle the error...
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2008 VMware, Inc.  All rights reserved.

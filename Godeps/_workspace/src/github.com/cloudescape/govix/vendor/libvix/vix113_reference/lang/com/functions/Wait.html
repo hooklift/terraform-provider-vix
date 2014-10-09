@@ -1,0 +1,172 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>Wait</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+Wait([in] VARIANT propertyIDs,
+     [in,out] VARIANT* propertiesArray,
+     [out,retval] ULONGLONG* error);
+</pre>
+<p>
+Wait for a particular job to complete.
+Unsuitable for asynchronous operations with
+ICallback object.
+<h1>Parameters</h1>
+<dl>
+<dt><i>propertyIDs</i></dt>
+<dd>
+An array of propertyIDs to identify the properties
+                 to fetch. 
+</dd>
+<dt><i>propertiesArray</i></dt>
+<dd>
+An returned array that stores the properties
+                     identified by the array "propertyIDs". Each 
+                     element in "propertiesArray" matches the 
+                     corresponding identifier in "propertiesArray";
+                     for example, if the first element in the "propertyIDs" array 
+                     is VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE,
+                     the first element in "propertiesArray" will be the
+                     object that is the result of this job, if one exists.
+</dd>
+<dt><i>error</i></dt>
+<dd>
+The error resulting from the asynchronous operation that returned
+           the IJob object.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function blocks until the job completes.
+<li> The error code returned by this function is the same as the error code
+returned by
+Job::GetError().
+<li> The error code returned by this function is also available in the
+VixCOM.Constants.VIX_JOB_RESULT_ERROR_CODE
+property of the job object.
+<li> Do not use
+Wait()
+to complete a job for which you have passed a
+ICallback object.
+The completion order in such a situation is undefined,
+and you cannot rely on the resulting property values.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0.
+<h1>Example</h1>
+<pre>
+</pre>
+VBScript:
+<pre>
+Dim lib
+Dim host
+Dim job
+Dim vm
+Dim result
+
+Set lib = CreateObject("VixCOM.VixLib")
+
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION, Empty, 0, Empty, Empty, 0, Nothing, Nothing)
+
+' results needs to be initialized before it's used, even if it's just going to be overwritten.
+Set results = Nothing
+
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set host = results(0)
+Set job = Nothing
+
+Set job = host.OpenVM("c:\Virtual Machines\vm1\win2000.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set vm = results(0)
+
+' ...Do everything in your program...
+
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+
+host.Disconnect()
+</pre>
+C#:
+<pre>
+class Program
+{
+
+   static void Main(string[] args)  
+   {
+      VixCOM.VixLibClass lib = new VixCOM.VixLibClass();
+      UInt64 err;
+      object results = null;
+      
+      VixCOM.IJob job = lib.Connect(VixCOM.Constants.VIX_API_VERSION,
+                                    VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                    null,
+                                    0,
+                                    null,
+                                    null,
+                                    0,
+                                    null,
+                                    null);
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE },
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IHost host = (VixCOM.IHost)((object[])results)[0];
+      CloseVixObject(job);
+
+      job = host.OpenVM("c:\\Virtual Machines\\vm1\\win2000.vmx", null);
+
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE }, 
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IVM2 vm = (VixCOM.IVM2)((object[])results)[0];
+      CloseVixObject(job);
+
+      // ...Do everything in your program...
+
+      CloseVixObject(vm);
+     
+      host.Disconnect();
+   }
+
+   static void CloseVixObject(Object vixObject)
+   {
+      try
+      {
+         ((IVixHandle2)vixObject).Close();
+      }
+      catch(Exception)
+      {
+         //Close is not supported in this version of Vix COM - Ignore
+      }
+   }
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

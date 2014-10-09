@@ -1,0 +1,178 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>FindItems</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+FindItems([in] LONG searchType,
+          [in] IVixHandle* searchCriteria,
+          [in] LONG timeout,
+          [in] ICallback* jobDoneCallback,
+          [out,retval] IJob** findJob);
+</pre>
+<p>
+This
+method
+asynchronously finds Vix objects and calls the application's
+ICallback object's OnVixEvent method
+to report each object found. For example, when used to
+find all running virtual machines,
+FindItems()
+returns a series
+of virtual machine file path names.
+<h1>Parameters</h1>
+<dl>
+<dt><i>searchType</i></dt>
+<dd>
+The type of items to find. Values are listed in the
+                Types Reference under VixFindItemType.
+</dd>
+<dt><i>searchCriteria</i></dt>
+<dd>
+Must be 
+                    NULL (C++), null (C#), Nothing (VB).
+</dd>
+<dt><i>timeout</i></dt>
+<dd>
+Must be -1.
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>findJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this
+                asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> When an object is found, VixHost_FindItems() passes the value
+VIX_EVENTTYPE_FIND_ITEM in the eventType parameter.
+<li> When an object is found, VixHost_FindItems() passes a property list object
+containing the location of the object found. The property list is passed
+as the value of the moreEventInfo parameter. The property list contains
+a single string value (VIX_PROPERTY_FOUND_ITEM_LOCATION), which is the
+URL of the item found.  For Server 2.0, ESX and vSphere, this
+value includes the datacenter.
+<li> When VixHost_FindItems() is done searching, it calls the callback function
+a final time and passes VIX_EVENTTYPE_CALLBACK_SIGNALLED as the event type.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0.
+<h1>Example</h1>
+The following example prints the path name of every virtual machine currently
+running on the host.
+C#:
+<pre>
+class Program
+{
+
+   static void Main(string[] args)  
+   {
+      VixCOM.VixLibClass lib = new VixCOM.VixLibClass();
+      UInt64 err;
+      object results = null;
+      
+      VixCOM.IJob job = lib.Connect(VixCOM.Constants.VIX_API_VERSION,
+                                    VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                    null,
+                                    0,
+                                    null,
+                                    null,
+                                    0,
+                                    null,
+                                    null);
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE },
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IHost host = (VixCOM.IHost)((object[])results)[0];
+      CloseVixObject(job);
+
+     
+      job = host.FindItems(VixCOM.Constants.VIX_FIND_RUNNING_VMS,
+                           null,
+                           -1,
+                           new DiscoveryCallback(lib));
+      job.WaitWithoutResults();
+      CloseVixObject(job);
+     
+      host.Disconnect();
+   }
+
+   static void CloseVixObject(Object vixObject)
+   {
+      try
+      {
+         ((IVixHandle2)vixObject).Close();
+      }
+      catch(Exception)
+      {
+         //Close is not supported in this version of Vix COM
+      }
+   }
+   
+   class DiscoveryCallback : VixCOM.ICallback {
+      
+      protected VixCOM.VixLibClass lib;
+      
+      public DiscoveryCallback(VixCOM.VixLibClass lib)
+      {
+         this.lib = lib;
+      }
+      
+      public void OnVixEvent(VixCOM.IJob job,
+                             int eventType,
+                             VixCOM.IVixHandle moreEventInfo)
+      {
+         UInt64 err;
+
+         // Ignore progress reports.
+         if (eventType == VixCOM.Constants.VIX_EVENTTYPE_FIND_ITEM) {
+            object results = null;
+
+            err = moreEventInfo.GetProperties(new int[] { VixCOM.Constants.VIX_PROPERTY_FOUND_ITEM_LOCATION },
+                                              ref results);
+            if (lib.ErrorIndicatesFailure(err)) {
+               // Handle the error...
+               return;
+            }
+
+            string vmPathName = (string)((object[])results)[0];
+
+            // vmPathName now has the path to the virtual machine's .vmx file.
+            // You can use it to open the virtual machine.
+         }
+
+         /*
+          * Close job object since we are done with this object
+          * Note: This does not invalidate the original job object that specified this as its callback function
+          * i.e. IJob createSnapshotJob = vm.CreateSnapshot(...); createSnapshotJob is still valid and can be used
+          */
+         ((IVixHandle2)job).Close();
+         if (null != moreEventInfo) {
+            ((IVixHandle2)moreEventInfo).Close();
+         }
+      }
+   }
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

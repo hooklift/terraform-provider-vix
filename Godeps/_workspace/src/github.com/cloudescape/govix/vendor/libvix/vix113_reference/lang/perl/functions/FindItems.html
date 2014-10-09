@@ -1,0 +1,59 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>FindItems</b>
+<h1>Description</h1>
+<pre>
+@vmlist = FindItems($hostHandle, $searchType, $timeoutInSeconds);
+</pre>
+<p>
+Returns the the VMs running on the host associated with the hostHandle.
+The first element in the list is an error code.
+<h1>Parameters</h1>
+<dl>
+<dt><i>hostHandle</i></dt>
+<dd>
+The host handle returned by HostConnect().
+<p>
+</dd>
+<dt><i>searchType</i></dt>
+<dd>
+The type of items to find. Values are listed in the
+                Types Reference under VixFindItemType.
+<p>
+</dd>
+<dt><i>timeoutInSeconds</i></dt>
+<dd>
+must be -1.
+</dd>
+</dl>
+<h1>Return Value</h1>
+A list, with an error code as the first entry, and the paths of
+Virtual Machine's matching $searchType following.
+<h1>Remarks</h1>
+FindRunningVMs() is a shortcut to FindItems() with searchType VIX_FIND_RUNNING_VMS.
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+Since VMware Workstation 6.5
+<h1>Example</h1>
+<pre>
+my @vms = FindItems($hostHandle, VIX_FIND_REGISTERED_VMS, 100);
+my $err = shift @vms;
+die "Error $err finding registered VMs ", GetErrorText($err),"\n" if $err != VIX_OK;
+
+print "Registered VMs: @vms\n";
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

@@ -1,0 +1,52 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMFileExistsInGuest</b>
+<h1>Description</h1>
+<pre>
+($err, $exists) = VMFileExistsInGuest($vmHandle,
+                                      $guestPathName);
+</pre>
+<p>
+This function tests the existence of a file in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>guestPathName</i></dt>
+<dd>
+The path to the file to be tested.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<p>
+$exists.  Whether the file system object exists.
+<h1>Remarks</h1>
+<ul>
+<li> You must call VMLoginInGuest() before calling this function.
+<li> Only absolute paths should be used for files in the guest; the resolution of 
+relative paths is not specified.
+<li> If guestPathName exists as a file system object, but is not a normal
+file (e.g. it is a directory, device, UNIX domain socket, etc), then
+VIX_OK is returned, and $exists  is set to FALSE.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br></body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

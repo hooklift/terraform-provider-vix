@@ -1,0 +1,53 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>GetPropertyType</b>
+<h1>Description</h1>
+<pre>
+Vix_GetPropertyType(VixHandle handle,
+                    VixPropertyID propertyID,
+                    VixPropertyType *propertyType);
+HRESULT
+GetPropertyType([in] LONG propertyID,
+                [out] LONG* propertyType,
+                [out,retval] ULONGLONG* error);
+</pre>
+<p>
+Given a property ID, this
+method
+returns the type of that property.
+<h1>Parameters</h1>
+<dl>
+<dt><i>propertyID</i></dt>
+<dd>
+A property ID. See below for valid values.
+</dd>
+<dt><i>propertyType</i></dt>
+<dd>
+The type of the data stored by the property.
+</dd>
+<dt><i>error</i></dt>
+<dd>
+This method returns VIX_OK if it succeeded.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+This
+method
+identifies the data type of a property.
+For a list of property data types, refer to the Types Reference topic.
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0.
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

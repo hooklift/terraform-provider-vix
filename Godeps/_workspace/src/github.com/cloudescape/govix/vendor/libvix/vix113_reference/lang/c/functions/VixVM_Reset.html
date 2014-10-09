@@ -1,0 +1,76 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_Reset</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_Reset(VixHandle vmHandle,
+            VixVMPowerOpOptions powerOnOptions,
+            VixEventProc *callbackProc,
+            void *clientData);
+</pre>
+<p>
+This function resets a virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>powerOnOptions</i></dt>
+<dd>
+Must be VIX_VMPOWEROP_NORMAL or VIX_VMPOWEROP_FROM_GUEST.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the power
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous operation.
+<h1>Remarks</h1>
+<ul>
+<li> This function resets a virtual machine.
+It is an asynchronous operation,
+and the job will be signaled when the operation completes.
+<li> If the virtual machine is not powered on when you call this function,
+it returns an error.
+<li> If you pass VIX_VMPOWEROP_NORMAL as an option, this function is
+the equivalent of pressing the reset button on a physical machine.
+<li> If you pass VIX_VMPOWEROP_FROM_GUEST as an option, this function tries to
+reset the guest OS, ensuring a clean shutdown of the guest. This option
+requires that the VMware Tools be installed and running in the guest.
+<li> After VMware Tools begin running in the guest, and
+VixVM_WaitForToolsInGuest
+returns, there is a short delay before VIX_VMPOWEROP_FROM_GUEST becomes available.
+During this time a job may return error 3009, VIX_E_POWEROP_SCRIPTS_NOT_AVAILABLE.
+As a workaround, add a short sleep after the WaitForTools call.
+<li> After reset, you must call
+VixVM_WaitForToolsInGuest
+before executing guest operations or querying guest properties.
+<li> On a Solaris guest with UFS file system on the root partition, the
+VIX_VMPOWEROP_NORMAL parameter causes an error screen at next power on,
+which requires user intervention to update the Solaris boot archive by
+logging into the failsafe boot session from the GRUB menu. Hence, although UFS
+file systems are supported, VMware recommends using the ZFS file system for
+Solaris guests.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

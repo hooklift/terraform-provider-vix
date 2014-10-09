@@ -1,0 +1,73 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixSnapshot_GetChild</b>
+<h1>Description</h1>
+<pre>
+VixError
+VixSnapshot_GetChild(VixHandle parentSnapshotHandle,
+                     int index,
+                     VixHandle *childSnapshotHandle)
+</pre>
+<p>
+This
+function
+returns the specified child snapshot.
+<h1>Parameters</h1>
+<dl>
+<dt><i>parentSnapshotHandle</i></dt>
+<dd>
+A snapshot handle.
+</dd>
+<dt><i>index</i></dt>
+<dd>
+Index into the list of snapshots.
+</dd>
+<dt><i>childSnapshotHandle</i></dt>
+<dd>
+(output) A handle to the child snapshot.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixError
+<h1>Remarks</h1>
+<ul>
+<li> Snapshots are indexed from 0 to n-1, where n is the number of child
+snapshots.
+Use the function 
+VixSnapshot_GetNumChildren()
+to get the
+value of n.
+<li> The snapshotHandle returned by this function is reference counted.
+The calling application is responsible for releasing the handle.
+<li> This function is not supported when using the 
+VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+VixHandle parentSnapshot;
+VixHandle childSnapshot;
+int numChildren;
+VixError err;
+int i;
+
+err = VixSnapshot_GetNumChildren(parentSnapshotHandle, &numChildren);
+printf("the snapshot has %d child snapshots\n", numChildren);
+for (i = 0; i &lt; numChildren; i++) {
+    err = VixSnapshot_GetChild(parentSnapshotHandle, i, &childSnapshot);
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

@@ -1,0 +1,115 @@
+
+state 0
+	$accept: .top $end 
+
+	STRING  shift 6
+	IDENTIFIER  shift 5
+	.  error
+
+	expr  goto 2
+	string  goto 3
+	variable  goto 4
+	top  goto 1
+
+state 1
+	$accept:  top.$end 
+
+	$end  accept
+	.  error
+
+
+state 2
+	top:  expr.    (1)
+
+	.  reduce 1 (src line 35)
+
+
+state 3
+	expr:  string.    (2)
+
+	.  reduce 2 (src line 41)
+
+
+state 4
+	expr:  variable.    (3)
+
+	.  reduce 3 (src line 46)
+
+
+state 5
+	expr:  IDENTIFIER.LEFTPAREN args RIGHTPAREN 
+	variable:  IDENTIFIER.    (9)
+
+	LEFTPAREN  shift 7
+	.  reduce 9 (src line 80)
+
+
+state 6
+	string:  STRING.    (8)
+
+	.  reduce 8 (src line 74)
+
+
+state 7
+	expr:  IDENTIFIER LEFTPAREN.args RIGHTPAREN 
+	args: .    (5)
+
+	STRING  shift 6
+	IDENTIFIER  shift 5
+	.  reduce 5 (src line 61)
+
+	args  goto 8
+	expr  goto 9
+	string  goto 3
+	variable  goto 4
+
+state 8
+	expr:  IDENTIFIER LEFTPAREN args.RIGHTPAREN 
+	args:  args.COMMA expr 
+
+	COMMA  shift 11
+	RIGHTPAREN  shift 10
+	.  error
+
+
+state 9
+	args:  expr.    (7)
+
+	.  reduce 7 (src line 69)
+
+
+state 10
+	expr:  IDENTIFIER LEFTPAREN args RIGHTPAREN.    (4)
+
+	.  reduce 4 (src line 50)
+
+
+state 11
+	args:  args COMMA.expr 
+
+	STRING  shift 6
+	IDENTIFIER  shift 5
+	.  error
+
+	expr  goto 12
+	string  goto 3
+	variable  goto 4
+
+state 12
+	args:  args COMMA expr.    (6)
+
+	.  reduce 6 (src line 65)
+
+
+8 terminals, 6 nonterminals
+10 grammar rules, 13/2000 states
+0 shift/reduce, 0 reduce/reduce conflicts reported
+55 working sets used
+memory: parser 10/30000
+7 extra closures
+9 shift entries, 1 exceptions
+7 goto entries
+4 entries saved by goto default
+Optimizer space used: output 13/30000
+13 table entries, 1 zero
+maximum spread: 8, maximum offset: 11

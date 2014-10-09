@@ -1,0 +1,102 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMWriteVariable</b>
+<h1>Description</h1>
+<pre>
+$err = VMWriteVariable($vmHandle,
+                       $variableType,
+                       $valueName,
+                       $value,
+                       $options)
+</pre>
+<p>
+This function writes variables to the virtual machine state. This includes
+the virtual machine configuration, environment variables in the guest, and
+VMware "Guest Variables".
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>variableType</i></dt>
+<dd>
+The type of variable to write. The currently supported values are:
+<ul>
+<li> VIX_VM_GUEST_VARIABLE -          A "Guest Variable". This is a runtime-only value; it is never 
+stored persistently. This is the same guest variable that is 
+exposed through the VMControl APIs, and is a simple way to pass 
+runtime values in and out of the guest. 
+<li> VIX_VM_CONFIG_RUNTIME_ONLY -     The configuration state of the virtual machine. This is the .vmx file
+that is stored on the host. You can read this and it will return the 
+persistent data. If you write to this, it will only be a runtime 
+change, so changes will be lost when the VM powers off.
+Not supported on ESX hosts.
+<li> VIX_GUEST_ENVIRONMENT_VARIABLE - An environment variable in the guest of
+the VM. On a Windows NT series guest,
+writing these values is saved persistently
+so they are immediately visible to
+every process. On a Linux or Windows 9X
+guest, writing these values is not
+persistent so they are only visible to
+the VMware tools process.
+Requires root or Administrator privilege.
+</ul>
+</dd>
+<dt><i>valueName</i></dt>
+<dd>
+The name of the variable.
+</dd>
+<dt><i>value</i></dt>
+<dd>
+The value to be written.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> The VIX_VM_CONFIG_RUNTIME_ONLY variable type is not supported on ESX hosts.
+<li> You must call
+VMLoginInGuest()
+before calling this function to write a VIX_GUEST_ENVIRONMENT_VARIABLE value.
+You do not have to call 
+VMLoginInGuest()
+to use this function to write a VIX_VM_GUEST_VARIABLE or
+a VIX_VM_CONFIG_RUNTIME_ONLY value.
+<li> Do not use the slash '/' character in a VIX_VM_GUEST_VARIABLE variable name; 
+doing so produces a VIX_E_INVALID_ARG error.
+<li> Do not use the equal '=' character in the valueName parameter;
+doing so produces a VIX_E_INVALID_ARG error.
+<li> On Linux guests, you must login as root to change environment variables
+(when variable type is VIX_GUEST_ENVIRONMENT_VARIABLE) otherwise it produces
+a VIX_E_GUEST_USER_PERMISSIONS error.
+<li> On Windows Vista guests, when variable type is VIX_GUEST_ENVIRONMENT_VARIABLE,
+you must turn off User Account Control (UAC) in Control Panel &gt; User Accounts &gt;
+User Accounts &gt; Turn User Account on or off, in order for this function to work.
+</ul>
+<h1>Side Effects</h1>
+May change configuration or environment variables.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.0
+<h1>Example</h1>
+See the documentation for 
+VMReadVariable().
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

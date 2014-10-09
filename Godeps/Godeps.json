@@ -1,17 +1,14 @@
 {
 	"ImportPath": "github.com/cloudescape/terraform-provider-vix",
 	"GoVersion": "go1.3.3",
-	"Packages": [
-		"./..."
-	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/c4milo/unzipit",
-			"Rev": "481fca4c016e36fa09229b950309d7e114cd57b8"
+			"Rev": "cf197b2b133eebd11836b8db2b5cd0da9384c7ab"
 		},
 		{
 			"ImportPath": "github.com/cloudescape/govix",
-			"Rev": "8fb1b04d0073ab01a4f666bf6e4608b72bb32527"
+			"Rev": "bd790b1296107fae8b4a11cc6d75292b93f3b85f"
 		},
 		{
 			"ImportPath": "github.com/cloudescape/govmx",
@@ -27,48 +24,48 @@
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/config",
-			"Comment": "v0.2.1-11-gfc93ea4",
-			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
+			"Comment": "v0.2.2-41-g1bcedc9",
+			"Rev": "1bcedc90b8323e3c27cda038f9c0e4e5448d6249"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/depgraph",
-			"Comment": "v0.2.1-11-gfc93ea4",
-			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
+			"Comment": "v0.2.2-41-g1bcedc9",
+			"Rev": "1bcedc90b8323e3c27cda038f9c0e4e5448d6249"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/digraph",
-			"Comment": "v0.2.1-11-gfc93ea4",
-			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
+			"Comment": "v0.2.2-41-g1bcedc9",
+			"Rev": "1bcedc90b8323e3c27cda038f9c0e4e5448d6249"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/flatmap",
-			"Comment": "v0.2.1-11-gfc93ea4",
-			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
+			"Comment": "v0.2.2-41-g1bcedc9",
+			"Rev": "1bcedc90b8323e3c27cda038f9c0e4e5448d6249"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/helper/multierror",
-			"Comment": "v0.2.1-11-gfc93ea4",
-			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
+			"Comment": "v0.2.2-41-g1bcedc9",
+			"Rev": "1bcedc90b8323e3c27cda038f9c0e4e5448d6249"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/helper/schema",
-			"Comment": "v0.2.1-11-gfc93ea4",
-			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
+			"Comment": "v0.2.2-41-g1bcedc9",
+			"Rev": "1bcedc90b8323e3c27cda038f9c0e4e5448d6249"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/plugin",
-			"Comment": "v0.2.1-11-gfc93ea4",
-			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
+			"Comment": "v0.2.2-41-g1bcedc9",
+			"Rev": "1bcedc90b8323e3c27cda038f9c0e4e5448d6249"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/rpc",
-			"Comment": "v0.2.1-11-gfc93ea4",
-			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
+			"Comment": "v0.2.2-41-g1bcedc9",
+			"Rev": "1bcedc90b8323e3c27cda038f9c0e4e5448d6249"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/terraform",
-			"Comment": "v0.2.1-11-gfc93ea4",
-			"Rev": "fc93ea45723003bf45a42761dfe61efff9dfe208"
+			"Comment": "v0.2.2-41-g1bcedc9",
+			"Rev": "1bcedc90b8323e3c27cda038f9c0e4e5448d6249"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/copystructure",

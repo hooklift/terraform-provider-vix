@@ -1,0 +1,82 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>GetFileInfoInGuest</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+GetFileInfoInGuest([in] BSTR pathName,
+                   [in] ICallback* jobDoneCallback,
+                   [out,retval] IJob** getFileInfoJob);
+</pre>
+<p>
+This function returns information about a file in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>pathname</i></dt>
+<dd>
+The path name of the file in the guest.
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>getFileInfoJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> You must call VM::LoginInGuest() before calling this function.
+<li> When the job is signaled, the following list of properties will be available
+on the returned job object:
+<ul>
+<li> VIX_PROPERTY_JOB_RESULT_FILE_SIZE: file size as a 64-bit integer. 
+This is 0 for directories.
+<li> VIX_PROPERTY_JOB_RESULT_FILE_FLAGS: file attribute flags.
+The flags are:
+<ul>
+<li> VIX_FILE_ATTRIBUTES_DIRECTORY - Set if the pathname identifies a directory.
+<li> VIX_FILE_ATTRIBUTES_SYMLINK - Set if the pathname identifies a symbolic link file.
+</ul>
+<li> VIX_PROPERTY_JOB_RESULT_FILE_MOD_TIME: The modification time of the file or directory as a 64-bit integer specifying seconds since the epoch.
+</ul>
+<li> Only absolute paths should be used for files in the guest; the resolution of 
+relative paths is not specified.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.5
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+</pre>
+VBScript:
+<pre>
+pathName = "C:\hello.txt"
+
+Set job = vm.GetFileInfoInGuest(pathName, Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_FILE_SIZE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo "Error: " & lib.GetErrorText(err, empty)
+   WScript.Quit
+End If
+
+WScript.Echo pathName & " is " & CStr(results(0)) & " bytes large."
+
+Set results = Nothing
+Set job = Nothing
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

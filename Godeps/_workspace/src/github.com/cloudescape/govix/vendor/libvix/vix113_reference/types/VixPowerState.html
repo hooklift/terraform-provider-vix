@@ -1,0 +1,92 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixPowerState</b>
+<h1>Description</h1>
+These are the possible values reported for VIX_PROPERTY_VM_POWER_STATE
+property.
+These values are bitwise flags.
+The actual value returned for may be a bitwise OR of one more of these
+flags, along with other reserved values not documented here.
+They represent runtime information about the state of the virtual machine.  To test the value of the property, use the Vix_GetProperties() function.
+<h1>Values</h1>
+<dl>
+<dt><i>VIX_POWERSTATE_POWERING_OFF</i></dt>
+<dd>
+Indicates that VixVM_PowerOff() has been called, but the operation itself has not completed.
+<p>
+</dd>
+<dt><i>VIX_POWERSTATE_POWERED_OFF</i></dt>
+<dd>
+Indicates that the virtual machine is not running.
+<p>
+</dd>
+<dt><i>VIX_POWERSTATE_POWERING_ON</i></dt>
+<dd>
+Indicates that VixVM_PowerOn() has been called, but the operation itself has not completed.
+<p>
+</dd>
+<dt><i>VIX_POWERSTATE_POWERED_ON</i></dt>
+<dd>
+Indicates that the virtual machine is running.
+<p>
+</dd>
+<dt><i>VIX_POWERSTATE_SUSPENDING</i></dt>
+<dd>
+Indicates that VixVM_Suspend() has been called, but the operation itself has not completed.
+<p>
+</dd>
+<dt><i>VIX_POWERSTATE_SUSPENDED</i></dt>
+<dd>
+Indicates that the virtual machine is suspended.  Use VixVM_PowerOn() to resume the virtual machine.
+<p>
+</dd>
+<dt><i>VIX_POWERSTATE_TOOLS_RUNNING</i></dt>
+<dd>
+Indicates that the virtual machine is running and the VMware Tools suite is active.  See also the VixToolsState property.
+<p>
+</dd>
+<dt><i>VIX_POWERSTATE_RESETTING</i></dt>
+<dd>
+Indicates that VixVM_Reset() has been called, but the operation itself has not completed.
+<p>
+</dd>
+<dt><i>VIX_POWERSTATE_BLOCKED_ON_MSG</i></dt>
+<dd>
+Indicates that a virtual machine state change is blocked, waiting for user interaction.
+</dd>
+</dl>
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+<h1>Example</h1>
+This example retrieves the power state of a virtual machine.
+<pre>
+VixError err = VIX_OK;
+VixHandle myVM = VIX_INVALID_HANDLE;
+VixToolsState powerState = 0;
+
+// ...Open the virtual machine and get a handle...
+
+// Test the power state.
+err = Vix_GetProperties(myVM,
+                        VIX_PROPERTY_VM_POWER_STATE,
+                        &powerState,
+                        VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+  // Handle the error...
+}
+
+if (VIX_POWERSTATE_POWERED_ON & powerState) {
+   // virtual machine is powered on
+} else if (VIX_POWERSTATE_POWERED_OFF & powerState) {
+   // virtual machine is powered off
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2008 VMware, Inc.  All rights reserved.

@@ -1,0 +1,102 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMPowerOn</b>
+<h1>Description</h1>
+<pre>
+$err = VMPowerOn($vmHandle,
+                 $powerOnOptions,
+                 $propertyListHandle);
+</pre>
+<p>
+Powers on a virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a
+              virtual machine handle.
+</dd>
+<dt><i>powerOnOptions</i></dt>
+<dd>
+VIX_VMPOWEROP_NORMAL or VIX_VMPOWEROP_LAUNCH_GUI.
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be VIX_INVALID_HANDLE.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> This function powers on a virtual machine.
+<li> This operation completes when the virtual machine has started to boot. 
+If the VMware Tools have been installed on this guest operating system,
+you can call VMWaitForToolsInGuest to determine when the guest has finished booting.
+<li> After powering on, you must call
+VMWaitForToolsInGuest
+before executing guest operations or querying guest properties.
+<li> In Server 1.0, when you power on a virtual machine, the virtual machine is powered on
+independent of a console window. If a console window is open, it remains open.
+Otherwise, the virtual machine is powered on without a console window.
+<li> To display a virtual machine with a Workstation user interface,
+powerOnOptions must have the VIX_VMPOWEROP_LAUNCH_GUI flag, and you must be
+connected to the host with the VIX_SERVICEPROVIDER_VMWARE_WORKSTATION flag. 
+If there is an existing instance of the Workstation user interface, the virtual machine
+will power on in a new tab within that instance. Otherwise, a new instance of 
+Workstation will open, and the virtual machine will power on there.
+<li> To display a virtual machine with a Player user interface, 
+powerOnOptions must have the VIX_VMPOWEROP_LAUNCH_GUI flag, and you must be
+connected to the host with the VIX_SERVICEPROVIDER_VMWARE_PLAYER flag. A new instance
+of Player will always open, and the virtual machine will power on there.
+<li> This function can also be used to resume execution of a suspended virtual
+machine.
+<li> The VIX_VMPOWEROP_LAUNCH_GUI option is not supported for encrypted
+virtual machines; attempting to power on with this option
+results in VIX_E_NOT_SUPPORTED.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Server 1.0
+<h1>Example</h1>
+<pre>
+my $err = VIX_OK;
+my $hostHandle = VIX_INVALID_HANDLE;
+my $vmHandle = VIX_INVALID_HANDLE;
+
+($err, $hostHandle) = HostConnect(VIX_API_VERSION,
+                                  VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                  undef, # hostName
+                                  0, # hostPort
+                                  undef, # userName
+                                  undef, # password
+                                  0, # options
+                                  VIX_INVALID_HANDLE); # propertyListHandle
+
+die "HostConnect() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $vmHandle) = VMOpen($hostHandle,
+                           "c:\\Virtual Machines\\vm1\\win2000.vmx");
+die "VMOpen() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+                       
+$err = VMPowerOn($vmHandle,
+                 VIX_VMPOWEROP_LAUNCH_GUI, # powerOnOptions
+                 VIX_INVALID_HANDLE);  # propertyListHandle
+die "VMPowerOn() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

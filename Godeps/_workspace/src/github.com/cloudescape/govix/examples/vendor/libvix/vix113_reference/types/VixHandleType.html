@@ -1,0 +1,79 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixHandleType</b>
+<h1>Description</h1>
+These are the types of handles used as values for VixHandle variables.
+Handle types are returned by the Vix_GetHandleType() function.
+Handles are used to manage the entities they represent (such as virtual machines)
+and to retrieve properties representing information about the entities.
+<h1>Values</h1>
+<dl>
+<dt><i>VIX_HANDLETYPE_NONE</i></dt>
+<dd>
+Indicates that no value has been assigned to this handle.
+Recommended for initializing handle variables.
+<p>
+</dd>
+<dt><i>VIX_HANDLETYPE_HOST</i></dt>
+<dd>
+The handle represents a host. 
+This handle type is created when you call VixHost_Connect().
+<p>
+</dd>
+<dt><i>VIX_HANDLETYPE_VM</i></dt>
+<dd>
+The handle represents a virtual machine.
+This handle type is created when you call VixVM_Open().
+<p>
+</dd>
+<dt><i>VIX_HANDLETYPE_NETWORK</i></dt>
+<dd>
+ 
+<p>
+</dd>
+<dt><i>VIX_HANDLETYPE_JOB</i></dt>
+<dd>
+The handle represents an active job.
+Job handles are return values from asynchronous operations, 
+including VixHost_Connect() and VixVM_Open().
+<p>
+</dd>
+<dt><i>VIX_HANDLETYPE_SNAPSHOT</i></dt>
+<dd>
+The handle represents a snapshot.
+This handle type is created when you call snapshot functions such as VixVM_GetCurrentSnapshot().
+Use these handles to revert or remove snapshots.
+<p>
+</dd>
+<dt><i>VIX_HANDLETYPE_PROPERTY_LIST</i></dt>
+<dd>
+The handle represents a property list.
+This handle type is used to pass additional arguments to many functions.
+</dd>
+</dl>
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+<h1>Example</h1>
+This example retrieves a handle type.
+<pre>
+VixError err = VIX_OK;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandleType myHandleType = VIX_HANDLETYPE_NONE;
+
+Create a new handle:
+jobHandle = VixHost_Connect(...);
+...
+
+// Test the handle type:
+myHandleType = Vix_GetHandleType(jobHandle);
+ASSERT(VIX_HANDLETYPE_JOB == myHandleType);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2008 VMware, Inc.  All rights reserved.

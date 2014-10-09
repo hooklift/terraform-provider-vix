@@ -1,0 +1,44 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>GetNumProperties</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+GetNumProperties([in] LONG resultPropertyID,
+                 [out,retval] LONG* numProperties);
+</pre>
+<p>
+Retrieves the number of instances of the specified property.
+Used to work with returned property lists.
+<h1>Parameters</h1>
+<dl>
+<dt><i>resultPropertyID</i></dt>
+<dd>
+A property ID.
+</dd>
+<dt><i>numProperties</i></dt>
+<dd>
+Returns the number of properties with an ID of
+                   resultPropertyID.
+</dd>
+</dl>
+<h1>Return Value</h1>
+int. The number of properties with an ID of resultPropertyID.
+<h1>Remarks</h1>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0.
+<h1>Example</h1>
+<pre>
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

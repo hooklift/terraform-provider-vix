@@ -1,0 +1,89 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<div class="deprecated">This function was removed in version 1.11.</div><h1>Name</h1>
+<b>VMBeginReplay</b>
+<h1>Description</h1>
+<pre>
+$err = VMBeginReplay($vmHandle, $snapshotHandle, $options,
+                     $propertyListHandle);
+</pre>
+<p>
+This function replays a recording of a virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual
+              machine handle.
+</dd>
+<dt><i>snapshotHandle</i></dt>
+<dd>
+snapshot handle that represents the recording.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be VIX_VMPOWEROP_NORMAL or VIX_VMPOWEROP_LAUNCH_GUI.
+<p>
+</dd>
+<dt><i>propertyListHandle</i></dt>
+<dd>
+Must be VIX_INVALID_HANDLE.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> Record-replay functionality has been deprecated and this function may be removed from future versions of the VIX API.
+<li> Use of this function with a non-recording snapshot returns
+VIX_E_INVALID_ARG.
+<li> To display playback of the recording with the Workstation user interface,
+powerOnOptions must have the VIX_VMPOWEROP_LAUNCH_GUI flag. If there is an
+existing instance of the Workstation user interface, the virtual machine will
+power on in a new tab within that instance. Otherwise, a new instance of 
+Workstation will open, and the virtual machine will power on there.
+<li> Guest commands are not allowed while the virtual machine is replaying a
+recording.
+<li> Once the recording has finished, the virtual machine will automatically "go live";
+it will resume normal execution from the last state that is part of the recording.
+<li> The property VIX_PROPERTY_SNAPSHOT_IS_REPLAYABLE can be used to determine if a
+snapshot is a recording.
+<li> This function is not supported when using the 
+VIX_SERVICEPROVIDER_VMWARE_PLAYER
+host type.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.5
+<h1>Example</h1>
+<pre>
+
+my $err;
+my $snapshotHandle;
+my $vmHandle;
+
+# find the appropriate snapshot handle to replay
+
+# start the replay with the UI open
+$err = VMBeginReplay($vmHandle, $snapshotHandle, VIX_VMPOWEROP_LAUNCH_GUI, VIX_INVALID_HANDLE);
+die "VMBeginReplay() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+# wait for some activity to happen, then stop replaying
+$err = VMEndReplay($vmHandle, 0, VIX_INVALID_HANDLE);
+die "VMEndReplay() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

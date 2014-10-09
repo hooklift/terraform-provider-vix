@@ -1,0 +1,38 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>GetHandleType</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+GetHandleType([out,retval] LONG* handleType);
+</pre>
+This method reports what type the object represents: host, virtual machine,
+job, or snapshot.
+<h1>Parameters</h1>
+<dl>
+<dt><i>handleType</i></dt>
+<dd>
+An enumerated type that identifies what the object represents.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function does not apply in VBScript, since it is not possible
+to access the IVixHandle interface of an object.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0.
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

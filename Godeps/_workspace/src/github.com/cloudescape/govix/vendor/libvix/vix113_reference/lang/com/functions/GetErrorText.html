@@ -1,0 +1,48 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>GetErrorText</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+GetErrorText([in] ULONGLONG err,
+             [in] BSTR locale,
+             [out,retval] BSTR* errorString);
+</pre>
+<p>
+Returns a human-readable string that describes the error.
+<h1>Parameters</h1>
+<dl>
+<dt><i>err</i></dt>
+<dd>
+A Vix error code returned by any other Vix function.
+</dd>
+<dt><i>locale</i></dt>
+<dd>
+Must be NULL (C++), null (C#), or Empty (VB).
+</dd>
+<dt><i>errorString</i></dt>
+<dd>
+Receives the human-readable error description.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This translates an error code, which is an enumerated type, to a
+user-readable string.
+<li> The locale is not used, and must be NULL (C++), null (C#), or Empty (VB). 
+Only U.S. English is supported in this release.
+</ul>
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0.
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

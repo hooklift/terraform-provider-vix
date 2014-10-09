@@ -1,0 +1,61 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMGetNumSharedFolders</b>
+<h1>Description</h1>
+<pre>
+($err, $numSharedFolders) = VMGetNumSharedFolders($vmHandle);
+</pre>
+<p>
+This function returns the number of shared folders mounted in the virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<p>
+$numSharedFolders.  This number of shared folders mounted in
+  the virtual machine referenced by $vmHandle.
+<h1>Remarks</h1>
+<ul>
+<li> This function returns the number of shared folders mounted in
+the virtual machine referenced by
+vmHandle.
+<li> It is not necessary to call
+VMLoginInGuest()
+before calling this function.
+<li> Shared folders are not supported for the following guest operating systems:
+Windows ME, Windows 98, Windows 95, Windows 3.x, and DOS.
+<li> In this release, this function requires the virtual machine to be powered on
+with VMware Tools installed.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+my $err;
+my $numSharedFolders;
+
+($err, $numSharedFolders) = VMGetNumSharedFolders($vmHandle);
+die "VMGetNumSharedFolders() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

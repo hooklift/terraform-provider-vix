@@ -1,0 +1,77 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMSuspend</b>
+<h1>Description</h1>
+<pre>
+$err = VMSuspend($vmHandle,
+                 $powerOffOptions);
+</pre>
+<p>
+This function suspends a virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>powerOffOptions</i></dt>
+<dd>
+Should be 0.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  Either VIX_OK, or an error code returned by the operation.
+For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> This function suspends a virtual machine.
+<li> If the virtual machine is not powered on when you call this function,
+the function returns the error VIX_E_VM_NOT_RUNNING.
+<li> Call
+VMPowerOn
+to resume running a suspended virtual machine.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Server 1.0
+<h1>Example</h1>
+<pre>
+my $err = VIX_OK;
+my $hostHandle = VIX_INVALID_HANDLE;
+my $vmHandle = VIX_INVALID_HANDLE;
+
+($err, $hostHandle) = HostConnect(VIX_API_VERSION,
+                                  VIX_SERVICEPROVIDER_VMWARE_VI_SERVER,
+                                  "https://10.1.9.245/sdk", # hostName
+                                  0, # hostPort
+                                  "root", # userName
+                                  "secret", # password
+                                  0, # options
+                                  VIX_INVALID_HANDLE); # propertyListHandle
+
+die "HostConnect() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $vmHandle) = VMOpen($hostHandle,
+                           "[storage1] vm/vm.vmx");
+die "VMOpen() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+                       
+# Assume this virtual machine is already running
+$err = VMSuspend($vmHandle,
+                  0); # powerOffOptions
+die "VMPowerOff() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

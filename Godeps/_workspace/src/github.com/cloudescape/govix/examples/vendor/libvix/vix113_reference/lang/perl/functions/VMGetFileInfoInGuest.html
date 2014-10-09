@@ -1,0 +1,80 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMGetFileInfoInGuest</b>
+<h1>Description</h1>
+<pre>
+($err, %fileInfo) = VMGetFileInfoInGuest($vmHandle,
+                                         $pathName);
+</pre>
+<p>
+This function returns information about a file in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>pathname</i></dt>
+<dd>
+The path name of the file in the guest.
+</dd>
+</dl>
+<h1>Return Value</h1>
+<pre>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+
+%fileInfo.  A hash containing the file information.
+</pre>
+<h1>Remarks</h1>
+<ul>
+<li> You must call VMLoginInGuest() before calling this function.
+<li> %fileInfo is a hash containing the following values:
+<ul>
+<li> FILE_SIZE: file size as a 64-bit integer. 
+This is 0 for directories.
+<li> FILE_FLAGS: file attribute flags.
+The flags are:
+<ul>
+<li> VIX_FILE_ATTRIBUTES_DIRECTORY - Set if the pathname identifies a directory.
+<li> VIX_FILE_ATTRIBUTES_SYMLINK - Set if the pathname identifies a symbolic link file.
+</ul>
+<li> MOD_TIME: The modification time of the file or directory as a 64-bit integer specifying seconds since the epoch.
+</ul>
+<li> Only absolute paths should be used for files in the guest; the resolution of 
+relative paths is not specified.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.5
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+</pre>
+<pre>
+my $err;
+my %fileInfo;
+
+($err, %fileInfo) = VMGetFileInfoInGuest($vmHandle, $guestFile);
+
+print "err: $err\n";
+
+print "Size: $info{'FILE_SIZE'} ";
+print "Flags: $info{'FILE_FLAGS'} ";
+print "Modtime: $info{'FILE_MOD_TIME'} ";
+print "\n";
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

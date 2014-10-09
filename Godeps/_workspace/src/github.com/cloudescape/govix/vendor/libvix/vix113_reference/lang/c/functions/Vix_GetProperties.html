@@ -1,0 +1,86 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>Vix_GetProperties</b>
+<h1>Description</h1>
+<pre>
+VixError
+Vix_GetProperties(VixHandle handle,
+                  VixPropertyID firstPropertyID,
+                  ...);
+</pre>
+<p>
+This
+function
+allows you to get one or more properties from a handle.
+For a list of property IDs, see Topics &gt; Types &gt; VixPropertyID.
+<h1>Parameters</h1>
+<dl>
+<dt><i>handle</i></dt>
+<dd>
+Any handle returned by a Vix function.
+</dd>
+<dt><i>firstPropertyID</i></dt>
+<dd>
+A property ID. See below for valid values.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixError. This function returns VIX_OK if it succeeded, otherwise
+the return value indicates an error.
+<p>
+When 
+Vix_GetProperties()
+returns an error, the values of the output parameters are indeterminate.
+<h1>Remarks</h1>
+<ul>
+<li> This function allows you to get one or more properties from a handle.
+You may use this function on any type of handle, but only specific
+properties are defined for each handle.
+<li> This procedure accepts a variable number of parameters, so you can
+retrieve any number of properties with a single call. The parameters
+must be in a series of pairs of property IDs and result pointers.
+Each result pointer will accept the value of the property identified
+by the property ID in the previous parameter. The type of the
+pointer depends on the type of the property.
+You end the variable
+list of parameters with a single ID value of VIX_PROPERTY_NONE.
+<li> If you retrieve a string property, the VIX API allocates space
+for that string. You are responsible for calling Vix_FreeBuffer()
+to free the string.
+<li> The value of
+VIX_PROPERTY_VM_TOOLS_STATE
+is valid only after calling 
+VixVM_WaitForToolsInGuest().
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0
+<h1>Example</h1>
+<pre>
+VixError err = VIX_OK;
+int vmPowerState;
+char *vmPathName = NULL;
+VixHandle myVM = VIX_INVALID_HANDLE;
+// ...Open the virtual machine and get a handle...
+err = Vix_GetProperties(myVM,
+                        VIX_PROPERTY_VM_POWER_STATE,
+                        &vmPowerState,
+                        VIX_PROPERTY_VM_VMX_PATHNAME,
+                        &vmPathName,
+                        VIX_PROPERTY_NONE);
+if (VIX_OK != err) {
+   // Handle the error...
+}
+Vix_FreeBuffer(vmPathName);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

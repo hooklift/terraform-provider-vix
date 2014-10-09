@@ -1,0 +1,39 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>GetErrorText</b>
+<h1>Description</h1>
+<pre>
+$errText = GetErrorText($err);
+</pre>
+<p>
+Returns a human-readable string that describes the error.
+<h1>Parameters</h1>
+<dl>
+<dt><i>err</i></dt>
+<dd>
+A Vix error code returned by any other Vix function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+A human-readable string that describes the error.
+<h1>Remarks</h1>
+<ul>
+<li> This translates an error code, which is an enumerated type, to a
+user-readable string.
+</ul>
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Server 1.0
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

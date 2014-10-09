@@ -1,0 +1,64 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixPropertyList_AllocPropertyList</b>
+<h1>Description</h1>
+<pre>
+VixError
+VixPropertyList_AllocPropertyList(VixHandle handle,
+                                  VixHandle *resultHandle,
+                                  VixPropertyID firstPropertyID,
+                                  ...);
+</pre>
+<p>
+This
+function
+creates a new VIX_HANDLETYPE_PROPERTY_LIST handle with a set of
+properties on it.  VIX_HANDLETYPE_PROPERTY_LIST handles are used to pass
+extra arguments to many functions.
+<h1>Parameters</h1>
+<dl>
+<dt><i>handle</i></dt>
+<dd>
+Any valid handle.
+</dd>
+<dt><i>resultHandle</i></dt>
+<dd>
+(output) A handle to the new property list.
+</dd>
+<dt><i>firstPropertyID</i></dt>
+<dd>
+A property ID. See below for valid values.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixError. This function returns VIX_OK if it succeeded, otherwise
+the return value indicates an error.
+<h1>Remarks</h1>
+<ul>
+<li> This function allows you to create a new property handle and set zero or more properties on it.
+<li> This procedure accepts a variable number of parameters, so you can
+set any number of properties with a single call. The parameters
+must be in a series of pairs of property IDs and values.
+Each value should be the type of the type of the property.
+You end the variable
+list of parameters with a single ID value of VIX_PROPERTY_NONE.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since Workstation 6.5
+<h1>Example</h1>
+<pre>
+</pre>
+<pre>
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

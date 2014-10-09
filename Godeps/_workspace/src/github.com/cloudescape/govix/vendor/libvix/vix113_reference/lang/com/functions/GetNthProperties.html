@@ -1,0 +1,62 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>GetNthProperties</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+GetNthProperties([in] LONG index,
+                 [in] VARIANT propertyIDs,
+                 [in,out] VARIANT* propertiesArray,
+                 [out,retval] ULONGLONG* error);
+</pre>
+<p>
+Retrieves the property at a specific index in a list.
+You can use this to iterate through returned property lists.
+<h1>Parameters</h1>
+<dl>
+<dt><i>index</i></dt>
+<dd>
+Index into the property list of the job object.
+</dd>
+<dt><i>propertyIDs</i></dt>
+<dd>
+An array of propertyIDs to identify the properties
+                 to fetch. 
+</dd>
+<dt><i>propertiesArray</i></dt>
+<dd>
+An returned array that stores the properties
+                     identified by the array "propertyIDs". Each 
+                     element in "propertiesArray" matches the 
+                     corresponding identifier in "propertiesArray";
+                     for example, if the first element in the "propertyIDs" array 
+                     is VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE,
+                     the first element in "propertiesArray" will be the
+                     object that is the result of this job, if one exists.
+</dd>
+<dt><i>error</i></dt>
+<dd>
+This returns VIX_OK if the method call succeeded, otherwise the
+           return value indicates an error.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0.
+<h1>Example</h1>
+<pre>
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

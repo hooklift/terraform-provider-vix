@@ -1,0 +1,185 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>PowerOff</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+PowerOff([in] LONG powerOffOptions,
+         [in] ICallback* jobDoneCallback,
+         [out,retval] IJob** powerJob);
+</pre>
+<p>
+This function powers off a virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>powerOffOptions</i></dt>
+<dd>
+Must be VixCOM.Constants.VIX_VMPOWEROP_NORMAL or
+                     VixCOM.Constants.VIX_VMPOWEROP_FROM_GUEST.
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>powerJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> This function powers off a virtual machine.
+<li> If you call this function while the virtual machine is suspended or powered off,
+the operation returns a VIX_E_VM_NOT_RUNNING error.
+If suspended, the virtual machine remains suspended and is not powered off.
+If powered off, you can safely ignore the error.
+<li> If you pass VIX_VMPOWEROP_NORMAL as an option,
+the virtual machine is powered off at the hardware level.
+Any state of the guest that was not committed to disk will be lost.
+<li> If you pass VIX_VMPOWEROP_FROM_GUEST as an option, the function tries to
+power off the guest OS, ensuring a clean shutdown of the guest. This option
+requires that VMware Tools be installed and running in the guest.
+<li> After VMware Tools begin running in the guest, and
+VM::WaitForToolsInGuest
+returns, there is a short delay before VIX_VMPOWEROP_FROM_GUEST becomes available.
+During this time a job may return error 3009, VIX_E_POWEROP_SCRIPTS_NOT_AVAILABLE.
+As a workaround, add a short sleep after the WaitForTools call.
+<li> On a Solaris guest with UFS file system on the root partition, the
+VIX_VMPOWEROP_NORMAL parameter causes an error screen at next power on,
+which requires user intervention to update the Solaris boot archive by
+logging into the failsafe boot session from the GRUB menu. Hence, although UFS
+file systems are supported, VMware recommends using the ZFS file system for
+Solaris guests.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+</pre>
+VBScript:
+<pre>
+Dim lib
+Dim host
+Dim vm
+Dim err
+Dim results
+Dim job
+
+Set lib = CreateObject("VixCOM.VixLib")
+
+Set job = lib.Connect(VixCOM.Constants.VIX_API_VERSION, VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION, Empty, 0, Empty, Empty, 0, Nothing, Nothing)
+
+' results needs to be initialized before it's used, even if it's just going to be overwritten.
+Set results = Nothing
+
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set host = results(0)
+
+Set job = host.OpenVM("C:\VMs\winxpprowithsp2\winxpprowithsp2.vmx", Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE), results)
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set vm = results(0)
+
+' Assume this virtual machine is already running
+
+Set job = vm.PowerOff(VixCOM.Constants.VIX_VMPOWEROP_FROM_GUEST, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   ' Handle the error...
+End If
+
+Set results = Nothing
+Set job = Nothing
+Set vm = Nothing
+
+host.Disconnect()
+</pre>
+C#:
+<pre>
+class Program
+{
+
+   static void Main(string[] args)  
+   {
+      VixCOM.VixLibClass lib = new VixCOM.VixLibClass();
+      UInt64 err;
+      object results = null;
+      
+      VixCOM.IJob job = lib.Connect(VixCOM.Constants.VIX_API_VERSION,
+                                    VixCOM.Constants.VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                    null,
+                                    0,
+                                    null,
+                                    null,
+                                    0,
+                                    null,
+                                    null);
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE },
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IHost host = (VixCOM.IHost)((object[])results)[0];
+      CloseVixObject(job);
+
+      job = host.OpenVM("C:\\VMs\\winxpprowithsp2\\winxpprowithsp2.vmx", null);
+
+      err = job.Wait(new int[] { VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_HANDLE }, 
+                     ref results);
+      if (lib.ErrorIndicatesFailure(err)) {
+         // Handle the error... 
+      }     
+
+      VixCOM.IVM2 vm = (VixCOM.IVM2)((object[])results)[0];
+      CloseVixObject(job);
+
+      // Assume this virtual machine is already running
+      job = vm.PowerOff(VixCOM.Constants.VIX_VMPOWEROP_FROM_GUEST, null);
+      job.WaitWithoutResults();
+      if (lib.ErrorIndicatesFailure(err))
+      {
+         // Handle the error... 
+      }
+      CloseVixObject(job);
+
+      CloseVixObject(vm);
+     
+      host.Disconnect();
+   }
+
+   static void CloseVixObject(Object vixObject)
+   {
+      try
+      {
+         ((IVixHandle2)vixObject).Close();
+      }
+      catch(Exception)
+      {
+         //Close is not supported in this version of Vix COM - Ignore
+      }
+   }
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

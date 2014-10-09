@@ -1,0 +1,55 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixFindItemType</b>
+<h1>Description</h1>
+These are the types of searches you can do with VixHost_FindItems().
+<h1>Values</h1>
+<dl>
+<dt><i>VIX_FIND_RUNNING_VMS</i></dt>
+<dd>
+Finds all virtual machines currently running on the host.
+<p>
+</dd>
+<dt><i>VIX_FIND_REGISTERED_VMS</i></dt>
+<dd>
+Finds all virtual machines registered on the host.
+                          This search applies only to platform products that maintain
+                          a virtual machine registry, such as ESX/ESXi and VMware Server,
+                          but not Workstation or Player.
+</dd>
+</dl>
+<h1>Requirements</h1>
+vix.h, since VMware Server 1.0.
+<h1>Example</h1>
+This example shows how to initiate a search for running virtual machines.
+The results of the search are to be collected in a callback routine named VixDiscoveryProc().
+See the functional description for VixHost_FindItems() for a more complete sample.
+<pre>
+VixError err = VIX_OK;
+VixHandle jobHandle = VIX_INVALID_HANDLE;
+VixHandle hostHandle = VIX_HANDLETYPE_NONE;
+
+// Connect to the host:
+jobHandle = VixHost_Connect(...);
+...
+// Release handle when done:
+Vix_ReleaseHandle(jobHandle);
+
+jobHandle = VixHost_FindItems(hostHandle,
+                              Vix_FIND_RUNNING_VMS,
+                              VIX_INVALID_HANDLE, // searchCriteria
+                              -1, // timeout
+                              VixDiscoveryProc,
+                              NULL);
+err = VixJob_Wait(jobHandle, Vix_PROPERTY_NONE);
+...
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2008 VMware, Inc.  All rights reserved.

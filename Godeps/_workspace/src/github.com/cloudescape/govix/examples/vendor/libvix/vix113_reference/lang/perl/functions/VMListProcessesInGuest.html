@@ -1,0 +1,73 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMListProcessesInGuest</b>
+<h1>Description</h1>
+<pre>
+($err, @processProperties) = VMListProcessesInGuest($vmHandle,
+                                                    $options);
+</pre>
+<p>
+This function lists the running processes in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<p>
+@processProperties.  An array of hashes containing the process properties.
+<h1>Remarks</h1>
+<ul>
+<li> You must call VMLoginInGuest() before calling this function.
+<li> @processProperties is an array of hashes, containing the following values:
+<ul>
+<li> PROCESS_NAME: the process name
+<li> PROCESS_ID: the process id
+<li> PROCESS_OWNER: the process owner
+<li> PROCESS_COMMAND: the process command line
+<li> PROCESS_BEING_DEBUGGED: is the process being debugged? (always FALSE on Linux)
+<li> PROCESS_START_TIME: the process start time specifying seconds since the epoch
+</ul>
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+$(err, @processProperties) = VMListProcessesInGuest($vmHandle);
+die "VMListProcessesInGuest() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+my $num = @processProperties;
+my $i;
+
+foreach $i (1..$num) {
+   print "process: $processProperties[$i-1]{'PROCESS_NAME'}\t";
+   print "pid: $processProperties[$i-1]{'PROCESS_ID'}\t";
+   print "owner: $processProperties[$i-1]{'PROCESS_OWNER'}\t";
+   print "command: $processProperties[$i-1]{'PROCESS_COMMAND'}\n";
+   print "debugged: $processProperties[$i-1]{'PROCESS_BEING_DEBUGGED'}\n";
+   print "started: $processProperties[$i-1]{'PROCESS_START_TIME'}\n";
+}
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

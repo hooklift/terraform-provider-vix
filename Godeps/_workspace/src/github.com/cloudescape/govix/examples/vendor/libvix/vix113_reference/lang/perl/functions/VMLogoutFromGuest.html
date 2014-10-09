@@ -1,0 +1,101 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMLogoutFromGuest</b>
+<h1>Description</h1>
+<pre>
+$err = VMLogoutFromGuest($vmHandle);
+</pre>
+<p>
+This function removes any guest operating system authentication context
+created by a previous call to 
+VMLoginInGuest().
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> This function has no effect and returns success if 
+VMLoginInGuest()
+has not been called.
+<li> If you call this function while guest operations are in progress,
+subsequent operations may fail with a permissions error.
+It is best to wait for guest operations to complete before logging out.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+[endcode;
+since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br>
+[example]
+This example copies a compiled object file from a virtual machine to be
+run on the host.
+
+<pre>
+my $err = VIX_OK;
+my $hostHandle = VIX_INVALID_HANDLE;
+my $vmHandle = VIX_INVALID_HANDLE;
+
+($err, $hostHandle) = HostConnect(VIX_API_VERSION,
+                                  VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                  undef, # hostName
+                                  0, # hostPort
+                                  undef, # userName
+                                  undef, # password
+                                  0, # options
+                                  VIX_INVALID_HANDLE); # propertyListHandle
+
+die "HostConnect() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $vmHandle) = VMOpen($hostHandle,
+                           "c:\\Virtual Machines\\vm1\\win2000.vmx");
+die "VMOpen() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+                       
+$err = VMPowerOn($vmHandle,
+                 0, # powerOnOptions
+                 VIX_INVALID_HANDLE);  # propertyListHandle
+die "VMPowerOn() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+
+$err = VMWaitForToolsInGuest($vmHandle,
+                             300); # timeoutInSeconds
+die "VMWaitForToolsInGuest() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+$err = VMLoginInGuest($vmHandle,
+                      "vixuser", # userName
+                      "secret", # password
+                      0); # options
+die "VMLoginInGuest() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+$err = VMCopyFileFromGuestToHost($vmHandle, 
+				 "c:\\guestDir\\helloworld.o",  # src name
+				 "c:\\hostDir\\helloworld.o", # dest name
+				 0, # options
+				 VIX_INVALID_HANDLE); # propertyListHandle
+die "VMCopyFileFromGuestToHost() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+$err = VMLogoutFromGuest($vmHandle);
+die "VMLogoutFromGuest() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+ReleaseHandle($vmHandle);
+HostDisconnect($hostHandle);
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

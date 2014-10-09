@@ -1,0 +1,917 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<META NAME="GENERATOR" CONTENT="Adobe FrameMaker 7.0/HTML Export Filter">
+<link rel="stylesheet" href="foundrydoc.css" charset="ISO-8859-1" type="text/css">
+<TITLE>Common Tasks</TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff">
+<DIV>
+<H6 CLASS="zChapterAnchor">
+<A NAME="0_pgfId-1008070"></A>&nbsp;</H6>
+<TABLE>
+<TR>
+<TD ROWSPAN="1" COLSPAN="1">
+<H1 CLASS="H0-Title">
+<A NAME="0_pgfId-1013383"></A><A NAME="0_74348"></A>Common Tasks</H1>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<H6 CLASS="zChapterNumber">
+<A NAME="0_pgfId-1013385"></A>&nbsp;</H6>
+</TD>
+</TR>
+</TABLE>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1008071"></A>This chapter explains how to use the VIX API for common virtual machine management tasks. The following tasks are described:</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1002579"></A><A HREF="tasks.html#0_76241" CLASS="XRef">Connecting to a Host</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003702"></A><A HREF="tasks.html#0_54421" CLASS="XRef">Registering and Unregistering Virtual Machines</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003706"></A><A HREF="tasks.html#0_91582" CLASS="XRef">Getting a Handle to a Virtual Machine</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003792"></A><A HREF="tasks.html#0_67611" CLASS="XRef">Starting or Resuming a Virtual Machine</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003112"></A><A HREF="tasks.html#0_94038" CLASS="XRef">Installing VMware Tools in a Virtual Machine</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003122"></A><A HREF="tasks.html#0_80487" CLASS="XRef">Virtual Machine Guest Operations</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1003714"></A><A HREF="tasks.html#0_50982" CLASS="XRef">Powering Off or Suspending a Virtual Machine</A></LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005671"></A><A HREF="tasks.html#0_68837" CLASS="XRef">Importing a Legacy Virtual Machine</A></LI>
+</UL>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1002585"></A><A NAME="0_76241"></A><A NAME="0_marker-1006490"></A>Connecting to a Host</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1002598"></A>To work with a virtual machine, you must first connect to the host where the virtual machine is stored.
+If the virtual machine is on a host running Workstation, you can connect to it only from a client on the same host.
+If the virtual machine is on an ESX/ESXi host, you can connect to that remote host by supplying credentials.
+If the virtual machine is on a host running VMware Server, you can connect to that host whether it is a local or remote host.
+In other words, Workstation requires local connection, and vSphere requires remote connections.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1015150"></A>In all cases, you connect to a host using the <tt>VixHost_Connect()</tt>
+ function.
+You specify the type of host with the <tt>hostType</tt> parameter for <tt>VixHost_Connect()</tt>. Pass one of the following values:</P>
+<UL>
+<LI><tt>VIX_SERVICEPROVIDER_VI_SERVER</tt> &ndash; if the host runs VMware vCenter, ESX/ESXi, or VMware Server 2.0</LI>
+<LI><tt>VIX_SERVICEPROVIDER_VMWARE_WORKSTATION</tt> &ndash; if the host runs VMware Workstation</LI>
+<LI><tt>VIX_SERVICEPROVIDER_VMWARE_PLAYER</tt> &ndash; if the host runs VMware Player</LI>
+<LI><tt>VIX_SERVICEPROVIDER_VMWARE_SERVER</tt> &ndash; if the host runs VMware Server 1.0</LI>
+<LI><tt>VIX_SERVICEPROVIDER_VMWARE_WORKSTATION_SHARED</tt> &ndash; if the host runs VMware Workstation in shared mode</LI>
+</UL>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1015190"></A>The <tt>hostType</tt>
+ parameter describes the VMware software running on the host where the virtual machine is located, regardless of where the client is running. If you are using VMware Server to connect to a remote host, it does not matter which VMware product (if any) is running on the local host.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1015214"></A>If you do not know in advance which VMware product the host will be running, you can pass <tt>VIX_SERVICEPROVIDER_DEFAULT</tt> for the hostType parameter.
+Although this no longer works for VMware Server 1.0.x, when you pass <tt>VIX_SERVICEPROVIDER_DEFAULT</tt>, the Vix library tries to determine which VMware product is installed on the host.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1015107"></A>You can use the <tt>VixHost_Connect()</tt>
+function in three different ways, subject to the restrictions described above:</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1002599"></A>You can connect to an arbitrary host using the name of the host machine, along with a user name and password identifying a valid user account on the machine. This kind of connection is supported by ESX/ESXi but not by Workstation. See <A HREF="tasks.html#0_67050" CLASS="XRef">Connecting to a Specified Host</A>.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1002603"></A>You can connect as a specified user on the local host (the host on which your client runs) when you provide a <tt>NULL</tt> value
+in the <tt>hostName</tt> argument, but you do specify the user name and password of a valid user account on the local host.
+This kind of connection is supported by VMware Server. See <A HREF="tasks.html#0_56663" CLASS="XRef">Connecting to the Local Host as a Specified User</A>.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1002616"></A>You can connect to the local host as the current user by passing <tt>NULL</tt> to all three identifying parameters:
+<tt>hostName</tt>,
+<tt>userName</tt>,
+and <tt>password</tt>.
+This kind of connection is supported by VMware Workstation.
+See <A HREF="tasks.html#0_15083" CLASS="XRef">Connecting to the Local Host as the Current User</A>.
+</LI>
+</UL>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1004466"></A><tt>VixHost_Connect()</tt> is an asynchronous function,
+so the function call must be completed with a callback function or a call to <tt>VixJob_Wait()</tt>.</P>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1002645"></A><A NAME="0_67050"></A><A NAME="0_marker-1006489"></A>Connecting to a Specified Host</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1044667"></A>This allows you to access, from a single client machine, any networked ESX/ESXi host or VMware Server. If the host is running VMware Workstation, you must use the procedure <A HREF="tasks.html#0_15083" CLASS="XRef">Connecting to the Local Host as the Current User</A>.</P>
+<P CLASS="B-Body">
+For clients connecting through a firewall, open ports 8222 and 8333 for VMware Server on Windows, ports 80 and 442 for ESX/ESXi, or ports 80 and 443 (and possibly 902) for VMware Server on Linux. This is assuming <tt>vmware-hostd</tt> listens on the default ports. If you changed ports at installation time or with <tt>vmware-config.pl</tt>, open your ports instead.</P>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1044671"></A>Example 3-1.  </H6>
+C code below.
+<A HREF="lang/perl/functions/HostConnect.html">Click here for Perl</A>.
+<A HREF="lang/com/functions/Connect.html">Click here for COM</A>.
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1044672"></A>#include &quot;vix.h&quot;
+<A NAME="0_pgfId-1030602"></A>&nbsp;
+<A NAME="0_pgfId-1030603"></A>int main(int argc, char * argv[])
+<A NAME="0_pgfId-1030604"></A>{
+<A NAME="0_pgfId-1030605"></A>   VixHandle hostHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1030606"></A>   VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1030607"></A>   VixError err;
+<A NAME="0_pgfId-1030608"></A>&nbsp;
+<A NAME="0_pgfId-1030609"></A>   // Connect to specified host.
+<A NAME="0_pgfId-1030610"></A>   jobHandle = VixHost_Connect(VIX_API_VERSION,
+<A NAME="0_pgfId-1030611"></A>                               VIX_SERVICEPROVIDER_VI_SERVER,
+<A NAME="0_pgfId-1030612"></A>                               argv[1], // hostName
+<A NAME="0_pgfId-1030613"></A>                               0, // hostPort
+<A NAME="0_pgfId-1030614"></A>                               argv[2], // userName
+<A NAME="0_pgfId-1030615"></A>                               argv[3], // password,
+<A NAME="0_pgfId-1030616"></A>                               0, // options
+<A NAME="0_pgfId-1030617"></A>                               VIX_INVALID_HANDLE, // propertyListHandle
+<A NAME="0_pgfId-1030618"></A>                               NULL, // callbackProc
+<A NAME="0_pgfId-1030619"></A>                               NULL); // clientData
+<A NAME="0_pgfId-1030620"></A>   err = VixJob_Wait(jobHandle,
+<A NAME="0_pgfId-1030621"></A>                     VIX_PROPERTY_JOB_RESULT_HANDLE,
+<A NAME="0_pgfId-1030622"></A>                     &amp;hostHandle,
+<A NAME="0_pgfId-1030623"></A>                     VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1030624"></A>   if (VIX_OK != err) {
+<A NAME="0_pgfId-1030625"></A>      // Handle the error...
+<A NAME="0_pgfId-1030626"></A>      goto abort;
+<A NAME="0_pgfId-1030627"></A>   }
+<A NAME="0_pgfId-1030628"></A>   Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055055"></A>   jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1030629"></A>   // Other code goes here...
+<A NAME="0_pgfId-1030630"></A>&nbsp;
+<A NAME="0_pgfId-1030631"></A>abort:
+<A NAME="0_pgfId-1030632"></A>   VixHost_Disconnect(hostHandle);
+<A NAME="0_pgfId-1030567"></A>}</PRE>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1030531"></A>If you specify the host when you connect to VMware Server, you can also choose to specify the port number. The port number defaults to 902, which is correct for most installations of VMware Server. Some installations might be configured to use a different port number, if port 902 is already in use on the host.</P>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1031213"></A><A NAME="0_56663"></A><A NAME="0_marker-1031212"></A>Connecting to the Local Host as a Specified User</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1031219"></A>This allows your client to run on any host machine running VMware Server that has a given user account. For example, you could create a client script that a system administrator could use on any machine to shut down all virtual machines owned by a given user. The example shown below allows you to choose a user account when you run the script.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1031220"></A>This form of connection is supported by VMware Server. If the host is running VMware Workstation, you must use the procedure <A HREF="tasks.html#0_15083" CLASS="XRef">Connecting to the Local Host as the Current User</A>.</P>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1044048"></A>Example 3-2.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1031215"></A>#include &quot;vix.h&quot;
+<A NAME="0_pgfId-1031126"></A>&nbsp;
+<A NAME="0_pgfId-1031127"></A>int main(int argc, char * argv[])
+<A NAME="0_pgfId-1031128"></A>{
+<A NAME="0_pgfId-1031129"></A>   VixHandle hostHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1031130"></A>   VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1031131"></A>   VixError err;
+<A NAME="0_pgfId-1031132"></A>&nbsp;
+<A NAME="0_pgfId-1031133"></A>   // Connect as specified user on local host.
+<A NAME="0_pgfId-1031134"></A>   jobHandle = VixHost_Connect(VIX_API_VERSION,
+<A NAME="0_pgfId-1031135"></A>                               VIX_SERVICEPROVIDER_VMWARE_SERVER,
+<A NAME="0_pgfId-1031136"></A>                               NULL, // hostName
+<A NAME="0_pgfId-1031137"></A>                               0, // hostPort
+<A NAME="0_pgfId-1031138"></A>                               argv[1], // userName
+<A NAME="0_pgfId-1031139"></A>                               argv[2], // password,
+<A NAME="0_pgfId-1031140"></A>                               0, // options
+<A NAME="0_pgfId-1031141"></A>                               VIX_INVALID_HANDLE, // propertyListHandle
+<A NAME="0_pgfId-1031142"></A>                               NULL, // callbackProc
+<A NAME="0_pgfId-1031143"></A>                               NULL); // clientData
+<A NAME="0_pgfId-1031144"></A>   err = VixJob_Wait(jobHandle,
+<A NAME="0_pgfId-1031145"></A>                     VIX_PROPERTY_JOB_RESULT_HANDLE,
+<A NAME="0_pgfId-1031146"></A>                     &amp;hostHandle,
+<A NAME="0_pgfId-1031147"></A>                     VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1031148"></A>   if (VIX_OK != err) {
+<A NAME="0_pgfId-1031149"></A>      // Handle the error...
+<A NAME="0_pgfId-1031150"></A>      goto abort;
+<A NAME="0_pgfId-1031151"></A>   }
+<A NAME="0_pgfId-1031152"></A>   Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055087"></A>   jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1031153"></A>   // Other code goes here...
+<A NAME="0_pgfId-1031154"></A>&nbsp;
+<A NAME="0_pgfId-1031155"></A>abort:
+<A NAME="0_pgfId-1031156"></A>   VixHost_Disconnect(hostHandle);
+<A NAME="0_pgfId-1031123"></A>}</PRE>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1031002"></A><A NAME="0_15083"></A><A NAME="0_marker-1031001"></A>Connecting to the Local Host as the Current User</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1031268"></A>This option allows you to connect a Vix client to a VMware product running on the same host. You can use this option with a host running either VMware Workstation or VMware Server.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1002667"></A>This option maximizes portability. You can run the client on any host machine, without limiting yourself to a particular user account and without having to specify a user account at run time. However, you must be sure that the current user has appropriate permissions to use one or more virtual machines on the local host.</P>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1043990"></A>Example 3-3.  </H6>
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1031163"></A>#include &quot;vix.h&quot;
+<A NAME="0_pgfId-1031164"></A>&nbsp;
+<A NAME="0_pgfId-1031165"></A>int main(int argc, char * argv[])
+<A NAME="0_pgfId-1031166"></A>{
+<A NAME="0_pgfId-1031167"></A>   VixHandle hostHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1031168"></A>   VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1031169"></A>   VixError err;
+<A NAME="0_pgfId-1031170"></A>&nbsp;
+<A NAME="0_pgfId-1031171"></A>   // Connect as current user on local host.
+<A NAME="0_pgfId-1031172"></A>   jobHandle = VixHost_Connect(VIX_API_VERSION,
+<A NAME="0_pgfId-1031173"></A>                               VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+<A NAME="0_pgfId-1031174"></A>                               NULL, // hostName
+<A NAME="0_pgfId-1031175"></A>                               0, // hostPort
+<A NAME="0_pgfId-1031176"></A>                               NULL, // userName
+<A NAME="0_pgfId-1031177"></A>                               NULL, // password,
+<A NAME="0_pgfId-1031178"></A>                               0, // options
+<A NAME="0_pgfId-1031179"></A>                               VIX_INVALID_HANDLE, // propertyListHandle
+<A NAME="0_pgfId-1031180"></A>                               NULL, // callbackProc
+<A NAME="0_pgfId-1031181"></A>                               NULL); // clientData
+<A NAME="0_pgfId-1031182"></A>                               
+<A NAME="0_pgfId-1031183"></A>   err = VixJob_Wait(jobHandle,
+<A NAME="0_pgfId-1031184"></A>                     VIX_PROPERTY_JOB_RESULT_HANDLE,
+<A NAME="0_pgfId-1031185"></A>                     &amp;hostHandle,
+<A NAME="0_pgfId-1031186"></A>                     VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1031187"></A>   if (VIX_OK != err) {
+<A NAME="0_pgfId-1031188"></A>      // Handle the error...
+<A NAME="0_pgfId-1031189"></A>      goto abort;
+<A NAME="0_pgfId-1031190"></A>   }
+<A NAME="0_pgfId-1031191"></A>   
+<A NAME="0_pgfId-1031192"></A>   Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055107"></A>   jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1031193"></A>   // Other code goes here...
+<A NAME="0_pgfId-1031194"></A>&nbsp;
+<A NAME="0_pgfId-1031195"></A>abort:
+<A NAME="0_pgfId-1031196"></A>   VixHost_Disconnect(hostHandle);
+<A NAME="0_pgfId-1031161"></A>}</PRE>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1003724"></A><A NAME="0_54421"></A><A NAME="0_marker-1006486"></A>Registering and Unregistering Virtual Machines</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003725"></A>ESX/ESXi and VMware Server require that a virtual machine be present in the &quot;inventory&quot; before virtual machine use. The virtual machine inventory is a list of virtual machines that the local host is able to run.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003726"></A>Conversely, if you remove a virtual machine from VMware Server's inventory, it is not available for any virtual machine operations. This is a convenient way to prevent virtual machines from being modified while they are not in regular use. You can also keep an unregistered virtual machine as a &quot;gold&quot; standard from which you can make copies as needed.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1031297"></A>VMware Player and Workstation do not support registering virtual machines.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1004324"></A>Registering or unregistering a virtual machine does not require a handle to the virtual machine, but it does require a path to the virtual machine's configuration (<tt>.vmx</tt>) file. The client must also provide a handle to the host machine where the virtual machine is to be registered or unregistered.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1004445"></A><tt>VixHost_RegisterVM()</tt>
+and <tt>VixHost_UnregisterVM()</tt> are asynchronous functions,
+so the function call must be completed with a callback function or a call to <tt>VixJob_Wait()</tt>.</P>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1003727"></A><A NAME="0_marker-1006485"></A>Registering a Virtual Machine</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1031378"></A>This feature is supported by ESX/ESXi and VMware Server.</P>
+<P CLASS="P-ProcedureHead">
+<A NAME="0_pgfId-1004150"></A>To register a virtual machine</P>
+<OL>
+<LI CLASS="L1F-List1First">
+<A NAME="0_pgfId-1004158"></A>Connect to the host on which the virtual machine is located. See <A HREF="tasks.html#0_76241" CLASS="XRef">Connecting to a Host</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1043985"></A>Use the host handle with <tt>VixHost_RegisterVM()</tt> to register the virtual machine by its path name in the host's file system.
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1054954"></A>Example 3-4.  </H6>
+C code below.
+<A HREF="lang/perl/functions/RegisterVM.html">Click here for Perl</A>.
+<A HREF="lang/com/functions/RegisterVM.html">Click here for COM</A>.
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1054955"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1054956"></A>char vmxFilePath[] = &quot;c:&#92;&#92;Virtual Machines&#92;&#92;vm1&#92;&#92;win2000.vmx&quot;;
+<A NAME="0_pgfId-1054957"></A>VixError err;
+<A NAME="0_pgfId-1054958"></A>&nbsp;
+<A NAME="0_pgfId-1054959"></A>// Add virtual machine to host's inventory.
+<A NAME="0_pgfId-1054960"></A>jobHandle = VixHost_RegisterVM(hostHandle,
+<A NAME="0_pgfId-1054961"></A>                               vmxFilePath,
+<A NAME="0_pgfId-1054962"></A>                               NULL, // callbackProc,
+<A NAME="0_pgfId-1054963"></A>                               NULL); // clientData
+<A NAME="0_pgfId-1054964"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1054965"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1054966"></A>   // Handle the error...
+<A NAME="0_pgfId-1054967"></A>   goto abort;
+<A NAME="0_pgfId-1054968"></A>}
+<A NAME="0_pgfId-1054969"></A>&nbsp;
+<A NAME="0_pgfId-1054970"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055124"></A>jobHandle = VIX_INVALID_HANDLE;</PRE>
+</LI>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1054972"></A><A NAME="0_marker-1054971"></A>Unregistering a Virtual Machine</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1054973"></A>This feature is supported by ESX/ESXi and VMware Server.</P>
+<P CLASS="P-ProcedureHead">
+<A NAME="0_pgfId-1054974"></A>To unregister a virtual machine</P>
+<OL>
+<LI CLASS="L1F-List1First">
+<A NAME="0_pgfId-1054978"></A>Connect to the host on which the virtual machine is located. See <A HREF="tasks.html#0_76241" CLASS="XRef">Connecting to a Host</A>.
+</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1054981"></A>Make sure the virtual machine is powered off. See <A HREF="tasks.html#0_50982" CLASS="XRef">Powering Off or Suspending a Virtual Machine</A>.
+<A NAME="0_pgfId-1004209"></A>If the virtual machine is suspended, first resume it, then power it off. See <A HREF="tasks.html#0_67611" CLASS="XRef">Starting or Resuming a Virtual Machine</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1043959"></A>Use the host handle with <tt>VixHost_UnregisterVM()</tt>
+ to unregister the virtual machine by its path name in the host's file system.</LI>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1043960"></A>Example 3-5.  </H6>
+C code below.
+<A HREF="lang/perl/functions/UnregisterVM.html">Click here for Perl</A>.
+<A HREF="lang/com/functions/UnregisterVM.html">Click here for COM</A>.
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1043961"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1043962"></A>char vmxFilePath[] = &quot;c:&#92;&#92;Virtual Machines&#92;&#92;vm1&#92;&#92;win2000.vmx&quot;;
+<A NAME="0_pgfId-1038807"></A>VixError err;
+<A NAME="0_pgfId-1038808"></A>&nbsp;
+<A NAME="0_pgfId-1038809"></A>// Remove virtual machine from host's inventory.
+<A NAME="0_pgfId-1038810"></A>jobHandle = VixHost_UnregisterVM(hostHandle,
+<A NAME="0_pgfId-1038811"></A>                                 vmxFilePath,
+<A NAME="0_pgfId-1038812"></A>                                 NULL, // callbackProc,
+<A NAME="0_pgfId-1038813"></A>                                 NULL); // clientData
+<A NAME="0_pgfId-1038814"></A>                                 
+<A NAME="0_pgfId-1038815"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1038816"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1038817"></A>   // Handle the error...
+<A NAME="0_pgfId-1038818"></A>   goto abort;
+<A NAME="0_pgfId-1038819"></A>}
+<A NAME="0_pgfId-1038820"></A>&nbsp;
+<A NAME="0_pgfId-1004528"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055129"></A>jobHandle = VIX_INVALID_HANDLE;</PRE>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1003741"></A><A NAME="0_91582"></A>Getting a <A NAME="0_marker-1006483"></A>Handle to a Virtual Machine</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1004341"></A>Most virtual machine operations require a handle to identify the virtual machine.
+The <tt>VixVM_Open()</tt> function converts a path name to a handle, which you can use in subsequent function calls.
+<tt>VixVM_Open()</tt> is an asynchronous function,
+so the function call must be completed with a callback function or a call to <tt>VixJob_Wait()</tt>.
+</P>
+<P CLASS="P-ProcedureHead">
+<A NAME="0_pgfId-1004342"></A>To get a handle to a virtual machine</P>
+<OL>
+<LI CLASS="L1F-List1First">
+<A NAME="0_pgfId-1004386"></A>Supply a handle to the host on which the virtual machine is located. See <A HREF="tasks.html#0_76241" CLASS="XRef">Connecting to a Host</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004387"></A>On VMware Server only, ensure that the virtual machine is registered on the host. See <A HREF="tasks.html#0_54421" CLASS="XRef">Registering and Unregistering Virtual Machines</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004400"></A>Use the host handle and the virtual machine's path name in the host's file system to open the virtual machine with <tt>VixVM_Open()</tt>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004560"></A>Retrieve the virtual machine handle from the job object.</LI>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1044117"></A>Example 3-6.  </H6>
+C code below.
+<A HREF="lang/perl/functions/VMOpen.html">Click here for Perl</A>.
+<A HREF="lang/com/functions/OpenVM.html">Click here for COM</A>.
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1044744"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1038894"></A>VixHandle vmHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1038855"></A>char vmxFilePath[] = &quot;c:&#92;&#92;Virtual Machines&#92;&#92;vm1&#92;&#92;win2000.vmx&quot;;
+<A NAME="0_pgfId-1038856"></A>VixError err;
+<A NAME="0_pgfId-1038857"></A>&nbsp;
+<A NAME="0_pgfId-1038858"></A>// Open virtual machine and get a handle.
+<A NAME="0_pgfId-1038859"></A>jobHandle = VixVM_Open(hostHandle,
+<A NAME="0_pgfId-1038860"></A>                       vmxFilePath,
+<A NAME="0_pgfId-1038861"></A>                       NULL, // callbackProc
+<A NAME="0_pgfId-1038862"></A>                       NULL); // clientData
+<A NAME="0_pgfId-1038863"></A>err = VixJob_Wait(jobHandle,
+<A NAME="0_pgfId-1038864"></A>                  VIX_PROPERTY_JOB_RESULT_HANDLE,
+<A NAME="0_pgfId-1038865"></A>                  &amp;vmHandle,
+<A NAME="0_pgfId-1038866"></A>                  VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1038867"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1038868"></A>   // Handle the error...
+<A NAME="0_pgfId-1038869"></A>   goto abort;
+<A NAME="0_pgfId-1038870"></A>}
+<A NAME="0_pgfId-1038871"></A>&nbsp;
+<A NAME="0_pgfId-1038872"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055142"></A>jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1038840"></A>// ...Use vmHandle in subsequent code...</PRE>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1003750"></A><A NAME="0_67611"></A><A NAME="0_marker-1006482"></A>Starting or Resuming a Virtual Machine</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003751"></A>The <tt>VixVM_PowerOn()</tt> function has two purposes:</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1004569"></A>To start the guest operating system in a virtual machine previously in a powered-off state.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1004573"></A>To resume execution of a guest operating system in a suspended virtual machine.</LI>
+</UL>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1004567"></A>There is no separate Resume function in the VIX API. The <tt>VixVM_PowerOn()</tt> function must be used instead.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1004796"></A><tt>VixVM_PowerOn()</tt> is an asynchronous function,
+so the function call must be completed with a callback function or a call to <tt>VixJob_Wait()</tt>.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003752"></A>For most purposes (especially if you want to do operations in the guest operating system) you must wait for VMware Tools to become active in the guest. Until the VMware Tools utility is ready, no guest operations using the VIX API can complete. See <A HREF="tasks.html#0_94038" CLASS="XRef">Installing VMware Tools in a Virtual Machine</A> for more information about VMware Tools.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1004938"></A>The <tt>VixVM_WaitForToolsInGuest()</tt> function allows you to wait until the VMware Tools utility is responding.
+There is a timeout parameter available for the function. You should generally set the timeout somewhat longer than the typical time it takes the guest operating system to finish booting.</P>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1004613"></A><A NAME="0_marker-1006481"></A>Starting a Virtual Machine from a Powered-Off State</H3>
+<P CLASS="P-ProcedureHead">
+<A NAME="0_pgfId-1004610"></A>To start a virtual machine</P>
+<OL>
+<LI CLASS="L1F-List1First">
+<A NAME="0_pgfId-1004623"></A>Connect to the host on which the virtual machine is located. See <A HREF="tasks.html#0_76241" CLASS="XRef">Connecting to a Host</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004641"></A>Get a handle to the virtual machine. See <A HREF="tasks.html#0_91582" CLASS="XRef">Getting a Handle to a Virtual Machine</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004645"></A>Use the virtual machine handle in a call to <tt>VixVM_PowerOn()</tt> to start up the virtual machine.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004652"></A>Wait for VMware Tools to become active in the guest operating system, using a call to <tt>VixVM_WaitForToolsInGuest()</tt>. 
+Check the job object to determine whether the wait timed out.</LI>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1044171"></A>Example 3-7.  </H6>
+C code below.
+For Perl <A HREF="lang/perl/functions/VMPowerOn.html">click here</A>
+and <A HREF="lang/perl/functions/VMWaitForToolsInGuest.html">click here</A>.
+For COM <A HREF="lang/com/functions/PowerOn.html">click here</A>
+and <A HREF="lang/com/functions/WaitForToolsInGuest.html">click here</A>.
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1044138"></A>VixError err = VIX_OK;
+<A NAME="0_pgfId-1044139"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1044140"></A>&nbsp;
+<A NAME="0_pgfId-1044141"></A>// Power on the virtual machine.
+<A NAME="0_pgfId-1044142"></A>jobHandle = VixVM_PowerOn(vmHandle,
+<A NAME="0_pgfId-1044143"></A>                          0, // powerOnOptions,
+<A NAME="0_pgfId-1044144"></A>                          VIX_INVALID_HANDLE, // propertyListHandle,
+<A NAME="0_pgfId-1044145"></A>                          NULL, // callbackProc,
+<A NAME="0_pgfId-1044146"></A>                          NULL); // clientData
+<A NAME="0_pgfId-1044147"></A>&nbsp;
+<A NAME="0_pgfId-1044148"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1044149"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1044150"></A>   // Handle the error...
+<A NAME="0_pgfId-1044151"></A>   goto abort;
+<A NAME="0_pgfId-1044152"></A>}
+<A NAME="0_pgfId-1044153"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055159"></A>jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1044154"></A>&nbsp;
+<A NAME="0_pgfId-1044155"></A>// Wait for VMware Tools to be active.
+<A NAME="0_pgfId-1044156"></A>jobHandle = VixVM_WaitForToolsInGuest(vmHandle,
+<A NAME="0_pgfId-1044157"></A>                                      120, // timeoutInSeconds,
+<A NAME="0_pgfId-1044158"></A>                                      NULL, // callbackProc,
+<A NAME="0_pgfId-1044159"></A>                                      NULL); // clientData
+<A NAME="0_pgfId-1044160"></A>&nbsp;
+<A NAME="0_pgfId-1044161"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1044162"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1044163"></A>   // Handle the timeout...
+<A NAME="0_pgfId-1044164"></A>}
+<A NAME="0_pgfId-1004853"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055172"></A>jobHandle = VIX_INVALID_HANDLE;</PRE>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1004617"></A><A NAME="0_marker-1006480"></A>Resuming a Suspended Virtual Machine</H3>
+<P CLASS="P-ProcedureHead">
+<A NAME="0_pgfId-1004612"></A>To resume a suspended virtual machine:</P>
+<OL>
+<LI CLASS="L1F-List1First">
+<A NAME="0_pgfId-1004739"></A>Connect to the host on which the virtual machine is located. See <A HREF="tasks.html#0_76241" CLASS="XRef">Connecting to a Host</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004744"></A>Get a handle to the virtual machine. See <A HREF="tasks.html#0_91582" CLASS="XRef">Getting a Handle to a Virtual Machine</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004745"></A>Use the virtual machine handle in a call to <tt>VixVM_PowerOn()</tt> to power on the virtual machine.
+</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004746"></A>(Optional) Use the <tt>VixVM_WaitForToolsInGuest()</tt> function to activate VMware Tools.
+<P CLASS="B1-BodyIndent">
+<A NAME="0_pgfId-1006542"></A>Generally, VMware Tools was already active in the guest operating system when the virtual machine was suspended.</P>
+</LI>
+</OL>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1044175"></A>Example 3-8.  </H6>
+C code below.
+For Perl <A HREF="lang/perl/functions/VMPowerOn.html">click here</A>
+and <A HREF="lang/perl/functions/VMWaitForToolsInGuest.html">click here</A>.
+For COM <A HREF="lang/com/functions/PowerOn.html">click here</A>
+and <A HREF="lang/com/functions/WaitForToolsInGuest.html">click here</A>.
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1044184"></A>VixError err = VIX_OK;
+<A NAME="0_pgfId-1044185"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1044186"></A>int toolsState = 0;
+<A NAME="0_pgfId-1044187"></A>&nbsp;
+<A NAME="0_pgfId-1044188"></A>// Resume suspended virtual machine.
+<A NAME="0_pgfId-1044189"></A>jobHandle = VixVM_PowerOn(vmHandle,
+<A NAME="0_pgfId-1044190"></A>                          0, // powerOnOptions,
+<A NAME="0_pgfId-1044191"></A>                          VIX_INVALID_HANDLE, // propertyListHandle,
+<A NAME="0_pgfId-1044192"></A>                          NULL, // callbackProc,
+<A NAME="0_pgfId-1044193"></A>                          NULL); // clientData
+<A NAME="0_pgfId-1044194"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1044195"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1044196"></A>   // Handle the error...
+<A NAME="0_pgfId-1044197"></A>   goto abort;
+<A NAME="0_pgfId-1044198"></A>}
+<A NAME="0_pgfId-1044199"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055177"></A>jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1044200"></A>&nbsp;
+<A NAME="0_pgfId-1044201"></A>// Check if VMware Tools active.
+<A NAME="0_pgfId-1044202"></A>err = Vix_GetProperties(vmHandle,
+<A NAME="0_pgfId-1044203"></A>                        VIX_PROPERTY_VM_TOOLS_STATE,
+<A NAME="0_pgfId-1044204"></A>                        &amp;toolsState,
+<A NAME="0_pgfId-1044205"></A>                        VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1044206"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1044207"></A>   // Handle the error...
+<A NAME="0_pgfId-1044208"></A>   goto abort;
+<A NAME="0_pgfId-1044209"></A>}
+<A NAME="0_pgfId-1044211"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055198"></A>jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1044212"></A>&nbsp;
+<A NAME="0_pgfId-1044213"></A>if (VIX_TOOLSSTATE_RUNNING != toolsState) {
+<A NAME="0_pgfId-1044214"></A>   // Wait for VMware Tools to be active.
+<A NAME="0_pgfId-1044215"></A>   jobHandle = VixVM_WaitForToolsInGuest(VixHandle vmHandle,
+<A NAME="0_pgfId-1044216"></A>                                         120, // timeoutInSeconds,
+<A NAME="0_pgfId-1044217"></A>                                         NULL, // callbackProc,
+<A NAME="0_pgfId-1044218"></A>                                         NULL); // clientData
+<A NAME="0_pgfId-1044219"></A>   err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1044220"></A>   if (VIX_OK != err) {
+<A NAME="0_pgfId-1044221"></A>      // Handle the timeout...
+<A NAME="0_pgfId-1044222"></A>   }
+<A NAME="0_pgfId-1044224"></A>   Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055193"></A>   jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1044225"></A>}</PRE>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1003051"></A><A NAME="0_94038"></A><A NAME="0_49559"></A>Installing <A NAME="0_marker-1006477"></A>VMware Tools in a Virtual Machine</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003062"></A>VMware Tools is a suite of utilities and drivers to enhance the performance and functionality of your <A NAME="0_marker-1006478"></A>guest operating system. For instance, VMware Tools provides a mouse driver and an SVGA driver for the virtual machine.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003305"></A>VMware Tools also implements some of the functionality required for doing Vix functions that affect the guest operating system, such as <tt>VixVM_RunProgramInGuest()</tt>.
+You need to install VMware Tools before calling guest functions in the VIX API.</P>
+<p class="B-Body">
+You can install VMware Tools manually by following the procedure described in the documentation for your VMware platform product. Or you can use the VIX API to do some or all of the installation steps from the host.</p>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003346"></A>To begin the Tools installation process, you call the Vix function <tt>VixVM_InstallTools()</tt>.
+This function mounts a <A NAME="0_marker-1006479"></A>CD image containing the VMware Tools installer.
+</p>
+<P CLASS="B-Body">
+If the guest operating system has the autorun feature enabled, the installer starts automatically. Many guest operating systems require manual intervention to complete the Tools installation. You can connect a console window to the virtual machine and use the mouse or keyboard to complete the procedure as described in the documentation for your VMware platform product.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003208"></A>The <tt>VixVM_InstallTools()</tt> function is also useful for updating the version of VMware Tools installed in a virtual machine.
+When a newer version of the API is available, VMware recommends that you run the Tools installation on your virtual machines to make sure you are working with the latest version.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1004917"></A><tt>VixVM_InstallTools()</tt> is an asynchronous function,
+so the function call must be completed with a callback function or a call to <tt>VixJob_Wait()</tt>.</P>
+<P CLASS="P-ProcedureHead">
+<A NAME="0_pgfId-1004883"></A>To install VMware Tools:</P>
+<OL>
+<LI CLASS="L1F-List1First">
+<A NAME="0_pgfId-1004888"></A>Connect to the host on which the virtual machine is located. See <A HREF="tasks.html#0_76241" CLASS="XRef">Connecting to a Host</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004893"></A>Get a handle to the virtual machine. See <A HREF="tasks.html#0_91582" CLASS="XRef">Getting a Handle to a Virtual Machine</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004894"></A>Power on the virtual machine. See <A HREF="tasks.html#0_67611" CLASS="XRef">Starting or Resuming a Virtual Machine</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004903"></A>Use the virtual machine handle to call <tt>VixVM_InstallTools()</tt>, which mounts the VMware Tools CD image.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1004926"></A>
+Using a console connected to the virtual machine, perform any remaining steps in the installation procedure documented for your VMware platform product.
+</LI>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1044440"></A>Example 3-9.  </H6>
+C code below.
+<A HREF="lang/perl/functions/VMInstallTools.html">Click here for Perl</A>.
+<A HREF="lang/com/functions/InstallTools.html">Click here for COM</A>.
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1044787"></A>VixError err = VIX_OK;
+<A NAME="0_pgfId-1044441"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1044442"></A>&nbsp;
+<A NAME="0_pgfId-1044443"></A>// Mount virtual CD-ROM with VMware Tools installer.
+<A NAME="0_pgfId-1044444"></A>jobHandle = VixVM_InstallTools(vmHandle,
+<A NAME="0_pgfId-1044445"></A>                               0, // options
+<A NAME="0_pgfId-1044446"></A>                               NULL, // commandLineArgs
+<A NAME="0_pgfId-1044447"></A>                               NULL, // callbackProc
+<A NAME="0_pgfId-1044448"></A>                               NULL); // clientData
+<A NAME="0_pgfId-1044449"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1044450"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1044451"></A>   // Handle the error...
+<A NAME="0_pgfId-1044452"></A>   goto abort;
+<A NAME="0_pgfId-1044453"></A>}
+<A NAME="0_pgfId-1044409"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055203"></A>jobHandle = VIX_INVALID_HANDLE;</PRE>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1014814"></A><A NAME="0_80487"></A>Virtual Machine <A NAME="0_marker-1014813"></A>Guest Operations</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1014815"></A>This section discusses several operations that provide access to the guest operating system.</P>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1014817"></A><A NAME="0_marker-1014816"></A>VMware Tools</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003282"></A>All functions that execute in a guest operating system require VMware Tools to be installed and running. See <A HREF="tasks.html#0_94038" CLASS="XRef">Installing VMware Tools in a Virtual Machine</A> for information on installing VMware Tools.</P>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1003283"></A><A NAME="0_marker-1006474"></A>Authentication</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003278"></A>All functions that modify a file system in the guest operating system or that execute code in a guest operating system require the client to authenticate as a user account known to the guest. The following list shows the functions that require client authentication.</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1045009"></A><tt>VixVM_CopyFileFromHostToGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1045013"></A><tt>VixVM_CopyFileFromGuestToHost()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1078825"></A><tt>VixVM_CreateDirectoryInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1078803"></A><tt>VixVM_CreateTempFileInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1078845"></A><tt>VixVM_DeleteDirectoryInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1078756"></A><tt>VixVM_DeleteFileInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1078697"></A><tt>VixVM_DirectoryExistsInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1078773"></A><tt>VixVM_FileExistsInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1078715"></A><tt>VixVM_KillProcessInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1011605"></A><tt>VixVM_ListDirectoryInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1044562"></A><tt>VixVM_ListProcessesInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1078687"></A><tt>VixVM_OpenUrlInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1078688"></A><tt>VixVM_RenameFileInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1044886"></A><tt>VixVM_RunProgramInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1044564"></A><tt>VixVM_RunScriptInGuest()</tt>
+</LI>
+</UL>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1011572"></A>A client uses <tt>VixVM_LoginInGuest()</tt> to authenticate with the guest operating system.
+Once authenticated, the client may continue to perform guest operations until one of the following takes place:</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1045057"></A>The client calls <tt>VixVM_LogoutFromGuest()</tt>.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1045058"></A>The client terminates, which ends the session.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1045059"></A>The client attempts to authenticate a second time, and the second attempt fails.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1045060"></A>The virtual machine shuts down.</LI>
+</UL>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1003263"></A>If a virtual machine is suspended while a client is authenticated with the guest operating system, the client may resume guest operations after resuming virtual machine execution. However, this is true only as long as the client continues running while the virtual machine is suspended.</P>
+<P CLASS="P-ProcedureHead">
+<A NAME="0_pgfId-1003264"></A>To authenticate with the guest operating system:</P>
+<OL>
+<LI CLASS="L1F-List1First">
+<A NAME="0_pgfId-1005045"></A>Connect to the host on which the virtual machine is located. See <A HREF="tasks.html#0_76241" CLASS="XRef">Connecting to a Host</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1005050"></A>Get a handle to the virtual machine. See <A HREF="tasks.html#0_91582" CLASS="XRef">Getting a Handle to a Virtual Machine</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1005054"></A>Power on the virtual machine and wait for VMware Tools to become active. See <A HREF="tasks.html#0_67611" CLASS="XRef">Starting or Resuming a Virtual Machine</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1005055"></A>Use the virtual machine handle, the user name, and the user password, to call <tt>VixVM_LoginInGuest()</tt>.</LI>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1045114"></A>Example 3-10.  </H6>
+C code below.
+<A HREF="lang/perl/functions/VMLoginInGuest.html">Click here for Perl</A>.
+<A HREF="lang/com/functions/LoginInGuest.html">Click here for COM</A>.
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1045127"></A>VixError err = VIX_OK;
+<A NAME="0_pgfId-1045128"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1045129"></A>&nbsp;
+<A NAME="0_pgfId-1045130"></A>// Authenticate with guest operating system.
+<A NAME="0_pgfId-1045131"></A>jobHandle = VixVM_LoginInGuest(vmHandle,
+<A NAME="0_pgfId-1045132"></A>                               &quot;Administrator&quot;, // userName
+<A NAME="0_pgfId-1045133"></A>                               &quot;secret&quot;, // password
+<A NAME="0_pgfId-1045134"></A>                               0, // options
+<A NAME="0_pgfId-1045135"></A>                               NULL, // callbackProc
+<A NAME="0_pgfId-1045136"></A>                               NULL); // clientData
+<A NAME="0_pgfId-1045137"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1045138"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1045139"></A>   // Handle the error...
+<A NAME="0_pgfId-1045140"></A>   goto abort;
+<A NAME="0_pgfId-1045141"></A>}
+<A NAME="0_pgfId-1045142"></A>&nbsp;
+<A NAME="0_pgfId-1045122"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055021"></A>jobHandle = VIX_INVALID_HANDLE;</PRE>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1011477"></A>The Console User</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1011510"></A>You may sometimes choose to provide a predefined string in place of an actual user name when calling <tt>VixVM_LoginInGuest()</tt>.
+The Vix header file provides the define <tt>VIX_CONSOLE_USER_NAME</tt> as a substitute for an actual user name.
+You must use this substitute for authentication with a Windows guest operating system if you plan to launch a graphical user interface in the guest.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1012246"></A>Before calling <tt>VixVM_LoginInGuest()</tt> with
+<tt>VIX_CONSOLE_USER_NAME</tt>, you need to be sure that a user is currently logged in to the guest operating system. The user must log in through a graphical console connection to the virtual machine.</P>
+<A NAME="0_pgfId-1013468"></A><tt>VixVM_LoginInGuest()</tt> establishes credentials for API operations but does not do an actual login to the guest.
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1011735"></A>Using <tt>VIX_CONSOLE_USER_NAME</tt>
+ is similar to making a second console connection to a virtual machine.
+When a user has logged in through one console connection, a second connection to the same virtual machine shares the display with the first connection and takes advantage of the first user's login account.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1011760"></A><tt>VIX_CONSOLE_USER_NAME</tt> is needed prior to calling these functions:</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1011869"></A><tt>VixVM_OpenUrlInGuest()</tt>
+</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1011905"></A><tt>VixVM_RunProgramInGuest()</tt>
+</LI>
+</UL>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1012272"></A>The password for <tt>VIX_CONSOLE_USER_NAME</tt>
+is always <tt>NULL</tt>.
+</P>
+<OL>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1045218"></A>Example 3-11.  </H6>
+C code below.
+<A HREF="lang/perl/functions/VMLoginInGuest.html">Click here for Perl</A>.
+<A HREF="lang/com/functions/LoginInGuest.html">Click here for COM</A>.
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1011971"></A>VixError err = VIX_OK;
+<A NAME="0_pgfId-1011972"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1011973"></A>&nbsp;
+<A NAME="0_pgfId-1011974"></A>// Authenticate with guest operating system.
+<A NAME="0_pgfId-1011975"></A>jobHandle = VixVM_LoginInGuest(vmHandle,
+<A NAME="0_pgfId-1011976"></A>                               CONSOLE_USER_NAME, // Use console ID
+<A NAME="0_pgfId-1011977"></A>                               NULL, // no password needed
+<A NAME="0_pgfId-1011978"></A>                               0, // options
+<A NAME="0_pgfId-1011979"></A>                               NULL, // callbackProc
+<A NAME="0_pgfId-1011980"></A>                               NULL); // clientData
+<A NAME="0_pgfId-1011981"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1011982"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1011983"></A>// Handle the error...
+<A NAME="0_pgfId-1011984"></A>goto abort;
+<A NAME="0_pgfId-1011985"></A>}
+<A NAME="0_pgfId-1011989"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055029"></A>jobHandle = VIX_INVALID_HANDLE;</PRE>
+</DIV>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1011514"></A><A NAME="0_50982"></A><A NAME="0_marker-1011512"></A>Powering Off or <A NAME="0_marker-1011513"></A>Suspending a Virtual Machine</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1014406"></A>This section discusses the operations used to power off or suspend a virtual machine.</P>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1005157"></A>Choosing Whether to Power Off or Suspend</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005253"></A>You can stop virtual machine execution in several ways. Whether you choose to power off or to suspend a virtual machine depends on your purpose.</P>
+<UL>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005227"></A><tt>VixVM_PowerOff()</tt> is equivalent to turning off the power switch of a physical machine.
+Some operations, such as changing the virtual hardware configuration, require the virtual machine to be powered off.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005232"></A><tt>VixVM_Suspend()</tt> is similar to putting a laptop to sleep. The virtual machine stops running.
+When you resume operation, the virtual machine continues from the point of suspension.</LI>
+<LI CLASS="BL-BulletList">
+<A NAME="0_pgfId-1005233"></A><tt>VixVM_Pause()</tt> temporarily stops virtual machine execution.
+It is useful to speed up your host when a virtual machine is consuming too much memory or CPU.</LI>
+</UL>
+<P CLASS="B1-BodyIndent">
+<A NAME="0_pgfId-1005235"></A>The suspend operation also saves the virtual machine's state on disk, allowing you to reboot the host or move the virtual machine to a new location without shutting down the guest operating system in the virtual machine.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005201"></A>Power functions are asynchronous, so they must be completed with a callback function or a call to <tt>VixJob_Wait()</tt>.</P>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1005166"></A><A NAME="0_44158"></A><A NAME="0_marker-1006471"></A>Powering Off a Virtual Machine</H3>
+<P CLASS="P-ProcedureHead">
+<A NAME="0_pgfId-1005167"></A>To power off a virtual machine</P>
+<OL>
+<LI CLASS="L1F-List1First">
+<A NAME="0_pgfId-1005170"></A>Connect to the host on which the virtual machine is located. See <A HREF="tasks.html#0_76241" CLASS="XRef">Connecting to a Host</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1005175"></A>Get a handle to the virtual machine. See <A HREF="tasks.html#0_91582" CLASS="XRef">Getting a Handle to a Virtual Machine</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1005176"></A>Use the virtual machine handle in a call to <tt>VixVM_PowerOff()</tt>.
+</LI>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1045225"></A>Example 3-12.  </H6>
+C code below.
+<A HREF="lang/perl/functions/VMPowerOff.html">Click here for Perl</A>.
+<A HREF="lang/com/functions/PowerOff.html">Click here for COM</A>.
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1045234"></A>VixError err = VIX_OK;
+<A NAME="0_pgfId-1045235"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1045236"></A>&nbsp;
+<A NAME="0_pgfId-1045237"></A>// Power off the virtual machine.
+<A NAME="0_pgfId-1045238"></A>jobHandle = VixVM_PowerOff(vmHandle,
+<A NAME="0_pgfId-1045239"></A>                           VIX_VMPOWEROP_FROM_GUEST, // powerOffOptions
+<A NAME="0_pgfId-1045241"></A>                           NULL, // callbackProc
+<A NAME="0_pgfId-1045242"></A>                           NULL); // clientData
+<A NAME="0_pgfId-1045244"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1045245"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1045246"></A>   // Handle the error...
+<A NAME="0_pgfId-1045247"></A>   goto abort;
+<A NAME="0_pgfId-1045248"></A>}
+<A NAME="0_pgfId-1045229"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055037"></A>jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1005404"></A>&nbsp;
+</PRE>
+</DIV>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1005207"></A><A NAME="0_marker-1006470"></A>Suspending a Virtual Machine</H3>
+<P CLASS="P-ProcedureHead">
+<A NAME="0_pgfId-1005349"></A>To suspend a virtual machine</P>
+<OL>
+<LI CLASS="L1F-List1First">
+<A NAME="0_pgfId-1005352"></A>Connect to the host on which the virtual machine is located. See <A HREF="tasks.html#0_76241" CLASS="XRef">Connecting to a Host</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1005357"></A>Get a handle to the virtual machine. See <A HREF="tasks.html#0_91582" CLASS="XRef">Getting a Handle to a Virtual Machine</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1005358"></A>Use the virtual machine handle in a call to <tt>VixVM_Suspend()</tt>.</LI>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1045272"></A>Example 3-13.  </H6>
+C code below.
+<A HREF="lang/perl/functions/VMSuspend.html">Click here for Perl</A>.
+<A HREF="lang/com/functions/Suspend.html">Click here for COM</A>.
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1045281"></A>VixError err = VIX_OK;
+<A NAME="0_pgfId-1045282"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1045283"></A>&nbsp;
+<A NAME="0_pgfId-1045284"></A>// Suspend the virtual machine.
+<A NAME="0_pgfId-1045285"></A>jobHandle = VixVM_Suspend(vmHandle,
+<A NAME="0_pgfId-1045286"></A>                          0, // powerOffOptions
+<A NAME="0_pgfId-1045288"></A>                          NULL, // callbackProc
+<A NAME="0_pgfId-1045289"></A>                          NULL); // clientData
+<A NAME="0_pgfId-1045290"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1045291"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1045292"></A>   // Handle the error...
+<A NAME="0_pgfId-1045293"></A>   goto abort;
+<A NAME="0_pgfId-1045294"></A>}
+<A NAME="0_pgfId-1045276"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1055045"></A>jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1005497"></A>&nbsp;
+</PRE>
+</DIV>
+</DIV>
+<DIV>
+<H2 CLASS="H1-Heading1">
+<A NAME="0_pgfId-1005676"></A><A NAME="0_68837"></A><A NAME="0_marker-1006458"></A>Importing a <A NAME="0_marker-1006468"></A>Legacy Virtual Machine</H2>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1006238"></A>The VIX API allows you to run some legacy virtual machines, with some loss of functionality that depends on the virtual hardware version. A legacy virtual machine is one created by an earlier version of VMware software.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1006275"></A>The properties of a virtual machine include a <A NAME="0_marker-1006459"></A>virtual hardware version that determine the capabilities of the virtual machine. VMware products generally support the current virtual hardware version and the previous virtual hardware version. Virtual machines older than the previous virtual hardware version are best upgraded, as they are not supported and they might fail to run.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1006303"></A>Virtual machines created with <A NAME="0_marker-1006464"></A>ESX/ESXi host may also be used with the VIX API if they are first <A NAME="0_marker-1006469"></A>exported to the file formats used by Workstation and VMware Server. Refer to your ESX/ESXi documentation for information on exporting virtual machines.</P>
+<DIV>
+<H3 CLASS="H2-Heading2">
+<A NAME="0_pgfId-1006328"></A><A NAME="0_marker-1006467"></A>Upgrading <A NAME="0_marker-1006465"></A>Virtual Hardware</H3>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1006318"></A>When using legacy virtual machines, you can upgrade the virtual hardware by calling the <tt>VixVM_UpgradeVirtualHardware()</tt> function.
+This function upgrades the virtual hardware to the same level as virtual machines created with the current release.</P>
+<P CLASS="P-ProcedureHead">
+<A NAME="0_pgfId-1006372"></A>To upgrade the virtual hardware version of your virtual machine</P>
+<OL>
+<LI CLASS="L1F-List1First">
+<A NAME="0_pgfId-1006348"></A>Connect to the host on which the virtual machine is located. See <A HREF="tasks.html#0_76241" CLASS="XRef">Connecting to a Host</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1006353"></A>Get a handle to the virtual machine. See <A HREF="tasks.html#0_91582" CLASS="XRef">Getting a Handle to a Virtual Machine</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1006360"></A>Power off the virtual machine. See <A HREF="tasks.html#0_44158" CLASS="XRef">Powering Off a Virtual Machine</A>.</LI>
+<LI CLASS="L1-List1">
+<A NAME="0_pgfId-1006367"></A>Use the virtual machine handle in a call to <tt>VixVM_UpgradeVirtualHardware()</tt>.</LI>
+<H6 CLASS="ET-ExampleTitle">
+<A NAME="0_pgfId-1081476"></A>Example 3-14.  </H6>
+C code below.
+<A HREF="lang/perl/functions/VMUpgradeVirtualHardware.html">Click here for Perl</A>.
+<A HREF="lang/com/functions/UpgradeVirtualHardware.html">Click here for COM</A>.
+</OL>
+<PRE CLASS="C-Code"><A NAME="0_pgfId-1081477"></A>VixError err = VIX_OK;
+<A NAME="0_pgfId-1081478"></A>VixHandle jobHandle = VIX_INVALID_HANDLE;
+<A NAME="0_pgfId-1081479"></A>&nbsp;
+<A NAME="0_pgfId-1081480"></A>// Upgrade the virtual hardware.
+<A NAME="0_pgfId-1081481"></A>jobHandle = VixVM_UpgradeVirtualHardware(vmHandle,
+<A NAME="0_pgfId-1081482"></A>                                         0, // options
+<A NAME="0_pgfId-1081483"></A>                                         NULL, // callbackProc
+<A NAME="0_pgfId-1081484"></A>                                         NULL); // clientData
+<A NAME="0_pgfId-1081485"></A>err = VixJob_Wait(jobHandle, VIX_PROPERTY_NONE);
+<A NAME="0_pgfId-1081486"></A>if (VIX_OK != err) {
+<A NAME="0_pgfId-1081487"></A>   // Handle the error...
+<A NAME="0_pgfId-1081488"></A>   goto abort;
+<A NAME="0_pgfId-1081489"></A>}
+<A NAME="0_pgfId-1081490"></A>&nbsp;
+<A NAME="0_pgfId-1081491"></A>Vix_ReleaseHandle(jobHandle);
+<A NAME="0_pgfId-1081492"></A>jobHandle = VIX_INVALID_HANDLE;</PRE>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1081493"></A>Once you have upgraded the virtual hardware of a legacy virtual machine, you can no longer use that virtual machine with older VMware products &ndash; those that require a previous virtual hardware version. If you have any doubts about upgrading, make a copy of the <A NAME="0_marker-1081494"></A>legacy virtual machine before you upgrade the virtual hardware version.</P>
+<P CLASS="B-Body">
+<A NAME="0_pgfId-1005701"></A>&nbsp;</P>
+</DIV>
+</DIV>
+</BODY>
+</HTML>

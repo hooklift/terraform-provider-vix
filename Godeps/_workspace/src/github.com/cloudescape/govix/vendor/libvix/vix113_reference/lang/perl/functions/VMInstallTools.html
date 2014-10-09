@@ -1,0 +1,139 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VMInstallTools</b>
+<h1>Description</h1>
+<pre>
+$err = VMInstallTools($vmHandle,
+                      $options,
+                      $commandLineArgs);
+</pre>
+<p>
+Prepares to install VMware Tools on the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VMOpen() to create a virtual machine handle.
+</dd>
+<dt><i>options</i></dt>
+<dd>
+May be either 
+   VIX_INSTALLTOOLS_MOUNT_TOOLS_INSTALLER
+   or 
+   VIX_INSTALLTOOLS_AUTO_UPGRADE.
+   Either flag can be combined with the
+   VIX_INSTALLTOOLS_RETURN_IMMEDIATELY
+   flag using the bitwise inclusive OR operator (|). See remarks for more information.
+</dd>
+<dt><i>commandLineArgs</i></dt>
+<dd>
+Must be
+undef.
+</dd>
+</dl>
+<h1>Return Value</h1>
+$err.  The error code returned by the operation. For returned values, see Topics &gt; Error Codes.
+<h1>Remarks</h1>
+<ul>
+<li> If the option 
+VIX_INSTALLTOOLS_MOUNT_TOOLS_INSTALLER
+is provided, the function prepares an ISO image to install VMware Tools
+on the guest operating system. If autorun is enabled, as it often is on Windows, 
+installation begins, otherwise you must initiate installation.  If VMware Tools
+is already installed, this function prepares to upgrade it to the version 
+matching the product.
+<li> If the option 
+VIX_INSTALLTOOLS_AUTO_UPGRADE
+is provided, the function attempts to automatically upgrade VMware Tools
+without any user interaction required, and then reboots the virtual machine.
+This option requires that a version of VMware Tools already be installed.
+If VMware Tools is not already installed, the function will fail.
+<li> When the option
+VIX_INSTALLTOOLS_AUTO_UPGRADE
+is used on virtual machine with a Windows guest operating system, the
+upgrade process may cause the Windows guest to perform a controlled reset
+in order to load new device drivers. If you intend to perform additional
+guest operations after upgrading the VMware Tools, it is recommanded that
+after this task completes, that the guest be reset using
+VMReset()
+with the VIX_VMPOWEROP_FROM_GUEST flag, followed by calling
+VMWaitForToolsInGuest()
+to ensure that the guest has reached a stable state.
+<li> If the option
+VIX_INSTALLTOOLS_AUTO_UPGRADE
+is provided and the newest version of tools is already installed,
+the function will return
+VIX_OK. Some older versions of Vix may return VIX_E_TOOLS_INSTALL_ALREADY_UP_TO_DATE.
+<li> If the
+VIX_INSTALLTOOLS_RETURN_IMMEDIATELY
+flag is set, this function will
+return
+immediately after mounting the VMware Tools ISO image.
+<li> If the
+VIX_INSTALLTOOLS_RETURN_IMMEDIATELY
+flag is not set for an ESX host, this function will
+return
+immediately after mounting the VMware Tools ISO image.
+<li> If the
+VIX_INSTALLTOOLS_RETURN_IMMEDIATELY
+flag is not set for a WS host, this function will
+return
+only after the installation successfully completes or is cancelled.
+<li> The virtual machine must be powered on to do this operation.
+<li> If the Workstation installer calls for an ISO file that is not downloaded,
+this function returns an error, rather than attempting to download the ISO file.
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+<pre>
+use VMware::Vix::Simple;
+use VMware::Vix::API::Constants;
+</pre>
+since VMware Server 1.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+my $err = VIX_OK;
+my $hostHandle = VIX_INVALID_HANDLE;
+my $vmHandle = VIX_INVALID_HANDLE;
+
+($err, $hostHandle) = HostConnect(VIX_API_VERSION,
+                                  VIX_SERVICEPROVIDER_VMWARE_WORKSTATION,
+                                  undef, # hostName
+                                  0, # hostPort
+                                  undef, # userName
+                                  undef, # password
+                                  0, # options
+                                  VIX_INVALID_HANDLE); # propertyListHandle
+
+die "HostConnect() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+($err, $vmHandle) = VMOpen($hostHandle,
+                           "c:\\Virtual Machines\\vm1\\win2000.vmx");
+die "VMOpen() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+                       
+$err = VMPowerOn($vmHandle,
+                 0, # powerOnOptions
+                 VIX_INVALID_HANDLE);  # propertyListHandle
+die "VMPowerOn() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+$err = VMInstallTools($vmHandle,
+                      VIX_INSTALLTOOLS_MOUNT_TOOLS_INSTALLER,	# options
+                      undef);	# commandLineArgs
+die "VMInstallTools() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+$err = VMPowerOff($vmHandle,
+                  0); # powerOnOptions
+die "VMPowerOff() failed, $err ", GetErrorText($err), "\n" if $err != VIX_OK;
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

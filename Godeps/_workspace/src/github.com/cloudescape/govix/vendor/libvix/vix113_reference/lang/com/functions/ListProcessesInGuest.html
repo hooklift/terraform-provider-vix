@@ -1,0 +1,100 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>ListProcessesInGuest</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+ListProcessesInGuest([in] LONG options,
+                     [in] ICallback* jobDoneCallback,
+                     [out,retval] IJob** listJob);
+</pre>
+<p>
+This function lists the running processes in the guest operating system.
+<h1>Parameters</h1>
+<dl>
+<dt><i>options</i></dt>
+<dd>
+Must be 0.
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+An ICallback instance that will be called when the
+                  operation is complete.
+</dd>
+<dt><i>listJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> You must call VM::LoginInGuest() before calling this function.
+<li> Job::GetNumProperties() should be used to determine the number of results.
+<li> Job::GetNthProperties() can be used to get each result.
+<li> When the job is signaled, the following list of properties will be available
+on the returned job handle:
+<ul>
+<li> VIX_PROPERTY_JOB_RESULT_ITEM_NAME: the process name
+<li> VIX_PROPERTY_JOB_RESULT_PROCESS_ID: the process id
+<li> VIX_PROPERTY_JOB_RESULT_PROCESS_OWNER: the process owner
+<li> VIX_PROPERTY_JOB_RESULT_PROCESS_COMMAND: the process command line
+<li> VIX_PROPERTY_JOB_RESULT_PROCESS_BEING_DEBUGGED: is the process being debugged?
+(always FALSE on Linux)
+<li> VIX_PROPERTY_JOB_RESULT_PROCESS_START_TIME: the process start time specifying seconds since the epoch
+</ul>
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<br>Minimum Supported Guest OS: Microsoft Windows NT Series, Linux<br><h1>Example</h1>
+<pre>
+</pre>
+VBScript:
+<pre>
+Set job = vm.ListProcessesInGuest(0, Nothing)
+err = job.WaitWithoutResults()
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+
+numResults = job.GetNumProperties(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_ITEM_NAME)
+
+Dim prop
+ReDim prop(3)
+' Populate the array of properties to request.
+prop(0) = VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_ITEM_NAME
+prop(1) = VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_PROCESS_ID
+prop(2) = VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_PROCESS_OWNER
+prop(3) = VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_PROCESS_COMMAND
+prop(4) = VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_PROCESS_BEING_DEBUGGED
+prop(5) = VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_PROCESS_START_TIME
+For i = 0 to numResults-1
+   err = job.GetNthProperties(i, prop, results)
+   QuitIfError(err)
+   ' Unpack the results.
+   processName = results(0)
+   pid = CStr(results(1))
+   owner = results(2)
+   commandLine = results(3)
+   isDebugged = results(4)
+   startTime = results(5)
+   WScript.Echo(processName & " (" & pid & "): " & owner & ", " & commandLine ", " & "isDebugged: , " & isDebugged & ", " & startTime)
+Next
+
+Set results = Nothing
+Set job = Nothing
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

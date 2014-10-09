@@ -1,0 +1,109 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>VixVM_GetSharedFolderState</b>
+<h1>Description</h1>
+<pre>
+VixHandle
+VixVM_GetSharedFolderState(VixHandle vmHandle,
+                           int index,
+                           VixEventProc *callbackProc,
+                           void *clientData);
+</pre>
+<p>
+This function returns the state of a shared folder mounted in the virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>vmHandle</i></dt>
+<dd>
+Identifies a virtual machine. Call VixVM_Open() to create a virtual machine handle.
+</dd>
+<dt><i>index</i></dt>
+<dd>
+Identifies the shared folder.
+</dd>
+<dt><i>callbackProc</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>clientData</i></dt>
+<dd>
+A parameter that will be passed to the callbackProc function.
+</dd>
+</dl>
+<h1>Return Value</h1>
+VixHandle. A job handle that describes the state of this asynchronous
+operation.
+<h1>Remarks</h1>
+<ul>
+<li> Shared folders are indexed from 0 to n-1, where n is the number of shared
+folders. Use the function 
+VixVM_GetNumSharedFolders()
+to get the
+value of n.
+<li> When the job is signaled, the following properties will be available on
+the returned job handle:
+<ul>
+<li> VIX_PROPERTY_JOB_RESULT_ITEM_NAME the name of the folder
+<li> VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_HOST the host path its mounted from
+<li> VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_FLAGS flags describing the folder
+options VIX_SHAREDFOLDER_WRITE_ACCESS
+</ul>
+<li> It is not necessary to call 
+VixVM_LoginInGuest()
+before calling this function.
+<li> Shared folders are not supported for the following guest operating systems:  
+Windows ME, Windows 98, Windows 95, Windows 3.x, and DOS.
+<li> In this release, this function requires the virtual machine to be powered on
+with VMware Tools installed.  
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+vix.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+VixHandle jobHandle;
+VixError err;
+int numSharedFolders;
+char *folderName;
+char *folderHostPath;
+int folderFlags;
+int i;
+
+jobHandle = VixVM_GetNumSharedFolders(vmHandle, NULL, NULL);
+err = VixJob_Wait(jobHandle, VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_COUNT, 
+		  &numSharedFolders, VIX_PROPERTY_NONE);
+Vix_ReleaseHandle(jobHandle);
+if (VIX_OK != err) {
+   // handle error
+}
+
+for (i = 0; i &lt; numSharedFolders; i++) {
+   jobHandle = VixVM_GetSharedFolderState(vmHandle, i, NULL, NULL);
+   err = VixJob_Wait(jobHandle,
+                     VIX_PROPERTY_JOB_RESULT_ITEM_NAME, &folderName,
+                     VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_HOST, &folderHostPath,
+                     VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_FLAGS, &folderFlags,
+		     VIX_PROPERTY_NONE);
+   if (VIX_OK != err) {
+      // handle error
+   }
+   Vix_ReleaseHandle(jobHandle);
+   printf("Folder #%d: %s:%s, flags %d\n",
+                  i, folderHostPath, folderName, folderFlags);
+   Vix_FreeBuffer(folderName);
+   Vix_FreeBuffer(folderHostPath);
+}
+
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.

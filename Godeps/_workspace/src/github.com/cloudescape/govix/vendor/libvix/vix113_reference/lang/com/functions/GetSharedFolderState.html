@@ -1,0 +1,105 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-8859-1">
+<meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+<link rel="stylesheet" href="../../../foundrydoc.css" type="text/css" charset="ISO-8859-1">
+<link rel="stylesheet" href="foundrydoc.css" type="text/css" charset="ISO-8859-1">
+</head>
+<body>
+<h1>Name</h1>
+<b>GetSharedFolderState</b>
+<h1>Description</h1>
+<pre>
+HRESULT
+GetSharedFolderState([in] LONG index,
+                     [in] ICallback* jobDoneCallback,
+                     [out,retval] IJob** getJob);
+</pre>
+<p>
+This function returns the state of a shared folder mounted in the virtual machine.
+<h1>Parameters</h1>
+<dl>
+<dt><i>index</i></dt>
+<dd>
+Identifies the shared folder.
+</dd>
+<dt><i>jobDoneCallback</i></dt>
+<dd>
+A callback function that will be invoked when the
+                  operation is complete.
+</dd>
+<dt><i>getJob</i></dt>
+<dd>
+Returns an IJob object that describes the state of this asynchronous operation.
+</dd>
+</dl>
+<h1>Return Value</h1>
+HRESULT
+<h1>Remarks</h1>
+<ul>
+<li> Shared folders are indexed from 0 to n-1, where n is the number of shared
+folders. Use the function 
+VM::GetNumSharedFolders()
+to get the
+value of n.
+<li> When the job is signaled, the following properties will be available on
+the returned job handle:
+<ul>
+<li> VIX_PROPERTY_JOB_RESULT_ITEM_NAME the name of the folder
+<li> VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_HOST the host path its mounted from
+<li> VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_FLAGS flags describing the folder
+options VIX_SHAREDFOLDER_WRITE_ACCESS
+</ul>
+<li> It is not necessary to call 
+VM::LoginInGuest()
+before calling this function.
+<li> Shared folders are not supported for the following guest operating systems:  
+Windows ME, Windows 98, Windows 95, Windows 3.x, and DOS.
+<li> In this release, this function requires the virtual machine to be powered on
+with VMware Tools installed.  
+</ul>
+<h1>Side Effects</h1>
+None.
+<h1>Requirements</h1>
+VixCOM.h, since VMware Workstation 6.0
+<h1>Example</h1>
+<pre>
+Dim numResults
+Dim results
+Dim job
+Dim error
+
+Set job = vm.GetNumSharedFolders(Nothing)
+err = job.Wait(Array(VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_COUNT), results)
+If lib.ErrorIndicatesFailure(err) Then
+   WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+   WScript.Quit
+End If
+numResults = results(0)
+
+Dim propIds
+Redim propIds(2)
+' Build an array of properties to request
+propIds(0) = VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_ITEM_NAME
+propIds(1) = VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_HOST
+propIds(2) = VixCOM.Constants.VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_FLAGS
+For i=0 to numResults-1
+   Set job = vm.GetSharedFolderState(i, Nothing)
+   ' Wait for the result, and get the result properties  
+   err = job.Wait(propIds, results)
+   If lib.ErrorIndicatesFailure(err) Then
+      WScript.Echo("Error: " & lib.GetErrorText(err, empty))
+      WScript.Quit
+   End If
+   folderName = results(0)       ' VIX_PROPERTY_JOB_RESULT_ITEM_NAME
+   folderHostPath = results(1)   ' VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_HOST
+   folderFlags = results(2)      ' VIX_PROPERTY_JOB_RESULT_SHARED_FOLDER_FLAGS
+   WScript.Echo(folderName & " on " & folderHostPath & " with flags: " & folderFlags)
+Next
+
+Set results = Nothing
+Set job = Nothing
+</pre>
+</body>
+</html>
+<hr>Copyright (C) 2007-2013 VMware, Inc.  All rights reserved.
