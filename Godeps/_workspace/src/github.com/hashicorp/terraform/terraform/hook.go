@@ -24,24 +24,31 @@ type Hook interface {
 	// PreApply and PostApply are called before and after a single
 	// resource is applied. The error argument in PostApply is the
 	// error, if any, that was returned from the provider Apply call itself.
-	PreApply(string, *ResourceState, *ResourceDiff) (HookAction, error)
-	PostApply(string, *ResourceState, error) (HookAction, error)
+	PreApply(*InstanceInfo, *InstanceState, *InstanceDiff) (HookAction, error)
+	PostApply(*InstanceInfo, *InstanceState, error) (HookAction, error)
 
 	// PreDiff and PostDiff are called before and after a single resource
 	// resource is diffed.
-	PreDiff(string, *ResourceState) (HookAction, error)
-	PostDiff(string, *ResourceDiff) (HookAction, error)
+	PreDiff(*InstanceInfo, *InstanceState) (HookAction, error)
+	PostDiff(*InstanceInfo, *InstanceDiff) (HookAction, error)
 
 	// Provisioning hooks
-	PreProvisionResource(string, *ResourceState) (HookAction, error)
-	PostProvisionResource(string, *ResourceState) (HookAction, error)
-	PreProvision(string, string) (HookAction, error)
-	PostProvision(string, string) (HookAction, error)
+	//
+	// All should be self-explanatory. ProvisionOutput is called with
+	// output sent back by the provisioners. This will be called multiple
+	// times as output comes in, but each call should represent a line of
+	// output. The ProvisionOutput method cannot control whether the
+	// hook continues running.
+	PreProvisionResource(*InstanceInfo, *InstanceState) (HookAction, error)
+	PostProvisionResource(*InstanceInfo, *InstanceState) (HookAction, error)
+	PreProvision(*InstanceInfo, string) (HookAction, error)
+	PostProvision(*InstanceInfo, string) (HookAction, error)
+	ProvisionOutput(*InstanceInfo, string, string)
 
 	// PreRefresh and PostRefresh are called before and after a single
 	// resource state is refreshed, respectively.
-	PreRefresh(string, *ResourceState) (HookAction, error)
-	PostRefresh(string, *ResourceState) (HookAction, error)
+	PreRefresh(*InstanceInfo, *InstanceState) (HookAction, error)
+	PostRefresh(*InstanceInfo, *InstanceState) (HookAction, error)
 }
 
 // NilHook is a Hook implementation that does nothing. It exists only to
@@ -49,43 +56,47 @@ type Hook interface {
 // and only implement the functions you are interested in.
 type NilHook struct{}
 
-func (*NilHook) PreApply(string, *ResourceState, *ResourceDiff) (HookAction, error) {
+func (*NilHook) PreApply(*InstanceInfo, *InstanceState, *InstanceDiff) (HookAction, error) {
 	return HookActionContinue, nil
 }
 
-func (*NilHook) PostApply(string, *ResourceState, error) (HookAction, error) {
+func (*NilHook) PostApply(*InstanceInfo, *InstanceState, error) (HookAction, error) {
 	return HookActionContinue, nil
 }
 
-func (*NilHook) PreDiff(string, *ResourceState) (HookAction, error) {
+func (*NilHook) PreDiff(*InstanceInfo, *InstanceState) (HookAction, error) {
 	return HookActionContinue, nil
 }
 
-func (*NilHook) PostDiff(string, *ResourceDiff) (HookAction, error) {
+func (*NilHook) PostDiff(*InstanceInfo, *InstanceDiff) (HookAction, error) {
 	return HookActionContinue, nil
 }
 
-func (*NilHook) PreProvisionResource(string, *ResourceState) (HookAction, error) {
+func (*NilHook) PreProvisionResource(*InstanceInfo, *InstanceState) (HookAction, error) {
 	return HookActionContinue, nil
 }
 
-func (*NilHook) PostProvisionResource(string, *ResourceState) (HookAction, error) {
+func (*NilHook) PostProvisionResource(*InstanceInfo, *InstanceState) (HookAction, error) {
 	return HookActionContinue, nil
 }
 
-func (*NilHook) PreProvision(string, string) (HookAction, error) {
+func (*NilHook) PreProvision(*InstanceInfo, string) (HookAction, error) {
 	return HookActionContinue, nil
 }
 
-func (*NilHook) PostProvision(string, string) (HookAction, error) {
+func (*NilHook) PostProvision(*InstanceInfo, string) (HookAction, error) {
 	return HookActionContinue, nil
 }
 
-func (*NilHook) PreRefresh(string, *ResourceState) (HookAction, error) {
+func (*NilHook) ProvisionOutput(
+	*InstanceInfo, string, string) {
+}
+
+func (*NilHook) PreRefresh(*InstanceInfo, *InstanceState) (HookAction, error) {
 	return HookActionContinue, nil
 }
 
-func (*NilHook) PostRefresh(string, *ResourceState) (HookAction, error) {
+func (*NilHook) PostRefresh(*InstanceInfo, *InstanceState) (HookAction, error) {
 	return HookActionContinue, nil
 }
 

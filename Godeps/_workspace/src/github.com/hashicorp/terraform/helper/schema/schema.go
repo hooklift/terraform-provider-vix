@@ -14,6 +14,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -73,6 +74,14 @@ type Schema struct {
 	// will no default and the user will be asked to fill it in.
 	Default     interface{}
 	DefaultFunc SchemaDefaultFunc
+
+	// Description is used as the description for docs or asking for user
+	// input. It should be relatively short (a few sentences max) and should
+	// be formatted to fit a CLI.
+	Description string
+
+	// InputDefault is the default value to use for when inputs are requested.
+	InputDefault string
 
 	// The fields below relate to diffs.
 	//
@@ -134,6 +143,10 @@ func (s *Schema) finalizeDiff(
 		return d
 	}
 
+	if d.NewRemoved {
+		return d
+	}
+
 	if s.Computed {
 		if d.Old != "" && d.New == "" {
 			// This is a computed value with an old value set already,
@@ -162,8 +175,8 @@ type schemaMap map[string]*Schema
 //
 // The diff is optional.
 func (m schemaMap) Data(
-	s *terraform.ResourceState,
-	d *terraform.ResourceDiff) (*ResourceData, error) {
+	s *terraform.InstanceState,
+	d *terraform.InstanceDiff) (*ResourceData, error) {
 	return &ResourceData{
 		schema: m,
 		state:  s,
@@ -174,9 +187,9 @@ func (m schemaMap) Data(
 // Diff returns the diff for a resource given the schema map,
 // state, and configuration.
 func (m schemaMap) Diff(
-	s *terraform.ResourceState,
-	c *terraform.ResourceConfig) (*terraform.ResourceDiff, error) {
-	result := new(terraform.ResourceDiff)
+	s *terraform.InstanceState,
+	c *terraform.ResourceConfig) (*terraform.InstanceDiff, error) {
+	result := new(terraform.InstanceDiff)
 	result.Attributes = make(map[string]*terraform.ResourceAttrDiff)
 
 	d := &ResourceData{
@@ -199,7 +212,7 @@ func (m schemaMap) Diff(
 	// caused that.
 	if result.RequiresNew() {
 		// Create the new diff
-		result2 := new(terraform.ResourceDiff)
+		result2 := new(terraform.InstanceDiff)
 		result2.Attributes = make(map[string]*terraform.ResourceAttrDiff)
 
 		// Reset the data to not contain state
@@ -268,6 +281,55 @@ func (m schemaMap) Diff(
 	}
 
 	return result, nil
+}
+
+// Input implements the terraform.ResourceProvider method by asking
+// for input for required configuration keys that don't have a value.
+func (m schemaMap) Input(
+	input terraform.UIInput,
+	c *terraform.ResourceConfig) (*terraform.ResourceConfig, error) {
+	keys := make([]string, 0, len(m))
+	for k, _ := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		v := m[k]
+
+		// Skip things that don't require config, if that is even valid
+		// for a provider schema.
+		if !v.Required && !v.Optional {
+			continue
+		}
+
+		// Skip things that have a value of some sort already
+		if _, ok := c.Raw[k]; ok {
+			continue
+		}
+
+		var value interface{}
+		var err error
+		switch v.Type {
+		case TypeBool:
+			fallthrough
+		case TypeInt:
+			fallthrough
+		case TypeString:
+			value, err = m.inputString(input, k, v)
+		default:
+			panic(fmt.Sprintf("Unknown type for input: %s", v.Type))
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf(
+				"%s: %s", k, err)
+		}
+
+		c.Raw[k] = value
+	}
+
+	return c, nil
 }
 
 // Validate validates the configuration against this schema mapping.
@@ -344,7 +406,7 @@ func (m schemaMap) InternalValidate() error {
 func (m schemaMap) diff(
 	k string,
 	schema *Schema,
-	diff *terraform.ResourceDiff,
+	diff *terraform.InstanceDiff,
 	d *ResourceData) error {
 	var err error
 	switch schema.Type {
@@ -370,7 +432,7 @@ func (m schemaMap) diff(
 func (m schemaMap) diffList(
 	k string,
 	schema *Schema,
-	diff *terraform.ResourceDiff,
+	diff *terraform.InstanceDiff,
 	d *ResourceData) error {
 	o, n, _ := d.diffChange(k)
 
@@ -465,7 +527,7 @@ func (m schemaMap) diffList(
 func (m schemaMap) diffMap(
 	k string,
 	schema *Schema,
-	diff *terraform.ResourceDiff,
+	diff *terraform.InstanceDiff,
 	d *ResourceData) error {
 	//elemSchema := &Schema{Type: TypeString}
 	prefix := k + "."
@@ -507,7 +569,7 @@ func (m schemaMap) diffMap(
 func (m schemaMap) diffSet(
 	k string,
 	schema *Schema,
-	diff *terraform.ResourceDiff,
+	diff *terraform.InstanceDiff,
 	d *ResourceData) error {
 	return m.diffList(k, schema, diff, d)
 }
@@ -515,7 +577,7 @@ func (m schemaMap) diffSet(
 func (m schemaMap) diffString(
 	k string,
 	schema *Schema,
-	diff *terraform.ResourceDiff,
+	diff *terraform.InstanceDiff,
 	d *ResourceData) error {
 	var originalN interface{}
 	var os, ns string
@@ -558,6 +620,9 @@ func (m schemaMap) diffString(
 	if o != nil && n == nil {
 		removed = true
 	}
+	if removed && schema.Computed {
+		return nil
+	}
 
 	diff.Attributes[k] = schema.finalizeDiff(&terraform.ResourceAttrDiff{
 		Old:        os,
@@ -567,6 +632,20 @@ func (m schemaMap) diffString(
 	})
 
 	return nil
+}
+
+func (m schemaMap) inputString(
+	input terraform.UIInput,
+	k string,
+	schema *Schema) (interface{}, error) {
+	result, err := input.Input(&terraform.InputOpts{
+		Id:          k,
+		Query:       k,
+		Description: schema.Description,
+		Default:     schema.InputDefault,
+	})
+
+	return result, err
 }
 
 func (m schemaMap) validate(

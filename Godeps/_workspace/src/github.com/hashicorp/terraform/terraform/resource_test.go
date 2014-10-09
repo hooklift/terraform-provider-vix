@@ -7,28 +7,38 @@ import (
 	"github.com/hashicorp/terraform/config"
 )
 
-func TestResource_Vars(t *testing.T) {
-	r := new(Resource)
-
-	if len(r.Vars()) > 0 {
-		t.Fatalf("bad: %#v", r.Vars())
-	}
-
-	r = &Resource{
-		Id: "key",
-		State: &ResourceState{
-			Attributes: map[string]string{
-				"foo": "bar",
+func TestInstanceInfo(t *testing.T) {
+	cases := []struct {
+		Info   *InstanceInfo
+		Result string
+	}{
+		{
+			&InstanceInfo{
+				Id: "foo",
 			},
+			"foo",
+		},
+		{
+			&InstanceInfo{
+				Id:         "foo",
+				ModulePath: rootModulePath,
+			},
+			"foo",
+		},
+		{
+			&InstanceInfo{
+				Id:         "foo",
+				ModulePath: []string{"root", "consul"},
+			},
+			"module.consul.foo",
 		},
 	}
 
-	expected := map[string]string{
-		"key.foo": "bar",
-	}
-	actual := r.Vars()
-	if !reflect.DeepEqual(actual, expected) {
-		t.Fatalf("bad: %#v", actual)
+	for i, tc := range cases {
+		actual := tc.Info.HumanId()
+		if actual != tc.Result {
+			t.Fatalf("%d: %s", i, actual)
+		}
 	}
 }
 
@@ -92,7 +102,10 @@ func TestResourceConfigGet(t *testing.T) {
 		rc := NewResourceConfig(rawC)
 		if tc.Vars != nil {
 			ctx := NewContext(&ContextOpts{Variables: tc.Vars})
-			if err := rc.interpolate(ctx); err != nil {
+			err := rc.interpolate(
+				ctx.walkContext(walkInvalid, rootModulePath),
+				nil)
+			if err != nil {
 				t.Fatalf("err: %s", err)
 			}
 		}

@@ -12,14 +12,54 @@ func TestResourceProvider_impl(t *testing.T) {
 	var _ terraform.ResourceProvider = new(ResourceProvider)
 }
 
-func TestResourceProvider_configure(t *testing.T) {
-	p := new(terraform.MockResourceProvider)
-	client, server := testClientServer(t)
-	name, err := Register(server, p)
+func TestResourceProvider_input(t *testing.T) {
+	client, server := testNewClientServer(t)
+	defer client.Close()
+
+	p := server.ProviderFunc().(*terraform.MockResourceProvider)
+
+	provider, err := client.ResourceProvider()
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	provider := &ResourceProvider{Client: client, Name: name}
+
+	input := new(terraform.MockUIInput)
+
+	expected := &terraform.ResourceConfig{
+		Raw: map[string]interface{}{"bar": "baz"},
+	}
+	p.InputReturnConfig = expected
+
+	// Input
+	config := &terraform.ResourceConfig{
+		Raw: map[string]interface{}{"foo": "bar"},
+	}
+	actual, err := provider.Input(input, config)
+	if !p.InputCalled {
+		t.Fatal("input should be called")
+	}
+	if !reflect.DeepEqual(p.InputConfig, config) {
+		t.Fatalf("bad: %#v", p.InputConfig)
+	}
+	if err != nil {
+		t.Fatalf("bad: %#v", err)
+	}
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("bad: %#v", actual)
+	}
+}
+
+func TestResourceProvider_configure(t *testing.T) {
+	client, server := testNewClientServer(t)
+	defer client.Close()
+
+	p := server.ProviderFunc().(*terraform.MockResourceProvider)
+
+	provider, err := client.ResourceProvider()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
 
 	// Configure
 	config := &terraform.ResourceConfig{
@@ -101,14 +141,15 @@ func TestResourceProvider_apply(t *testing.T) {
 	}
 	provider := &ResourceProvider{Client: client, Name: name}
 
-	p.ApplyReturn = &terraform.ResourceState{
+	p.ApplyReturn = &terraform.InstanceState{
 		ID: "bob",
 	}
 
 	// Apply
-	state := &terraform.ResourceState{}
-	diff := &terraform.ResourceDiff{}
-	newState, err := provider.Apply(state, diff)
+	info := &terraform.InstanceInfo{}
+	state := &terraform.InstanceState{}
+	diff := &terraform.InstanceDiff{}
+	newState, err := provider.Apply(info, state, diff)
 	if !p.ApplyCalled {
 		t.Fatal("apply should be called")
 	}
@@ -132,7 +173,7 @@ func TestResourceProvider_diff(t *testing.T) {
 	}
 	provider := &ResourceProvider{Client: client, Name: name}
 
-	p.DiffReturn = &terraform.ResourceDiff{
+	p.DiffReturn = &terraform.InstanceDiff{
 		Attributes: map[string]*terraform.ResourceAttrDiff{
 			"foo": &terraform.ResourceAttrDiff{
 				Old: "",
@@ -142,11 +183,12 @@ func TestResourceProvider_diff(t *testing.T) {
 	}
 
 	// Diff
-	state := &terraform.ResourceState{}
+	info := &terraform.InstanceInfo{}
+	state := &terraform.InstanceState{}
 	config := &terraform.ResourceConfig{
 		Raw: map[string]interface{}{"foo": "bar"},
 	}
-	diff, err := provider.Diff(state, config)
+	diff, err := provider.Diff(info, state, config)
 	if !p.DiffCalled {
 		t.Fatal("diff should be called")
 	}
@@ -173,11 +215,12 @@ func TestResourceProvider_diff_error(t *testing.T) {
 	p.DiffReturnError = errors.New("foo")
 
 	// Diff
-	state := &terraform.ResourceState{}
+	info := &terraform.InstanceInfo{}
+	state := &terraform.InstanceState{}
 	config := &terraform.ResourceConfig{
 		Raw: map[string]interface{}{"foo": "bar"},
 	}
-	diff, err := provider.Diff(state, config)
+	diff, err := provider.Diff(info, state, config)
 	if !p.DiffCalled {
 		t.Fatal("diff should be called")
 	}
@@ -201,13 +244,14 @@ func TestResourceProvider_refresh(t *testing.T) {
 	}
 	provider := &ResourceProvider{Client: client, Name: name}
 
-	p.RefreshReturn = &terraform.ResourceState{
+	p.RefreshReturn = &terraform.InstanceState{
 		ID: "bob",
 	}
 
 	// Refresh
-	state := &terraform.ResourceState{}
-	newState, err := provider.Refresh(state)
+	info := &terraform.InstanceInfo{}
+	state := &terraform.InstanceState{}
+	newState, err := provider.Refresh(info, state)
 	if !p.RefreshCalled {
 		t.Fatal("refresh should be called")
 	}

@@ -2,39 +2,51 @@ package terraform
 
 import (
 	"bytes"
-	"reflect"
+	"strings"
 
 	"testing"
 )
 
 func TestReadWritePlan(t *testing.T) {
 	plan := &Plan{
-		Config: testConfig(t, "new-good"),
+		Module: testModule(t, "new-good"),
 		Diff: &Diff{
-			Resources: map[string]*ResourceDiff{
-				"nodeA": &ResourceDiff{
-					Attributes: map[string]*ResourceAttrDiff{
-						"foo": &ResourceAttrDiff{
-							Old: "foo",
-							New: "bar",
-						},
-						"bar": &ResourceAttrDiff{
-							Old:         "foo",
-							NewComputed: true,
-						},
-						"longfoo": &ResourceAttrDiff{
-							Old:         "foo",
-							New:         "bar",
-							RequiresNew: true,
+			Modules: []*ModuleDiff{
+				&ModuleDiff{
+					Path: rootModulePath,
+					Resources: map[string]*InstanceDiff{
+						"nodeA": &InstanceDiff{
+							Attributes: map[string]*ResourceAttrDiff{
+								"foo": &ResourceAttrDiff{
+									Old: "foo",
+									New: "bar",
+								},
+								"bar": &ResourceAttrDiff{
+									Old:         "foo",
+									NewComputed: true,
+								},
+								"longfoo": &ResourceAttrDiff{
+									Old:         "foo",
+									New:         "bar",
+									RequiresNew: true,
+								},
+							},
 						},
 					},
 				},
 			},
 		},
 		State: &State{
-			Resources: map[string]*ResourceState{
-				"foo": &ResourceState{
-					ID: "bar",
+			Modules: []*ModuleState{
+				&ModuleState{
+					Path: rootModulePath,
+					Resources: map[string]*ResourceState{
+						"foo": &ResourceState{
+							Primary: &InstanceState{
+								ID: "bar",
+							},
+						},
+					},
 				},
 			},
 		},
@@ -53,9 +65,9 @@ func TestReadWritePlan(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	println(reflect.DeepEqual(actual.Config.Resources, plan.Config.Resources))
-
-	if !reflect.DeepEqual(actual, plan) {
-		t.Fatalf("bad: %#v", actual)
+	actualStr := strings.TrimSpace(actual.String())
+	expectedStr := strings.TrimSpace(plan.String())
+	if actualStr != expectedStr {
+		t.Fatalf("bad:\n\n%s\n\nexpected:\n\n%s", actualStr, expectedStr)
 	}
 }

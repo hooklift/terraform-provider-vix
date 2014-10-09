@@ -5,11 +5,14 @@ import (
 	"crypto/sha1"
 	"encoding/gob"
 	"encoding/hex"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform/config"
+	"github.com/hashicorp/terraform/config/module"
 )
 
 // This is the directory where our test fixtures are.
@@ -30,6 +33,18 @@ func checksumStruct(t *testing.T, i interface{}) string {
 	return hex.EncodeToString(sum[:])
 }
 
+func tempDir(t *testing.T) string {
+	dir, err := ioutil.TempDir("", "tf")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if err := os.RemoveAll(dir); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	return dir
+}
+
 func testConfig(t *testing.T, name string) *config.Config {
 	c, err := config.Load(filepath.Join(fixtureDir, name, "main.tf"))
 	if err != nil {
@@ -37,6 +52,20 @@ func testConfig(t *testing.T, name string) *config.Config {
 	}
 
 	return c
+}
+
+func testModule(t *testing.T, name string) *module.Tree {
+	mod, err := module.NewTreeModule("", filepath.Join(fixtureDir, name))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	s := &module.FolderStorage{StorageDir: tempDir(t)}
+	if err := mod.Load(s, module.GetModeGet); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	return mod
 }
 
 func testProviderFuncFixed(rp ResourceProvider) ResourceProviderFactory {
@@ -59,21 +88,21 @@ type HookRecordApplyOrder struct {
 	Active bool
 
 	IDs    []string
-	States []*ResourceState
-	Diffs  []*ResourceDiff
+	States []*InstanceState
+	Diffs  []*InstanceDiff
 
 	l sync.Mutex
 }
 
 func (h *HookRecordApplyOrder) PreApply(
-	id string,
-	s *ResourceState,
-	d *ResourceDiff) (HookAction, error) {
+	info *InstanceInfo,
+	s *InstanceState,
+	d *InstanceDiff) (HookAction, error) {
 	if h.Active {
 		h.l.Lock()
 		defer h.l.Unlock()
 
-		h.IDs = append(h.IDs, id)
+		h.IDs = append(h.IDs, info.Id)
 		h.Diffs = append(h.Diffs, d)
 		h.States = append(h.States, s)
 	}
@@ -84,6 +113,46 @@ func (h *HookRecordApplyOrder) PreApply(
 // Below are all the constant strings that are the expected output for
 // various tests.
 
+const testTerraformInputProviderStr = `
+aws_instance.bar:
+  ID = foo
+  bar = override
+  foo = us-east-1
+  type = aws_instance
+aws_instance.foo:
+  ID = foo
+  bar = baz
+  num = 2
+  type = aws_instance
+`
+
+const testTerraformInputProviderOnlyStr = `
+aws_instance.foo:
+  ID = foo
+  foo = us-west-2
+  type = aws_instance
+`
+
+const testTerraformInputVarOnlyStr = `
+aws_instance.foo:
+  ID = foo
+  foo = us-east-1
+  type = aws_instance
+`
+
+const testTerraformInputVarsStr = `
+aws_instance.bar:
+  ID = foo
+  bar = override
+  foo = us-east-1
+  type = aws_instance
+aws_instance.foo:
+  ID = foo
+  bar = baz
+  num = 2
+  type = aws_instance
+`
+
 const testTerraformApplyStr = `
 aws_instance.bar:
   ID = foo
@@ -92,6 +161,27 @@ aws_instance.bar:
 aws_instance.foo:
   ID = foo
   num = 2
+  type = aws_instance
+`
+
+const testTerraformApplyDependsCreateBeforeStr = `
+aws_instance.lb:
+  ID = foo
+  instance = foo
+  type = aws_instance
+
+  Dependencies:
+    aws_instance.web
+aws_instance.web:
+  ID = foo
+  require_new = ami-new
+  type = aws_instance
+`
+
+const testTerraformApplyCreateBeforeStr = `
+aws_instance.bar:
+  ID = foo
+  require_new = xyz
   type = aws_instance
 `
 
@@ -106,6 +196,9 @@ aws_instance.bar:
   ID = foo
   foo = computed_dynamical
   type = aws_instance
+
+  Dependencies:
+    aws_instance.foo
 aws_instance.foo:
   ID = foo
   dynamical = computed_dynamical
@@ -120,9 +213,29 @@ aws_instance.foo:
   ID = foo
 `
 
+const testTerraformApplyModuleStr = `
+aws_instance.bar:
+  ID = foo
+  foo = bar
+  type = aws_instance
+aws_instance.foo:
+  ID = foo
+  num = 2
+  type = aws_instance
+
+module.child:
+  aws_instance.baz:
+    ID = foo
+    foo = bar
+    type = aws_instance
+`
+
 const testTerraformApplyProvisionerStr = `
 aws_instance.bar:
   ID = foo
+
+  Dependencies:
+    aws_instance.foo
 aws_instance.foo:
   ID = foo
   dynamical = computed_dynamical
@@ -131,18 +244,33 @@ aws_instance.foo:
 `
 
 const testTerraformApplyProvisionerFailStr = `
-aws_instance.bar: (tainted)
-  ID = foo
+aws_instance.bar: (1 tainted)
+  ID = <not created>
+  Tainted ID 1 = foo
 aws_instance.foo:
   ID = foo
   num = 2
   type = aws_instance
 `
 
+const testTerraformApplyProvisionerFailCreateBeforeDestroyStr = `
+aws_instance.bar: (1 tainted)
+  ID = bar
+  require_new = abc
+  Tainted ID 1 = foo
+`
+
 const testTerraformApplyProvisionerResourceRefStr = `
 aws_instance.bar:
   ID = foo
   num = 2
+  type = aws_instance
+`
+
+const testTerraformApplyProvisionerDiffStr = `
+aws_instance.bar:
+  ID = foo
+  foo = bar
   type = aws_instance
 `
 
@@ -153,14 +281,32 @@ const testTerraformApplyDestroyStr = `
 const testTerraformApplyErrorStr = `
 aws_instance.bar:
   ID = bar
+
+  Dependencies:
+    aws_instance.foo
 aws_instance.foo:
   ID = foo
   num = 2
 `
 
+const testTerraformApplyErrorCreateBeforeDestroyStr = `
+aws_instance.bar:
+  ID = bar
+  require_new = abc
+`
+
+const testTerraformApplyErrorDestroyCreateBeforeDestroyStr = `
+aws_instance.bar: (1 tainted)
+  ID = foo
+  Tainted ID 1 = bar
+`
+
 const testTerraformApplyErrorPartialStr = `
 aws_instance.bar:
   ID = bar
+
+  Dependencies:
+    aws_instance.foo
 aws_instance.foo:
   ID = foo
   num = 2
@@ -345,6 +491,81 @@ STATE:
 <no state>
 `
 
+const testTerraformPlanCountIndexStr = `
+DIFF:
+
+CREATE: aws_instance.foo.0
+  foo:  "" => "0"
+  type: "" => "aws_instance"
+CREATE: aws_instance.foo.1
+  foo:  "" => "1"
+  type: "" => "aws_instance"
+
+STATE:
+
+<no state>
+`
+
+const testTerraformPlanCountIndexZeroStr = `
+DIFF:
+
+CREATE: aws_instance.foo
+  foo:  "" => "0"
+  type: "" => "aws_instance"
+
+STATE:
+
+<no state>
+`
+
+const testTerraformPlanCountOneIndexStr = `
+DIFF:
+
+CREATE: aws_instance.bar
+  foo:  "" => "foo"
+  type: "" => "aws_instance"
+CREATE: aws_instance.foo
+  foo:  "" => "foo"
+  type: "" => "aws_instance"
+
+STATE:
+
+<no state>
+`
+
+const testTerraformPlanCountZeroStr = `
+DIFF:
+
+CREATE: aws_instance.bar
+  foo:  "" => ""
+  type: "" => "aws_instance"
+
+STATE:
+
+<no state>
+`
+
+const testTerraformPlanCountVarStr = `
+DIFF:
+
+CREATE: aws_instance.bar
+  foo:  "" => "foo,foo,foo"
+  type: "" => "aws_instance"
+CREATE: aws_instance.foo.0
+  foo:  "" => "foo"
+  type: "" => "aws_instance"
+CREATE: aws_instance.foo.1
+  foo:  "" => "foo"
+  type: "" => "aws_instance"
+CREATE: aws_instance.foo.2
+  foo:  "" => "foo"
+  type: "" => "aws_instance"
+
+STATE:
+
+<no state>
+`
+
 const testTerraformPlanCountDecreaseStr = `
 DIFF:
 
@@ -449,6 +670,146 @@ STATE:
 <no state>
 `
 
+const testTerraformPlanModulesStr = `
+DIFF:
+
+CREATE: aws_instance.bar
+  foo:  "" => "2"
+  type: "" => "aws_instance"
+CREATE: aws_instance.foo
+  num:  "" => "2"
+  type: "" => "aws_instance"
+
+module.child:
+  CREATE: aws_instance.foo
+    num:  "" => "2"
+    type: "" => "aws_instance"
+
+STATE:
+
+<no state>
+`
+
+const testTerraformPlanModuleDestroyStr = `
+DIFF:
+
+DESTROY: aws_instance.foo
+
+module.child:
+  DESTROY: aws_instance.foo
+
+STATE:
+
+aws_instance.foo:
+  ID = bar
+
+module.child:
+  aws_instance.foo:
+    ID = bar
+`
+
+const testTerraformPlanModuleInputStr = `
+DIFF:
+
+CREATE: aws_instance.bar
+  foo:  "" => "2"
+  type: "" => "aws_instance"
+
+module.child:
+  CREATE: aws_instance.foo
+    foo:  "" => "42"
+    type: "" => "aws_instance"
+
+STATE:
+
+<no state>
+`
+
+const testTerraformPlanModuleInputComputedStr = `
+DIFF:
+
+CREATE: aws_instance.bar
+  foo:  "" => "<computed>"
+  type: "" => "aws_instance"
+
+module.child:
+  CREATE: aws_instance.foo
+    foo:  "" => "<computed>"
+    type: "" => "aws_instance"
+
+STATE:
+
+<no state>
+`
+
+const testTerraformPlanModuleInputVarStr = `
+DIFF:
+
+CREATE: aws_instance.bar
+  foo:  "" => "2"
+  type: "" => "aws_instance"
+
+module.child:
+  CREATE: aws_instance.foo
+    foo:  "" => "52"
+    type: "" => "aws_instance"
+
+STATE:
+
+<no state>
+`
+
+const testTerraformPlanModuleOrphansStr = `
+DIFF:
+
+CREATE: aws_instance.foo
+  num:  "" => "2"
+  type: "" => "aws_instance"
+
+module.child:
+  DESTROY: aws_instance.foo
+
+STATE:
+
+module.child:
+  aws_instance.foo:
+    ID = baz
+`
+
+const testTerraformPlanModuleVarStr = `
+DIFF:
+
+CREATE: aws_instance.bar
+  foo:  "" => "2"
+  type: "" => "aws_instance"
+
+module.child:
+  CREATE: aws_instance.foo
+    num:  "" => "2"
+    type: "" => "aws_instance"
+
+STATE:
+
+<no state>
+`
+
+const testTerraformPlanModuleVarComputedStr = `
+DIFF:
+
+CREATE: aws_instance.bar
+  foo:  "" => "<computed>"
+  type: "" => "aws_instance"
+
+module.child:
+  CREATE: aws_instance.foo
+    foo:  "" => "<computed>"
+    type: "" => "aws_instance"
+
+STATE:
+
+<no state>
+`
+
 const testTerraformPlanOrphanStr = `
 DIFF:
 
@@ -471,7 +832,7 @@ CREATE: aws_instance.bar
   type: "" => "aws_instance"
 UPDATE: aws_instance.foo
   num:  "" => "2"
-  type: "" => ""
+  type: "" => "aws_instance"
 
 STATE:
 
@@ -482,14 +843,33 @@ aws_instance.foo:
 const testTerraformPlanTaintStr = `
 DIFF:
 
-DESTROY: aws_instance.bar
+DESTROY/CREATE: aws_instance.bar
   foo:  "" => "2"
   type: "" => "aws_instance"
 
 STATE:
 
-aws_instance.bar: (tainted)
-  ID = baz
+aws_instance.bar: (1 tainted)
+  ID = <not created>
+  Tainted ID 1 = baz
+aws_instance.foo:
+  ID = bar
+  num = 2
+`
+
+const testTerraformPlanMultipleTaintStr = `
+DIFF:
+
+DESTROY/CREATE: aws_instance.bar
+  foo:  "" => "2"
+  type: "" => "aws_instance"
+
+STATE:
+
+aws_instance.bar: (2 tainted)
+  ID = <not created>
+  Tainted ID 1 = baz
+  Tainted ID 2 = zip
 aws_instance.foo:
   ID = bar
   num = 2
@@ -509,3 +889,18 @@ STATE:
 
 <no state>
 `
+
+const testTerraformPlanPathVarStr = `
+DIFF:
+
+CREATE: aws_instance.foo
+  cwd:    "" => "%s/barpath"
+  module: "" => "%s/foopath"
+  root:   "" => "%s/barpath"
+  type:   "" => "aws_instance"
+
+STATE:
+
+<no state>
+`
+

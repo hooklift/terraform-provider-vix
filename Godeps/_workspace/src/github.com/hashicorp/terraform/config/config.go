@@ -4,6 +4,8 @@ package config
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform/flatmap"
@@ -12,9 +14,19 @@ import (
 	"github.com/mitchellh/reflectwalk"
 )
 
+// NameRegexp is the regular expression that all names (modules, providers,
+// resources, etc.) must follow.
+var NameRegexp = regexp.MustCompile(`\A[A-Za-z0-9\-\_]+\z`)
+
 // Config is the configuration that comes from loading a collection
 // of Terraform templates.
 type Config struct {
+	// Dir is the path to the directory where this configuration was
+	// loaded from. If it is blank, this configuration wasn't loaded from
+	// any meaningful directory.
+	Dir string
+
+	Modules         []*Module
 	ProviderConfigs []*ProviderConfig
 	Resources       []*Resource
 	Variables       []*Variable
@@ -23,6 +35,16 @@ type Config struct {
 	// The fields below can be filled in by loaders for validation
 	// purposes.
 	unknownKeys []string
+}
+
+// Module is a module used within a configuration.
+//
+// This does not represent a module itself, this represents a module
+// call-site within an existing configuration.
+type Module struct {
+	Name      string
+	Source    string
+	RawConfig *RawConfig
 }
 
 // ProviderConfig is the configuration for a resource provider.
@@ -40,10 +62,17 @@ type ProviderConfig struct {
 type Resource struct {
 	Name         string
 	Type         string
-	Count        int
+	RawCount     *RawConfig
 	RawConfig    *RawConfig
 	Provisioners []*Provisioner
 	DependsOn    []string
+	Lifecycle    ResourceLifecycle
+}
+
+// ResourceLifecycle is used to store the lifecycle tuning parameters
+// to allow customized behavior
+type ResourceLifecycle struct {
+	CreateBeforeDestroy bool `hcl:"create_before_destroy"`
 }
 
 // Provisioner is a configured provisioner step on a resource.
@@ -92,6 +121,21 @@ func ProviderConfigName(t string, pcs []*ProviderConfig) string {
 	return lk
 }
 
+// A unique identifier for this module.
+func (r *Module) Id() string {
+	return fmt.Sprintf("%s", r.Name)
+}
+
+// Count returns the count of this resource.
+func (r *Resource) Count() (int, error) {
+	v, err := strconv.ParseInt(r.RawCount.Value().(string), 0, 0)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(v), nil
+}
+
 // A unique identifier for this resource.
 func (r *Resource) Id() string {
 	return fmt.Sprintf("%s.%s", r.Type, r.Name)
@@ -99,6 +143,10 @@ func (r *Resource) Id() string {
 
 // Validate does some basic semantic checking of the configuration.
 func (c *Config) Validate() error {
+	if c == nil {
+		return nil
+	}
+
 	var errs []error
 
 	for _, k := range c.unknownKeys {
@@ -106,7 +154,7 @@ func (c *Config) Validate() error {
 			"Unknown root level key: %s", k))
 	}
 
-	vars := c.allVariables()
+	vars := c.InterpolatedVariables()
 	varMap := make(map[string]*Variable)
 	for _, v := range c.Variables {
 		varMap[v.Name] = v
@@ -156,9 +204,93 @@ func (c *Config) Validate() error {
 		}
 	}
 
+	// Check that all count variables are valid.
+	for source, vs := range vars {
+		for _, rawV := range vs {
+			switch v := rawV.(type) {
+			case *CountVariable:
+				if v.Type == CountValueInvalid {
+					errs = append(errs, fmt.Errorf(
+						"%s: invalid count variable: %s",
+						source,
+						v.FullKey()))
+				}
+			case *PathVariable:
+				if v.Type == PathValueInvalid {
+					errs = append(errs, fmt.Errorf(
+						"%s: invalid path variable: %s",
+						source,
+						v.FullKey()))
+				}
+			}
+		}
+	}
+
+	// Check that all references to modules are valid
+	modules := make(map[string]*Module)
+	dupped := make(map[string]struct{})
+	for _, m := range c.Modules {
+		// Check for duplicates
+		if _, ok := modules[m.Id()]; ok {
+			if _, ok := dupped[m.Id()]; !ok {
+				dupped[m.Id()] = struct{}{}
+
+				errs = append(errs, fmt.Errorf(
+					"%s: module repeated multiple times",
+					m.Id()))
+			}
+		}
+
+		if _, ok := modules[m.Id()]; !ok {
+			// If we haven't seen this module before, check that the
+			// source has no interpolations.
+			rc, err := NewRawConfig(map[string]interface{}{
+				"root": m.Source,
+			})
+			if err != nil {
+				errs = append(errs, fmt.Errorf(
+					"%s: module source error: %s",
+					m.Id(), err))
+			} else if len(rc.Interpolations) > 0 {
+				errs = append(errs, fmt.Errorf(
+					"%s: module source cannot contain interpolations",
+					m.Id()))
+			}
+
+			// Check that the name matches our regexp
+			if !NameRegexp.Match([]byte(m.Name)) {
+				errs = append(errs, fmt.Errorf(
+					"%s: module name can only contain letters, numbers, "+
+						"dashes, and underscores",
+					m.Id()))
+			}
+		}
+
+		modules[m.Id()] = m
+	}
+	dupped = nil
+
+	// Check that all variables for modules reference modules that
+	// exist.
+	for source, vs := range vars {
+		for _, v := range vs {
+			mv, ok := v.(*ModuleVariable)
+			if !ok {
+				continue
+			}
+
+			if _, ok := modules[mv.Name]; !ok {
+				errs = append(errs, fmt.Errorf(
+					"%s: unknown module referenced: %s",
+					source,
+					mv.Name))
+			}
+		}
+	}
+
 	// Check that all references to resources are valid
 	resources := make(map[string]*Resource)
-	dupped := make(map[string]struct{})
+	dupped = make(map[string]struct{})
 	for _, r := range c.Resources {
 		if _, ok := resources[r.Id()]; ok {
 			if _, ok := dupped[r.Id()]; !ok {
@@ -176,11 +308,42 @@ func (c *Config) Validate() error {
 
 	// Validate resources
 	for n, r := range resources {
-		if r.Count < 1 {
+		// Verify count variables
+		for _, v := range r.RawCount.Variables {
+			switch v.(type) {
+			case *CountVariable:
+				errs = append(errs, fmt.Errorf(
+					"%s: resource count can't reference count variable: %s",
+					n,
+					v.FullKey()))
+			case *ModuleVariable:
+				errs = append(errs, fmt.Errorf(
+					"%s: resource count can't reference module variable: %s",
+					n,
+					v.FullKey()))
+			case *ResourceVariable:
+				errs = append(errs, fmt.Errorf(
+					"%s: resource count can't reference resource variable: %s",
+					n,
+					v.FullKey()))
+			case *UserVariable:
+				// Good
+			default:
+				panic("Unknown type in count var: " + n)
+			}
+		}
+
+		// Interpolate with a fixed number to verify that its a number
+		r.RawCount.interpolate(func(Interpolation) (string, error) {
+			return "5", nil
+		})
+		_, err := strconv.ParseInt(r.RawCount.Value().(string), 0, 0)
+		if err != nil {
 			errs = append(errs, fmt.Errorf(
-				"%s: count must be greater than or equal to 1",
+				"%s: resource count must be an integer",
 				n))
 		}
+		r.RawCount.init()
 
 		for _, d := range r.DependsOn {
 			if _, ok := resources[d]; !ok {
@@ -199,25 +362,12 @@ func (c *Config) Validate() error {
 			}
 
 			id := fmt.Sprintf("%s.%s", rv.Type, rv.Name)
-			r, ok := resources[id]
-			if !ok {
+			if _, ok := resources[id]; !ok {
 				errs = append(errs, fmt.Errorf(
 					"%s: unknown resource '%s' referenced in variable %s",
 					source,
 					id,
 					rv.FullKey()))
-				continue
-			}
-
-			// If it is a multi reference and resource has a single
-			// count, it is an error.
-			if r.Count > 1 && !rv.Multi {
-				errs = append(errs, fmt.Errorf(
-					"%s: variable '%s' must specify index for multi-count "+
-						"resource %s",
-					source,
-					rv.FullKey(),
-					id))
 				continue
 			}
 		}
@@ -245,10 +395,10 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// allVariables is a helper that returns a mapping of all the interpolated
+// InterpolatedVariables is a helper that returns a mapping of all the interpolated
 // variables within the configuration. This is used to verify references
 // are valid in the Validate step.
-func (c *Config) allVariables() map[string][]InterpolatedVariable {
+func (c *Config) InterpolatedVariables() map[string][]InterpolatedVariable {
 	result := make(map[string][]InterpolatedVariable)
 	for _, pc := range c.ProviderConfigs {
 		source := fmt.Sprintf("provider config '%s'", pc.Name)
@@ -259,6 +409,9 @@ func (c *Config) allVariables() map[string][]InterpolatedVariable {
 
 	for _, rc := range c.Resources {
 		source := fmt.Sprintf("resource '%s'", rc.Id())
+		for _, v := range rc.RawCount.Variables {
+			result[source] = append(result[source], v)
+		}
 		for _, v := range rc.RawConfig.Variables {
 			result[source] = append(result[source], v)
 		}
@@ -272,6 +425,24 @@ func (c *Config) allVariables() map[string][]InterpolatedVariable {
 	}
 
 	return result
+}
+
+func (m *Module) mergerName() string {
+	return m.Id()
+}
+
+func (m *Module) mergerMerge(other merger) merger {
+	m2 := other.(*Module)
+
+	result := *m
+	result.Name = m2.Name
+	result.RawConfig = result.RawConfig.merge(m2.RawConfig)
+
+	if m2.Source != "" {
+		result.Source = m2.Source
+	}
+
+	return &result
 }
 
 func (o *Output) mergerName() string {
@@ -314,8 +485,8 @@ func (r *Resource) mergerMerge(m merger) merger {
 	result.Type = r2.Type
 	result.RawConfig = result.RawConfig.merge(r2.RawConfig)
 
-	if r2.Count > 0 {
-		result.Count = r2.Count
+	if r2.RawCount.Value() != "1" {
+		result.RawCount = r2.RawCount
 	}
 
 	if len(r2.Provisioners) > 0 {

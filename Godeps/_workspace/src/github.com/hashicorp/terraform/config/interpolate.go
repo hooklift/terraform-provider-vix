@@ -52,6 +52,45 @@ type VariableInterpolation struct {
 	Variable InterpolatedVariable
 }
 
+// CountVariable is a variable for referencing information about
+// the count.
+type CountVariable struct {
+	Type CountValueType
+	key  string
+}
+
+// CountValueType is the type of the count variable that is referenced.
+type CountValueType byte
+
+const (
+	CountValueInvalid CountValueType = iota
+	CountValueIndex
+)
+
+// A ModuleVariable is a variable that is referencing the output
+// of a module, such as "${module.foo.bar}"
+type ModuleVariable struct {
+	Name  string
+	Field string
+	key   string
+}
+
+// A PathVariable is a variable that references path information about the
+// module.
+type PathVariable struct {
+	Type PathValueType
+	key  string
+}
+
+type PathValueType byte
+
+const (
+	PathValueInvalid PathValueType = iota
+	PathValueCwd
+	PathValueModule
+	PathValueRoot
+)
+
 // A ResourceVariable is a variable that is referencing the field
 // of a resource, such as "${aws_instance.foo.ami}"
 type ResourceVariable struct {
@@ -76,11 +115,17 @@ type UserVariable struct {
 }
 
 func NewInterpolatedVariable(v string) (InterpolatedVariable, error) {
-	if !strings.HasPrefix(v, "var.") {
+	if strings.HasPrefix(v, "count.") {
+		return NewCountVariable(v)
+	} else if strings.HasPrefix(v, "path.") {
+		return NewPathVariable(v)
+	} else if strings.HasPrefix(v, "var.") {
+		return NewUserVariable(v)
+	} else if strings.HasPrefix(v, "module.") {
+		return NewModuleVariable(v)
+	} else {
 		return NewResourceVariable(v)
 	}
-
-	return NewUserVariable(v)
 }
 
 func (i *FunctionInterpolation) Interpolate(
@@ -140,6 +185,65 @@ func (i *VariableInterpolation) GoString() string {
 
 func (i *VariableInterpolation) Variables() map[string]InterpolatedVariable {
 	return map[string]InterpolatedVariable{i.Variable.FullKey(): i.Variable}
+}
+
+func NewCountVariable(key string) (*CountVariable, error) {
+	var fieldType CountValueType
+	parts := strings.SplitN(key, ".", 2)
+	switch parts[1] {
+	case "index":
+		fieldType = CountValueIndex
+	}
+
+	return &CountVariable{
+		Type: fieldType,
+		key:  key,
+	}, nil
+}
+
+func (c *CountVariable) FullKey() string {
+	return c.key
+}
+
+func NewModuleVariable(key string) (*ModuleVariable, error) {
+	parts := strings.SplitN(key, ".", 3)
+	if len(parts) < 3 {
+		return nil, fmt.Errorf(
+			"%s: module variables must be three parts: module.name.attr",
+			key)
+	}
+
+	return &ModuleVariable{
+		Name:  parts[1],
+		Field: parts[2],
+		key:   key,
+	}, nil
+}
+
+func (v *ModuleVariable) FullKey() string {
+	return v.key
+}
+
+func NewPathVariable(key string) (*PathVariable, error) {
+	var fieldType PathValueType
+	parts := strings.SplitN(key, ".", 2)
+	switch parts[1] {
+	case "cwd":
+		fieldType = PathValueCwd
+	case "module":
+		fieldType = PathValueModule
+	case "root":
+		fieldType = PathValueRoot
+	}
+
+	return &PathVariable{
+		Type: fieldType,
+		key:  key,
+	}, nil
+}
+
+func (v *PathVariable) FullKey() string {
+	return v.key
 }
 
 func NewResourceVariable(key string) (*ResourceVariable, error) {

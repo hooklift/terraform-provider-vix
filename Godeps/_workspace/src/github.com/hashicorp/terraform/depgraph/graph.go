@@ -163,7 +163,11 @@ func (g *Graph) String() string {
 	}
 	sort.Strings(keys)
 
-	buf.WriteString(fmt.Sprintf("root: %s\n", g.Root.Name))
+	if g.Root != nil {
+		buf.WriteString(fmt.Sprintf("root: %s\n", g.Root.Name))
+	} else {
+		buf.WriteString("root: <unknown>\n")
+	}
 	for _, k := range keys {
 		n := mapping[k]
 		buf.WriteString(fmt.Sprintf("%s\n", n.Name))
@@ -352,4 +356,24 @@ func (g *Graph) Walk(fn WalkFunc) error {
 
 		return err
 	}
+}
+
+// DependsOn returns the set of nouns that have a
+// dependency on a given noun. This can be used to find
+// the incoming edges to a noun.
+func (g *Graph) DependsOn(n *Noun) []*Noun {
+	var incoming []*Noun
+OUTER:
+	for _, other := range g.Nouns {
+		if other == n {
+			continue
+		}
+		for _, d := range other.Deps {
+			if d.Target == n {
+				incoming = append(incoming, other)
+				continue OUTER
+			}
+		}
+	}
+	return incoming
 }

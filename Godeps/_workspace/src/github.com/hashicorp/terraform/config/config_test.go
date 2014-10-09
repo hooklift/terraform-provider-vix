@@ -9,6 +9,36 @@ import (
 // This is the directory where our test fixtures are.
 const fixtureDir = "./test-fixtures"
 
+func TestConfigCount(t *testing.T) {
+	c := testConfig(t, "count-int")
+	actual, err := c.Resources[0].Count()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if actual != 5 {
+		t.Fatalf("bad: %#v", actual)
+	}
+}
+
+func TestConfigCount_string(t *testing.T) {
+	c := testConfig(t, "count-string")
+	actual, err := c.Resources[0].Count()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if actual != 5 {
+		t.Fatalf("bad: %#v", actual)
+	}
+}
+
+func TestConfigCount_var(t *testing.T) {
+	c := testConfig(t, "count-var")
+	_, err := c.Resources[0].Count()
+	if err == nil {
+		t.Fatalf("should error")
+	}
+}
+
 func TestConfigValidate(t *testing.T) {
 	c := testConfig(t, "validate-good")
 	if err := c.Validate(); err != nil {
@@ -23,22 +53,64 @@ func TestConfigValidate_badDependsOn(t *testing.T) {
 	}
 }
 
-func TestConfigValidate_badMultiResource(t *testing.T) {
-	c := testConfig(t, "validate-bad-multi-resource")
+func TestConfigValidate_countInt(t *testing.T) {
+	c := testConfig(t, "validate-count-int")
+	if err := c.Validate(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+}
+
+func TestConfigValidate_countCountVar(t *testing.T) {
+	c := testConfig(t, "validate-count-count-var")
 	if err := c.Validate(); err == nil {
 		t.Fatal("should not be valid")
 	}
 }
 
-func TestConfigValidate_countBelowZero(t *testing.T) {
-	c := testConfig(t, "validate-count-below-zero")
+func TestConfigValidate_countModuleVar(t *testing.T) {
+	c := testConfig(t, "validate-count-module-var")
 	if err := c.Validate(); err == nil {
 		t.Fatal("should not be valid")
 	}
 }
 
-func TestConfigValidate_countZero(t *testing.T) {
-	c := testConfig(t, "validate-count-zero")
+func TestConfigValidate_countNotInt(t *testing.T) {
+	c := testConfig(t, "validate-count-not-int")
+	if err := c.Validate(); err == nil {
+		t.Fatal("should not be valid")
+	}
+}
+
+func TestConfigValidate_countResourceVar(t *testing.T) {
+	c := testConfig(t, "validate-count-resource-var")
+	if err := c.Validate(); err == nil {
+		t.Fatal("should not be valid")
+	}
+}
+
+func TestConfigValidate_countUserVar(t *testing.T) {
+	c := testConfig(t, "validate-count-user-var")
+	if err := c.Validate(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+}
+
+func TestConfigValidate_countVar(t *testing.T) {
+	c := testConfig(t, "validate-count-var")
+	if err := c.Validate(); err != nil {
+		t.Fatal("err: %s", err)
+	}
+}
+
+func TestConfigValidate_countVarInvalid(t *testing.T) {
+	c := testConfig(t, "validate-count-var-invalid")
+	if err := c.Validate(); err == nil {
+		t.Fatal("should not be valid")
+	}
+}
+
+func TestConfigValidate_dupModule(t *testing.T) {
+	c := testConfig(t, "validate-dup-module")
 	if err := c.Validate(); err == nil {
 		t.Fatal("should not be valid")
 	}
@@ -51,8 +123,43 @@ func TestConfigValidate_dupResource(t *testing.T) {
 	}
 }
 
+func TestConfigValidate_moduleNameBad(t *testing.T) {
+	c := testConfig(t, "validate-module-name-bad")
+	if err := c.Validate(); err == nil {
+		t.Fatal("should not be valid")
+	}
+}
+
+func TestConfigValidate_moduleSourceVar(t *testing.T) {
+	c := testConfig(t, "validate-module-source-var")
+	if err := c.Validate(); err == nil {
+		t.Fatal("should not be valid")
+	}
+}
+
+func TestConfigValidate_nil(t *testing.T) {
+	var c Config
+	if err := c.Validate(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+}
+
 func TestConfigValidate_outputBadField(t *testing.T) {
 	c := testConfig(t, "validate-output-bad-field")
+	if err := c.Validate(); err == nil {
+		t.Fatal("should not be valid")
+	}
+}
+
+func TestConfigValidate_pathVar(t *testing.T) {
+	c := testConfig(t, "validate-path-var")
+	if err := c.Validate(); err != nil {
+		t.Fatal("err: %s", err)
+	}
+}
+
+func TestConfigValidate_pathVarInvalid(t *testing.T) {
+	c := testConfig(t, "validate-path-var-invalid")
 	if err := c.Validate(); err == nil {
 		t.Fatal("should not be valid")
 	}
@@ -86,6 +193,13 @@ func TestConfigValidate_unknownVar(t *testing.T) {
 	}
 }
 
+func TestConfigValidate_unknownVarCount(t *testing.T) {
+	c := testConfig(t, "validate-unknownvar-count")
+	if err := c.Validate(); err == nil {
+		t.Fatal("should not be valid")
+	}
+}
+
 func TestConfigValidate_varDefault(t *testing.T) {
 	c := testConfig(t, "validate-var-default")
 	if err := c.Validate(); err != nil {
@@ -104,6 +218,40 @@ func TestConfigValidate_varDefaultInterpolate(t *testing.T) {
 	c := testConfig(t, "validate-var-default-interpolate")
 	if err := c.Validate(); err == nil {
 		t.Fatal("should not be valid")
+	}
+}
+
+func TestConfigValidate_varModule(t *testing.T) {
+	c := testConfig(t, "validate-var-module")
+	if err := c.Validate(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+}
+
+func TestConfigValidate_varModuleInvalid(t *testing.T) {
+	c := testConfig(t, "validate-var-module-invalid")
+	if err := c.Validate(); err == nil {
+		t.Fatal("should not be valid")
+	}
+}
+
+func TestNameRegexp(t *testing.T) {
+	cases := []struct{
+		Input string
+		Match bool
+	}{
+		{"hello", true},
+		{"foo-bar", true},
+		{"foo_bar", true},
+		{"_hello", true},
+		{"foo bar", false},
+		{"foo.bar", false},
+	}
+
+	for _, tc := range cases {
+		if NameRegexp.Match([]byte(tc.Input)) != tc.Match {
+			t.Fatalf("Input: %s\n\nExpected: %#v", tc.Input, tc.Match)
+		}
 	}
 }
 
