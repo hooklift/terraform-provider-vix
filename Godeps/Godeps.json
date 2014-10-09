@@ -68,10 +68,6 @@
 			"Rev": "958f2ec094162e931f264ffa9d967830b61ecb3c"
 		},
 		{
-			"ImportPath": "github.com/hashicorp/yamux",
-			"Rev": "35417c7dfab4085d7c921b33e4d5ea6cf9ceef65"
-		},
-		{
 			"ImportPath": "github.com/mitchellh/copystructure",
 			"Rev": "d8968bce41ab42f33aeb143afa95e331cb1ba886"
 		},
