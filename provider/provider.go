@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/terraform"
 )
 
 type Config struct {
@@ -22,7 +23,7 @@ func init() {
 	log.SetPrefix(fmt.Sprintf("pid-%d-", os.Getpid()))
 }
 
-func Provider() *schema.Provider {
+func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"product": &schema.Schema{

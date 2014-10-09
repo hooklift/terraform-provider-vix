@@ -4,10 +4,12 @@
 package main
 
 import (
-	"github.com/cloudescape/terraform-provider-vix/provider"
+	vix "github.com/cloudescape/terraform-provider-vix/provider"
 	"github.com/hashicorp/terraform/plugin"
 )
 
 func main() {
-	plugin.Serve(provider.Provider())
+	plugin.Serve(&plugin.ServeOpts{
+		ProviderFunc: vix.Provider,
+	})
 }
