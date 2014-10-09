@@ -22,6 +22,15 @@ func TestDecode_interface(t *testing.T) {
 			},
 		},
 		{
+			"basic_squish.hcl",
+			false,
+			map[string]interface{}{
+				"foo":     "bar",
+				"bar":     "${file(\"bing/bong.txt\")}",
+				"foo-bar": "baz",
+			},
+		},
+		{
 			"empty.hcl",
 			false,
 			map[string]interface{}{
@@ -51,6 +60,9 @@ func TestDecode_interface(t *testing.T) {
 				"a": 1e-10,
 				"b": 1e+10,
 				"c": 1e10,
+				"d": 1.2e-10,
+				"e": 1.2e+10,
+				"f": 1.2e10,
 			},
 		},
 		{
@@ -60,6 +72,9 @@ func TestDecode_interface(t *testing.T) {
 				"a": 1e-10,
 				"b": 1e+10,
 				"c": 1e10,
+				"d": 1.2e-10,
+				"e": 1.2e+10,
+				"f": 1.2e10,
 			},
 		},
 		{
@@ -407,5 +422,20 @@ func TestDecode_structureMap(t *testing.T) {
 		if !reflect.DeepEqual(actual, expected) {
 			t.Fatalf("Input: %s\n\nActual: %#v\n\nExpected: %#v", f, actual, expected)
 		}
+	}
+}
+
+func TestDecode_intString(t *testing.T) {
+	var value struct {
+		Count int
+	}
+
+	err := Decode(&value, testReadFile(t, "basic_int_string.hcl"))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if value.Count != 3 {
+		t.Fatalf("bad: %#v", value.Count)
 	}
 }

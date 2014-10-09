@@ -26,14 +26,17 @@ import (
 
 %token  <b> BOOL
 %token  <num> NUMBER
-%token  <str> COMMA IDENTIFIER EQUAL NEWLINE STRING MINUS
+%token  <str> COMMA COMMAEND IDENTIFIER EQUAL NEWLINE STRING MINUS
 %token  <str> LEFTBRACE RIGHTBRACE LEFTBRACKET RIGHTBRACKET PERIOD
 %token  <str> EPLUS EMINUS
 
 %%
 
 top:
-	objectlist
+   {
+        hclResult = &Object{Type: ValueTypeObject}
+    }
+|   objectlist
 	{
 		hclResult = &Object{
 			Type:  ValueTypeObject,
@@ -150,6 +153,10 @@ listitems:
 	{
 		$$ = append($1, $3)
 	}
+|	listitems COMMAEND
+	{
+		$$ = $1
+	}
 
 listitem:
 	number
@@ -188,6 +195,19 @@ number:
 |   int exp
     {
 		fs := fmt.Sprintf("%d%s", $1, $2)
+		f, err := strconv.ParseFloat(fs, 64)
+		if err != nil {
+			panic(err)
+		}
+
+		$$ = &Object{
+			Type:  ValueTypeFloat,
+			Value: f,
+		}
+    }
+|   int frac exp
+    {
+		fs := fmt.Sprintf("%d.%s%s", $1, $2, $3)
 		f, err := strconv.ParseFloat(fs, 64)
 		if err != nil {
 			panic(err)

@@ -17,6 +17,10 @@ func TestLex(t *testing.T) {
 			[]int{IDENTIFIER, EQUAL, STRING, lexEOF},
 		},
 		{
+			"comment_single.hcl",
+			[]int{lexEOF},
+		},
+		{
 			"multiple.hcl",
 			[]int{
 				IDENTIFIER, EQUAL, STRING,
@@ -31,6 +35,10 @@ func TestLex(t *testing.T) {
 				NUMBER, COMMA, NUMBER, COMMA, STRING,
 				RIGHTBRACKET, lexEOF,
 			},
+		},
+		{
+			"old.hcl",
+			[]int{IDENTIFIER, EQUAL, LEFTBRACE, STRING, lexEOF},
 		},
 		{
 			"structure_basic.hcl",

@@ -16,11 +16,12 @@ const lexEOF = 0
 type hclLex struct {
 	Input string
 
-	lastNumber bool
-	pos        int
-	width      int
-	col, line  int
-	err        error
+	lastNumber        bool
+	pos               int
+	width             int
+	col, line         int
+	lastCol, lastLine int
+	err               error
 }
 
 // The parser calls this method to get each new token.
@@ -34,6 +35,7 @@ func (x *hclLex) Lex(yylval *hclSymType) int {
 		// Ignore all whitespace except a newline which we handle
 		// specially later.
 		if unicode.IsSpace(c) {
+			x.lastNumber = false
 			continue
 		}
 
@@ -81,7 +83,7 @@ func (x *hclLex) Lex(yylval *hclSymType) int {
 		case '-':
 			return MINUS
 		case ',':
-			return COMMA
+			return x.lexComma()
 		case '=':
 			return EQUAL
 		case '[':
@@ -160,20 +162,49 @@ func (x *hclLex) consumeComment(c rune) bool {
 	}
 }
 
+// lexComma reads the comma
+func (x *hclLex) lexComma() int {
+	for {
+		c := x.peek()
+
+		// Consume space
+		if unicode.IsSpace(c) {
+			x.next()
+			continue
+		}
+
+		if c == ']' {
+			return COMMAEND
+		}
+
+		break
+	}
+
+	return COMMA
+}
+
 // lexId lexes an identifier
 func (x *hclLex) lexId(yylval *hclSymType) int {
 	var b bytes.Buffer
+	first := true
 	for {
 		c := x.next()
 		if c == lexEOF {
 			break
 		}
 
-		if unicode.IsSpace(c) {
+		if !unicode.IsDigit(c) && !unicode.IsLetter(c) && c != '_' && c != '-' {
 			x.backup()
+
+			if first {
+				x.createErr("Invalid identifier")
+				return lexEOF
+			}
+
 			break
 		}
 
+		first = false
 		if _, err := b.WriteRune(c); err != nil {
 			return lexEOF
 		}

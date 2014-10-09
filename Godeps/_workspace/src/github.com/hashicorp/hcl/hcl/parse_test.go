@@ -20,6 +20,18 @@ func TestParse(t *testing.T) {
 			false,
 		},
 		{
+			"comment_single.hcl",
+			false,
+		},
+		{
+			"empty.hcl",
+			false,
+		},
+		{
+			"list_comma.hcl",
+			false,
+		},
+		{
 			"multiple.hcl",
 			false,
 		},

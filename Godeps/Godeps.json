@@ -20,7 +20,7 @@
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl",
-			"Rev": "26239b8eab901433e15c3c6d27e1f8065b0fbe83"
+			"Rev": "cd87a48c3c4bca64b2217b73d3ebeef0b955d1fb"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/terraform/config",
@@ -66,6 +66,10 @@
 			"ImportPath": "github.com/hashicorp/terraform/terraform",
 			"Comment": "v0.2.2-443-g958f2ec",
 			"Rev": "958f2ec094162e931f264ffa9d967830b61ecb3c"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/yamux",
+			"Rev": "9feabe6854fadca1abec9cd3bd2a613fe9a34000"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/copystructure",
