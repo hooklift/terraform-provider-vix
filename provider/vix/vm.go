@@ -118,23 +118,20 @@ func (v *VM) Create() (string, error) {
 	}
 
 	image := v.Image
-
-	imgPath := filepath.Join(usr.HomeDir, ".terraform/vix/images", image.Checksum)
-	if err = image.Download(imgPath); err != nil {
-		return "", err
-	}
-	defer image.file.Close()
-
 	goldPath := filepath.Join(usr.HomeDir, filepath.Join(".terraform/vix/gold", image.Checksum))
 	_, err = os.Stat(goldPath)
-	goldPathExist := err == nil || err != os.ErrNotExist
-
-	// There is no need to get the error as the slice will be empty anyway
 	finfo, _ := ioutil.ReadDir(goldPath)
 	goldPathEmpty := len(finfo) == 0
 
-	if !goldPathExist || goldPathEmpty {
+	if os.IsNotExist(err) || goldPathEmpty {
 		log.Println("[DEBUG] Gold virtual machine does not exist or is empty")
+
+		imgPath := filepath.Join(usr.HomeDir, ".terraform/vix/images", image.Checksum)
+		if err = image.Download(imgPath); err != nil {
+			return "", err
+		}
+		defer image.file.Close()
+
 		log.Printf("[DEBUG] Unpacking Gold virtual machine into %s\n", goldPath)
 		_, err = unzipit.Unpack(image.file, goldPath)
 		if err != nil {
