@@ -25,8 +25,10 @@ type Host struct {
 //
 // Since VMware Server 1.0
 func (h *Host) Disconnect() {
-	C.VixHost_Disconnect(h.handle)
-	h.handle = C.VIX_INVALID_HANDLE
+	if h.handle != C.VIX_INVALID_HANDLE {
+		C.VixHost_Disconnect(h.handle)
+		h.handle = C.VIX_INVALID_HANDLE
+	}
 }
 
 //export go_callback_char

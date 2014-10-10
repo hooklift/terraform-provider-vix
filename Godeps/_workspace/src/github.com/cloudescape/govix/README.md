@@ -31,8 +31,8 @@ For a more detailed information about the API, please refer to the API documenta
 #### Dynamic library loading
 In order for Go to find libvix when running your compiled binary, a govix path has to be added to the *LD_LIBRARY_PATH* environment variable. Example:
 
-* **OSX:** `export DYLD_LIBRARY_PATH=${GOPATH}/src/github.com/cloudescape/govix`
-* **Linux:** `export LD_LIBRARY_PATH=${GOPATH}/src/github.com/cloudescape/govix`
+* **OSX:** `export DYLD_LIBRARY_PATH=${GOPATH}/src/github.com/cloudescape/govix/vendor/libvix`
+* **Linux:** `export LD_LIBRARY_PATH=${GOPATH}/src/github.com/cloudescape/govix/vendor/libvix`
 * **Windows:** append the path to the PATH environment variable
 
 Be aware that the previous example assumes $GOPATH only has a path set.
