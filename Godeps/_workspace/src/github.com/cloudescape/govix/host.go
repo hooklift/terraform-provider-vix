@@ -25,7 +25,15 @@ type Host struct {
 //
 // Since VMware Server 1.0
 func (h *Host) Disconnect() {
-	if &h.handle != nil && h.handle != C.VIX_INVALID_HANDLE {
+	// TODO(c4milo): Return an error to the user given that this error
+	// may be thrown due to insufficient hardware resources
+	if h.handle == C.VIX_E_CANCELLED {
+		return
+	}
+
+	if &h.handle != nil &&
+		h.handle != C.VIX_INVALID_HANDLE {
+
 		C.VixHost_Disconnect(h.handle)
 		h.handle = C.VIX_INVALID_HANDLE
 	}
