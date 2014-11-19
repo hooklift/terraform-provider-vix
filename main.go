@@ -4,8 +4,8 @@
 package main
 
 import (
-	vix "github.com/cloudescape/terraform-provider-vix/provider"
 	"github.com/hashicorp/terraform/plugin"
+	vix "github.com/hooklift/terraform-provider-vix/provider"
 )
 
 func main() {

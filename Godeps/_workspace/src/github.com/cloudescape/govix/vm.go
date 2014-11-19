@@ -18,7 +18,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/cloudescape/govmx"
+	"github.com/hooklift/govmx"
 )
 
 type VM struct {

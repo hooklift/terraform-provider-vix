@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cloudescape/govmx"
+	"github.com/hooklift/govmx"
 )
 
 // Manages VMX file

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cloudescape/govmx"
+	"github.com/hooklift/govmx"
 )
 
 // CD/DVD configuration

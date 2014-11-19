@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/c4milo/unzipit"
-	govix "github.com/cloudescape/govix"
 	"github.com/dustin/go-humanize"
+	govix "github.com/hooklift/govix"
 )
 
 // Virtual machine configuration

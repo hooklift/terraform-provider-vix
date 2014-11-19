@@ -32,8 +32,8 @@ path has to be added to the LD_LIBRARY_PATH environment variable.
 
 Example:
 
-  * OSX: export DYLD_LIBRARY_PATH=${GOPATH}/src/github.com/cloudescape/govix
-  * Linux: export LD_LIBRARY_PATH=${GOPATH}/src/github.com/cloudescape/govix
+  * OSX: export DYLD_LIBRARY_PATH=${GOPATH}/src/github.com/hooklift/govix
+  * Linux: export LD_LIBRARY_PATH=${GOPATH}/src/github.com/hooklift/govix
   * Windows: append the path to the PATH environment variable
 
 Be aware that the previous example assumes $GOPATH only has a path set.

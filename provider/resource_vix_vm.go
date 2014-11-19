@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"time"
 
-	govix "github.com/cloudescape/govix"
-	"github.com/cloudescape/govmx"
-	"github.com/cloudescape/terraform-provider-vix/provider/vix"
+	govix "github.com/hooklift/govix"
+	"github.com/hooklift/govmx"
+	"github.com/hooklift/terraform-provider-vix/provider/vix"
 
 	"github.com/hashicorp/terraform/helper/multierror"
 	"github.com/hashicorp/terraform/helper/schema"
