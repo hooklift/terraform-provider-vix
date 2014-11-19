@@ -160,7 +160,7 @@ func (v *VM) Create() (string, error) {
 
 	log.Printf("[INFO] Opening Gold virtual machine from %s", vmxFile)
 
-	vm, err := client.OpenVm(vmxFile, v.Image.Password)
+	vm, err := client.OpenVM(vmxFile, v.Image.Password)
 
 	if err != nil {
 		return "", err
@@ -182,7 +182,7 @@ func (v *VM) Create() (string, error) {
 
 		// If there is an error and the error is other than "The snapshot already exists"
 		// then return the error
-		if err != nil && err.(*govix.VixError).Code != 13004 {
+		if err != nil && err.(*govix.Error).Code != 13004 {
 			return "", err
 		}
 	} else {
@@ -212,7 +212,7 @@ func (v *VM) Update(vmxFile string) error {
 	if client.Provider == govix.VMWARE_VI_SERVER ||
 		client.Provider == govix.VMWARE_SERVER {
 		log.Printf("[INFO] Registering VM in host's inventory...")
-		err = client.RegisterVm(vmxFile)
+		err = client.RegisterVM(vmxFile)
 		if err != nil {
 			return err
 		}
@@ -220,7 +220,7 @@ func (v *VM) Update(vmxFile string) error {
 
 	log.Printf("[INFO] Opening virtual machine from %s", vmxFile)
 
-	vm, err := client.OpenVm(vmxFile, v.Image.Password)
+	vm, err := client.OpenVM(vmxFile, v.Image.Password)
 	if err != nil {
 		return err
 	}
@@ -380,7 +380,7 @@ func (v *VM) Destroy(vmxFile string) error {
 	}
 	defer client.Disconnect()
 
-	vm, err := client.OpenVm(vmxFile, v.Image.Password)
+	vm, err := client.OpenVM(vmxFile, v.Image.Password)
 	if err != nil {
 		return err
 	}
@@ -400,7 +400,7 @@ func (v *VM) Destroy(vmxFile string) error {
 		client.Provider == govix.VMWARE_SERVER {
 		log.Printf("[INFO] Unregistering VM from host's inventory...")
 
-		err := client.UnregisterVm(vmxFile)
+		err := client.UnregisterVM(vmxFile)
 		if err != nil {
 			return err
 		}
@@ -419,7 +419,7 @@ func (v *VM) Refresh(vmxFile string) (bool, error) {
 	}
 	defer client.Disconnect()
 
-	vm, err := client.OpenVm(vmxFile, v.Image.Password)
+	vm, err := client.OpenVM(vmxFile, v.Image.Password)
 	if err != nil {
 		return false, err
 	}
