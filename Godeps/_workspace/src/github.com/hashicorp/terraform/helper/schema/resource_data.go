@@ -41,10 +41,13 @@ type ResourceData struct {
 type getSource byte
 
 const (
-	getSourceState getSource = iota
+	getSourceState getSource = 1 << iota
 	getSourceConfig
-	getSourceDiff
 	getSourceSet
+	getSourceExact               // Only get from the _exact_ level
+	getSourceDiff                // Apply the diff on top our level
+	getSourceLevelMask getSource = getSourceState | getSourceConfig | getSourceSet
+	getSourceMax       getSource = getSourceSet
 )
 
 // getResult is the internal structure that is generated when a Get
@@ -52,6 +55,7 @@ const (
 type getResult struct {
 	Value          interface{}
 	ValueProcessed interface{}
+	Computed       bool
 	Exists         bool
 	Schema         *Schema
 }
@@ -79,7 +83,7 @@ func (d *ResourceData) Get(key string) interface{} {
 // set and the new value is. This is common, for example, for boolean
 // fields which have a zero value of false.
 func (d *ResourceData) GetChange(key string) (interface{}, interface{}) {
-	o, n := d.getChange(key, getSourceConfig, getSourceDiff)
+	o, n := d.getChange(key, getSourceConfig, getSourceConfig|getSourceDiff)
 	return o.Value, n.Value
 }
 
@@ -90,7 +94,7 @@ func (d *ResourceData) GetChange(key string) (interface{}, interface{}) {
 // The first result will not necessarilly be nil if the value doesn't exist.
 // The second result should be checked to determine this information.
 func (d *ResourceData) GetOk(key string) (interface{}, bool) {
-	r := d.getRaw(key, getSourceSet)
+	r := d.getRaw(key, getSourceSet|getSourceDiff)
 	return r.Value, r.Exists
 }
 
@@ -221,9 +225,10 @@ func (d *ResourceData) init() {
 	d.newState = &copyState
 }
 
-func (d *ResourceData) diffChange(k string) (interface{}, interface{}, bool) {
+func (d *ResourceData) diffChange(
+	k string) (interface{}, interface{}, bool, bool) {
 	// Get the change between the state and the config.
-	o, n := d.getChange(k, getSourceState, getSourceConfig)
+	o, n := d.getChange(k, getSourceState, getSourceConfig|getSourceExact)
 	if !o.Exists {
 		o.Value = nil
 	}
@@ -232,7 +237,7 @@ func (d *ResourceData) diffChange(k string) (interface{}, interface{}, bool) {
 	}
 
 	// Return the old, new, and whether there is a change
-	return o.Value, n.Value, !reflect.DeepEqual(o.Value, n.Value)
+	return o.Value, n.Value, !reflect.DeepEqual(o.Value, n.Value), n.Computed
 }
 
 func (d *ResourceData) getChange(
@@ -280,12 +285,42 @@ func (d *ResourceData) getSet(
 	source getSource) getResult {
 	s := &Set{F: schema.Set}
 	result := getResult{Schema: schema, Value: s}
-	raw := d.getList(k, nil, schema, source)
+
+	// Get the list. For sets, the entire source must be exact: the
+	// entire set must come from set, diff, state, etc. So we go backwards
+	// and once we get a result, we take it. Or, we never get a result.
+	var raw getResult
+	sourceLevel := source & getSourceLevelMask
+	sourceFlags := source & ^getSourceLevelMask
+	for listSource := sourceLevel; listSource > 0; listSource >>= 1 {
+		// If we're already asking for an exact source and it doesn't
+		// match, then leave since the original source was the match.
+		if sourceFlags&getSourceExact != 0 && listSource != sourceLevel {
+			break
+		}
+
+		// The source we get from is the level we're on, plus the flags
+		// we had, plus the exact flag.
+		getSource := listSource
+		getSource |= sourceFlags
+		getSource |= getSourceExact
+		raw = d.getList(k, nil, schema, getSource)
+		if raw.Exists {
+			break
+		}
+	}
 	if !raw.Exists {
 		if len(parts) > 0 {
 			return d.getList(k, parts, schema, source)
 		}
 
+		return result
+	}
+
+	// If the entire list is computed, then the entire set is
+	// necessarilly computed.
+	if raw.Computed {
+		result.Computed = true
 		return result
 	}
 
@@ -295,6 +330,7 @@ func (d *ResourceData) getSet(
 			return d.getList(k, parts, schema, source)
 		}
 
+		result.Exists = raw.Exists
 		return result
 	}
 
@@ -358,19 +394,26 @@ func (d *ResourceData) getMap(
 	resultSet := false
 	prefix := k + "."
 
-	if d.state != nil && source >= getSourceState {
-		for k, _ := range d.state.Attributes {
-			if !strings.HasPrefix(k, prefix) {
-				continue
-			}
+	flags := source & ^getSourceLevelMask
+	level := source & getSourceLevelMask
+	exact := flags&getSourceExact != 0
+	diff := flags&getSourceDiff != 0
 
-			single := k[len(prefix):]
-			result[single] = d.getPrimitive(k, nil, elemSchema, source).Value
-			resultSet = true
+	if !exact || level == getSourceState {
+		if d.state != nil && level >= getSourceState {
+			for k, _ := range d.state.Attributes {
+				if !strings.HasPrefix(k, prefix) {
+					continue
+				}
+
+				single := k[len(prefix):]
+				result[single] = d.getPrimitive(k, nil, elemSchema, source).Value
+				resultSet = true
+			}
 		}
 	}
 
-	if d.config != nil && source == getSourceConfig {
+	if d.config != nil && level == getSourceConfig {
 		// For config, we always set the result to exactly what was requested
 		if mraw, ok := d.config.Get(k); ok {
 			result = make(map[string]interface{})
@@ -402,7 +445,7 @@ func (d *ResourceData) getMap(
 		}
 	}
 
-	if d.diff != nil && source >= getSourceDiff {
+	if d.diff != nil && diff {
 		for k, v := range d.diff.Attributes {
 			if !strings.HasPrefix(k, prefix) {
 				continue
@@ -419,22 +462,31 @@ func (d *ResourceData) getMap(
 		}
 	}
 
-	if d.setMap != nil && source >= getSourceSet {
-		cleared := false
-		for k, _ := range d.setMap {
-			if !strings.HasPrefix(k, prefix) {
-				continue
-			}
-			resultSet = true
-
-			if !cleared {
-				// We clear the results if they are in the set map
+	if !exact || level == getSourceSet {
+		if d.setMap != nil && level >= getSourceSet {
+			cleared := false
+			if v, ok := d.setMap[k]; ok && v == "" {
+				// We've cleared the map
 				result = make(map[string]interface{})
-				cleared = true
-			}
+				resultSet = true
+			} else {
+				for k, _ := range d.setMap {
+					if !strings.HasPrefix(k, prefix) {
+						continue
+					}
+					resultSet = true
 
-			single := k[len(prefix):]
-			result[single] = d.getPrimitive(k, nil, elemSchema, source).Value
+					if !cleared {
+						// We clear the results if they are in the set map
+						result = make(map[string]interface{})
+						cleared = true
+					}
+
+					single := k[len(prefix):]
+					result[single] = d.getPrimitive(
+						k, nil, elemSchema, source).Value
+				}
+			}
 		}
 	}
 
@@ -516,17 +568,21 @@ func (d *ResourceData) getList(
 	}
 
 	// Get the entire list.
+	var result []interface{}
 	count := d.getList(k, []string{"#"}, schema, source)
-	result := make([]interface{}, count.Value.(int))
-	for i, _ := range result {
-		is := strconv.FormatInt(int64(i), 10)
-		result[i] = d.getList(k, []string{is}, schema, source).Value
+	if !count.Computed {
+		result = make([]interface{}, count.Value.(int))
+		for i, _ := range result {
+			is := strconv.FormatInt(int64(i), 10)
+			result[i] = d.getList(k, []string{is}, schema, source).Value
+		}
 	}
 
 	return getResult{
-		Value:  result,
-		Exists: count.Exists,
-		Schema: schema,
+		Value:    result,
+		Computed: count.Computed,
+		Exists:   count.Exists,
+		Schema:   schema,
 	}
 }
 
@@ -537,11 +593,19 @@ func (d *ResourceData) getPrimitive(
 	source getSource) getResult {
 	var result string
 	var resultProcessed interface{}
-	var resultSet bool
-	if d.state != nil && source >= getSourceState {
-		result, resultSet = d.state.Attributes[k]
+	var resultComputed, resultSet bool
+	flags := source & ^getSourceLevelMask
+	source = source & getSourceLevelMask
+	exact := flags&getSourceExact != 0
+	diff := flags&getSourceDiff != 0
+
+	if !exact || source == getSourceState {
+		if d.state != nil && source >= getSourceState {
+			result, resultSet = d.state.Attributes[k]
+		}
 	}
 
+	// No exact check is needed here because config is always exact
 	if d.config != nil && source == getSourceConfig {
 		// For config, we always return the exact value
 		if v, ok := d.config.Get(k); ok {
@@ -555,9 +619,11 @@ func (d *ResourceData) getPrimitive(
 			resultSet = false
 		}
 
+		// If it is computed, set that.
+		resultComputed = d.config.IsComputed(k)
 	}
 
-	if d.diff != nil && source >= getSourceDiff {
+	if d.diff != nil && diff {
 		attrD, ok := d.diff.Attributes[k]
 		if ok {
 			if !attrD.NewComputed {
@@ -581,10 +647,12 @@ func (d *ResourceData) getPrimitive(
 		}
 	}
 
-	if d.setMap != nil && source >= getSourceSet {
-		if v, ok := d.setMap[k]; ok {
-			result = v
-			resultSet = true
+	if !exact || source == getSourceSet {
+		if d.setMap != nil && source >= getSourceSet {
+			if v, ok := d.setMap[k]; ok {
+				result = v
+				resultSet = true
+			}
 		}
 	}
 
@@ -615,6 +683,10 @@ func (d *ResourceData) getPrimitive(
 			break
 		}
 
+		if resultComputed {
+			break
+		}
+
 		v, err := strconv.ParseInt(result, 0, 0)
 		if err != nil {
 			panic(err)
@@ -628,6 +700,7 @@ func (d *ResourceData) getPrimitive(
 	return getResult{
 		Value:          resultValue,
 		ValueProcessed: resultProcessed,
+		Computed:       resultComputed,
 		Exists:         resultSet,
 		Schema:         schema,
 	}
@@ -717,14 +790,6 @@ func (d *ResourceData) setMapValue(
 		return fmt.Errorf("%s: full map must be set, no a single element", k)
 	}
 
-	// Delete any prior map set
-	/*
-		v := d.getMap(k, nil, schema, getSourceSet)
-		for subKey, _ := range v.(map[string]interface{}) {
-			delete(d.setMap, fmt.Sprintf("%s.%s", k, subKey))
-		}
-	*/
-
 	v := reflect.ValueOf(value)
 	if v.Kind() != reflect.Map {
 		return fmt.Errorf("%s: must be a map", k)
@@ -738,6 +803,13 @@ func (d *ResourceData) setMapValue(
 		vs[mk.String()] = mv.Interface()
 	}
 
+	if len(vs) == 0 {
+		// The empty string here means the map is removed.
+		d.setMap[k] = ""
+		return nil
+	}
+
+	delete(d.setMap, k)
 	for subKey, v := range vs {
 		err := d.set(fmt.Sprintf("%s.%s", k, subKey), nil, elemSchema, v)
 		if err != nil {
@@ -841,6 +913,34 @@ func (d *ResourceData) setSet(
 		return fmt.Errorf("%s: can only set the full set, not elements", k)
 	}
 
+	// If it is a slice, then we have to turn it into a *Set so that
+	// we get the proper order back based on the hash code.
+	if v := reflect.ValueOf(value); v.Kind() == reflect.Slice {
+		// Set the entire list, this lets us get sane values out of it
+		if err := d.setList(k, nil, schema, value); err != nil {
+			return err
+		}
+
+		// Build the set by going over the list items in order and
+		// hashing them into the set. The reason we go over the list and
+		// not the `value` directly is because this forces all types
+		// to become []interface{} (generic) instead of []string, which
+		// most hash functions are expecting.
+		s := &Set{F: schema.Set}
+		source := getSourceSet | getSourceExact
+		for i := 0; i < v.Len(); i++ {
+			is := strconv.FormatInt(int64(i), 10)
+			result := d.getList(k, []string{is}, schema, source)
+			if !result.Exists {
+				panic("just set item doesn't exist")
+			}
+
+			s.Add(result.Value)
+		}
+
+		value = s
+	}
+
 	if s, ok := value.(*Set); ok {
 		value = s.List()
 	}
@@ -853,12 +953,19 @@ func (d *ResourceData) stateList(
 	schema *Schema) map[string]string {
 	countRaw := d.get(prefix, []string{"#"}, schema, d.stateSource(prefix))
 	if !countRaw.Exists {
-		return nil
+		if schema.Computed {
+			// If it is computed, then it always _exists_ in the state,
+			// it is just empty.
+			countRaw.Exists = true
+			countRaw.Value = 0
+		} else {
+			return nil
+		}
 	}
 	count := countRaw.Value.(int)
 
 	result := make(map[string]string)
-	if count > 0 {
+	if count > 0 || schema.Computed {
 		result[prefix+".#"] = strconv.FormatInt(int64(count), 10)
 	}
 	for i := 0; i < count; i++ {
@@ -953,7 +1060,14 @@ func (d *ResourceData) stateSet(
 	schema *Schema) map[string]string {
 	raw := d.get(prefix, nil, schema, d.stateSource(prefix))
 	if !raw.Exists {
-		return nil
+		if schema.Computed {
+			// If it is computed, then it always _exists_ in the state,
+			// it is just empty.
+			raw.Exists = true
+			raw.Value = new(Set)
+		} else {
+			return nil
+		}
 	}
 
 	set := raw.Value.(*Set)
@@ -1003,14 +1117,14 @@ func (d *ResourceData) stateSingle(
 func (d *ResourceData) stateSource(prefix string) getSource {
 	// If we're not doing a partial apply, then get the set level
 	if !d.partial {
-		return getSourceSet
+		return getSourceSet | getSourceDiff
 	}
 
 	// Otherwise, only return getSourceSet if its in the partial map.
 	// Otherwise we use state level only.
 	for k, _ := range d.partialMap {
 		if strings.HasPrefix(prefix, k) {
-			return getSourceSet
+			return getSourceSet | getSourceDiff
 		}
 	}
 

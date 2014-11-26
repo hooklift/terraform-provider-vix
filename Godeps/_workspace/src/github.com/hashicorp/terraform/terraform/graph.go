@@ -80,6 +80,8 @@ type GraphNodeModule struct {
 	Config *config.Module
 	Path   []string
 	Graph  *depgraph.Graph
+	State  *ModuleState
+	Flags  ResourceFlag
 }
 
 // GraphNodeResource is a node type in the graph that represents a resource
@@ -246,6 +248,9 @@ func Graph(opts *GraphOpts) (*depgraph.Graph, error) {
 	// Add the orphan dependencies
 	graphAddOrphanDeps(g, modState)
 
+	// Add the orphan module dependencies
+	graphAddOrphanModuleDeps(g, modState)
+
 	// Add the provider dependencies
 	graphAddResourceProviderDeps(g)
 
@@ -269,7 +274,7 @@ func Graph(opts *GraphOpts) (*depgraph.Graph, error) {
 
 	// If we have a diff, then make sure to add that in
 	if modDiff != nil {
-		if err := graphAddDiff(g, modDiff); err != nil {
+		if err := graphAddDiff(g, opts.Diff, modDiff); err != nil {
 			return nil, err
 		}
 	}
@@ -298,45 +303,70 @@ func Graph(opts *GraphOpts) (*depgraph.Graph, error) {
 // allows orphaned resources to be destroyed in the proper order.
 func graphEncodeDependencies(g *depgraph.Graph) {
 	for _, n := range g.Nouns {
-		// Ignore any non-resource nodes
-		rn, ok := n.Meta.(*GraphNodeResource)
-		if !ok {
-			continue
-		}
-		r := rn.Resource
+		switch rn := n.Meta.(type) {
+		case *GraphNodeResource:
+			// If we are using create-before-destroy, there
+			// are some special depedencies injected on the
+			// deposed node that would cause a circular depedency
+			// chain if persisted. We must only handle the new node,
+			// node the deposed node.
+			r := rn.Resource
+			if r.Flags&FlagDeposed != 0 {
+				continue
+			}
 
-		// If we are using create-before-destroy, there
-		// are some special depedencies injected on the
-		// deposed node that would cause a circular depedency
-		// chain if persisted. We must only handle the new node,
-		// node the deposed node.
-		if r.Flags&FlagDeposed != 0 {
-			continue
-		}
+			// Update the dependencies
+			var inject []string
+			for _, dep := range n.Deps {
+				switch target := dep.Target.Meta.(type) {
+				case *GraphNodeModule:
+					inject = append(inject, dep.Target.Name)
 
-		// Update the dependencies
-		var inject []string
-		for _, dep := range n.Deps {
-			switch target := dep.Target.Meta.(type) {
-			case *GraphNodeModule:
-				inject = append(inject, dep.Target.Name)
+				case *GraphNodeResource:
+					if target.Resource.Id == r.Id {
+						continue
+					}
+					inject = append(inject, target.Resource.Id)
 
-			case *GraphNodeResource:
-				if target.Resource.Id == r.Id {
-					continue
+				case *GraphNodeResourceProvider:
+					// Do nothing
+
+				default:
+					panic(fmt.Sprintf("Unknown graph node: %#v", dep.Target))
 				}
-				inject = append(inject, target.Resource.Id)
+			}
 
-			case *GraphNodeResourceProvider:
-				// Do nothing
+			// Update the dependencies
+			r.Dependencies = inject
 
-			default:
-				panic(fmt.Sprintf("Unknown graph node: %#v", dep.Target))
+		case *GraphNodeModule:
+			// Update the dependencies
+			var inject []string
+			for _, dep := range n.Deps {
+				switch target := dep.Target.Meta.(type) {
+				case *GraphNodeModule:
+					if dep.Target.Name == n.Name {
+						continue
+					}
+					inject = append(inject, dep.Target.Name)
+
+				case *GraphNodeResource:
+					inject = append(inject, target.Resource.Id)
+
+				case *GraphNodeResourceProvider:
+					// Do nothing
+
+				default:
+					panic(fmt.Sprintf("Unknown graph node: %#v", dep.Target))
+				}
+
+			}
+
+			// Update the dependencies
+			if rn.State != nil {
+				rn.State.Dependencies = inject
 			}
 		}
-
-		// Update the dependencies
-		r.Dependencies = inject
 	}
 }
 
@@ -357,6 +387,14 @@ func graphAddConfigModules(
 		if n, err := graphModuleNoun(m.Name, m, g, opts); err != nil {
 			return err
 		} else {
+			// Attach the module state if any
+			if opts.State != nil {
+				module := n.Meta.(*GraphNodeModule)
+				module.State = opts.State.ModuleByPath(module.Path)
+				if module.State == nil {
+					module.State = opts.State.AddModule(module.Path)
+				}
+			}
 			nounsList = append(nounsList, n)
 		}
 	}
@@ -506,10 +544,22 @@ func graphAddConfigResources(
 // destroying the VPC's subnets first, whereas creating a VPC requires
 // doing it before the subnets are created. This function handles inserting
 // these nodes for you.
-func graphAddDiff(g *depgraph.Graph, d *ModuleDiff) error {
+func graphAddDiff(g *depgraph.Graph, gDiff *Diff, d *ModuleDiff) error {
 	var nlist []*depgraph.Noun
+	var modules []*depgraph.Noun
 	injected := make(map[*depgraph.Dependency]struct{})
 	for _, n := range g.Nouns {
+		// A module is being destroyed if all it's resources are being
+		// destroyed (via a destroy plan) or if it is orphaned. Only in
+		// those cases do we need to handle depedency inversion.
+		if mod, ok := n.Meta.(*GraphNodeModule); ok {
+			md := gDiff.ModuleByPath(mod.Path)
+			if mod.Flags&FlagOrphan != 0 || (md != nil && md.Destroy) {
+				modules = append(modules, n)
+			}
+			continue
+		}
+
 		rn, ok := n.Meta.(*GraphNodeResource)
 		if !ok {
 			continue
@@ -539,6 +589,8 @@ func graphAddDiff(g *depgraph.Graph, d *ModuleDiff) error {
 			rn.Diff = d
 		}
 
+		// If we are not expanding, then we assign the
+		// instance diff to the resource.
 		var rd *InstanceDiff
 		if rn.ExpandMode == ResourceExpandNone {
 			rd = diffs[0]
@@ -653,78 +705,81 @@ func graphAddDiff(g *depgraph.Graph, d *ModuleDiff) error {
 		rn.Resource.Diff = rd
 	}
 
-	// Go through each noun and make sure we calculate all the dependencies
-	// properly.
-	for _, n := range nlist {
-		deps := n.Deps
-		num := len(deps)
-		for i := 0; i < num; i++ {
-			dep := deps[i]
+	// Go through each resource and module and make sure we
+	// calculate all the dependencies properly.
+	invertDeps := [][]*depgraph.Noun{nlist, modules}
+	for _, list := range invertDeps {
+		for _, n := range list {
+			deps := n.Deps
+			num := len(deps)
+			for i := 0; i < num; i++ {
+				dep := deps[i]
 
-			// Check if this dependency was just injected, otherwise
-			// we will incorrectly flip the depedency twice.
-			if _, ok := injected[dep]; ok {
-				continue
-			}
+				// Check if this dependency was just injected, otherwise
+				// we will incorrectly flip the depedency twice.
+				if _, ok := injected[dep]; ok {
+					continue
+				}
 
-			switch target := dep.Target.Meta.(type) {
-			case *GraphNodeResource:
-				// If the other node is also being deleted,
-				// we must be deleted first. E.g. if A -> B,
-				// then when we create, B is created first then A.
-				// On teardown, A is destroyed first, then B.
-				// Thus we must flip our depedency and instead inject
-				// it on B.
-				for _, n2 := range nlist {
-					rn2 := n2.Meta.(*GraphNodeResource)
-					if target.Resource.Id == rn2.Resource.Id {
-						newDep := &depgraph.Dependency{
-							Name:   n.Name,
-							Source: n2,
-							Target: n,
+				switch target := dep.Target.Meta.(type) {
+				case *GraphNodeResource:
+					// If the other node is also being deleted,
+					// we must be deleted first. E.g. if A -> B,
+					// then when we create, B is created first then A.
+					// On teardown, A is destroyed first, then B.
+					// Thus we must flip our depedency and instead inject
+					// it on B.
+					for _, n2 := range nlist {
+						rn2 := n2.Meta.(*GraphNodeResource)
+						if target.Resource.Id == rn2.Resource.Id {
+							newDep := &depgraph.Dependency{
+								Name:   n.Name,
+								Source: n2,
+								Target: n,
+							}
+							injected[newDep] = struct{}{}
+							n2.Deps = append(n2.Deps, newDep)
+							break
 						}
-						injected[newDep] = struct{}{}
-						n2.Deps = append(n2.Deps, newDep)
-						break
 					}
+
+					// Drop the dependency. We may have created
+					// an inverse depedency if the dependent resource
+					// is also being deleted, but this dependence is
+					// no longer required.
+					deps[i], deps[num-1] = deps[num-1], nil
+					num--
+					i--
+
+				case *GraphNodeModule:
+					// We invert any module dependencies so we're destroyed
+					// first, before any modules are applied.
+					newDep := &depgraph.Dependency{
+						Name:   n.Name,
+						Source: dep.Target,
+						Target: n,
+					}
+					dep.Target.Deps = append(dep.Target.Deps, newDep)
+
+					// Drop the dependency. We may have created
+					// an inverse depedency if the dependent resource
+					// is also being deleted, but this dependence is
+					// no longer required.
+					deps[i], deps[num-1] = deps[num-1], nil
+					num--
+					i--
+				case *GraphNodeResourceProvider:
+					// Keep these around, but fix up the source to be ourselves
+					// rather than the old node.
+					newDep := *dep
+					newDep.Source = n
+					deps[i] = &newDep
+				default:
+					panic(fmt.Errorf("Unhandled depedency type: %#v", dep.Target.Meta))
 				}
-
-				// Drop the dependency. We may have created
-				// an inverse depedency if the dependent resource
-				// is also being deleted, but this dependence is
-				// no longer required.
-				deps[i], deps[num-1] = deps[num-1], nil
-				num--
-				i--
-
-			case *GraphNodeModule:
-				// We invert any module dependencies so we're destroyed
-				// first, before any modules are applied.
-				newDep := &depgraph.Dependency{
-					Name:   n.Name,
-					Source: dep.Target,
-					Target: n,
-				}
-				dep.Target.Deps = append(dep.Target.Deps, newDep)
-
-				// Drop the dependency. We may have created
-				// an inverse depedency if the dependent resource
-				// is also being deleted, but this dependence is
-				// no longer required.
-				deps[i], deps[num-1] = deps[num-1], nil
-				num--
-				i--
-			case *GraphNodeResourceProvider:
-				// Keep these around, but fix up the source to be ourselves
-				// rather than the old node.
-				newDep := *dep
-				newDep.Source = n
-				deps[i] = &newDep
-			default:
-				panic(fmt.Errorf("Unhandled depedency type: %#v", dep.Target.Meta))
 			}
+			n.Deps = deps[:num]
 		}
-		n.Deps = deps[:num]
 	}
 
 	// Add the nouns to the graph
@@ -742,6 +797,11 @@ func graphAddExplicitDeps(g *depgraph.Graph) {
 	for _, n := range g.Nouns {
 		rn, ok := n.Meta.(*GraphNodeResource)
 		if !ok {
+			continue
+		}
+		if rn.Config == nil {
+			// Orphan. It can't be depended on or have depends (explicit)
+			// anyways.
 			continue
 		}
 
@@ -850,6 +910,10 @@ func graphAddModuleOrphans(
 		if n, err := graphModuleNoun(k, nil, g, opts); err != nil {
 			return err
 		} else {
+			// Mark this module as being an orphan
+			module := n.Meta.(*GraphNodeModule)
+			module.Flags |= FlagOrphan
+			module.State = m
 			nounsList = append(nounsList, n)
 		}
 	}
@@ -894,6 +958,56 @@ func graphAddOrphanDeps(g *depgraph.Graph, mod *ModuleState) {
 			}
 
 			for _, depName := range rs.Dependencies {
+				if !strings.HasPrefix(depName, compareName) {
+					continue
+				}
+				dep := &depgraph.Dependency{
+					Name:   depName,
+					Source: n,
+					Target: n2,
+				}
+				n.Deps = append(n.Deps, dep)
+				break
+			}
+		}
+	}
+}
+
+// graphAddOrphanModuleDeps adds the dependencies to the orphan
+// modules based on their explicit Dependencies state.
+func graphAddOrphanModuleDeps(g *depgraph.Graph, mod *ModuleState) {
+	for _, n := range g.Nouns {
+		module, ok := n.Meta.(*GraphNodeModule)
+		if !ok {
+			continue
+		}
+		if module.Flags&FlagOrphan == 0 {
+			continue
+		}
+
+		// If we have no dependencies, then just continue
+		if len(module.State.Dependencies) == 0 {
+			continue
+		}
+
+		for _, n2 := range g.Nouns {
+			// Don't ever depend on ourselves
+			if n2.Meta == n.Meta {
+				continue
+			}
+
+			var compareName string
+			switch rn2 := n2.Meta.(type) {
+			case *GraphNodeModule:
+				compareName = n2.Name
+			case *GraphNodeResource:
+				compareName = rn2.Resource.Id
+			}
+			if compareName == "" {
+				continue
+			}
+
+			for _, depName := range module.State.Dependencies {
 				if !strings.HasPrefix(depName, compareName) {
 					continue
 				}
@@ -1011,12 +1125,7 @@ func graphAddConfigProviderConfigs(g *depgraph.Graph, c *config.Config) {
 func graphAddRoot(g *depgraph.Graph) {
 	root := &depgraph.Noun{Name: GraphRootNode}
 	for _, n := range g.Nouns {
-		switch m := n.Meta.(type) {
-		case *GraphNodeResource:
-			// If the resource is part of a group, we don't need to make a dep
-			if m.Index != -1 {
-				continue
-			}
+		switch n.Meta.(type) {
 		case *GraphNodeResourceProvider:
 			// ResourceProviders don't need to be in the root deps because
 			// they're always pointed to by some resource.
@@ -1088,10 +1197,16 @@ func graphAddTainted(g *depgraph.Graph, mod *ModuleState) {
 			continue
 		}
 
-		// Find the untainted resource of this in the noun list
+		// Find the untainted resource of this in the noun list. If our
+		// name is 3 parts, then we mus be a count instance, so our
+		// untainted node is just the noun without the count.
 		var untainted *depgraph.Noun
+		untaintedK := k
+		if ps := strings.Split(k, "."); len(ps) == 3 {
+			untaintedK = strings.Join(ps[0:2], ".")
+		}
 		for _, n := range g.Nouns {
-			if n.Name == k {
+			if n.Name == untaintedK {
 				untainted = n
 				break
 			}
@@ -1190,8 +1305,20 @@ func nounAddVariableDeps(
 			name = fmt.Sprintf("module.%s", v.Name)
 			target = g.Noun(name)
 		case *config.ResourceVariable:
-			name = v.ResourceId()
-			target = g.Noun(v.ResourceId())
+			// For resource variables, if we ourselves are a resource, then
+			// we have to check whether to expand or not to create the proper
+			// resource dependency.
+			rn, ok := n.Meta.(*GraphNodeResource)
+			if !ok || rn.ExpandMode > ResourceExpandNone {
+				name = v.ResourceId()
+				target = g.Noun(v.ResourceId())
+				break
+			}
+
+			// We're an expanded resource, so add the specific index
+			// as the dependency.
+			name = fmt.Sprintf("%s.%d", v.ResourceId(), v.Index)
+			target = g.Noun(name)
 		default:
 		}
 
@@ -1549,19 +1676,41 @@ func graphMapResourceProvisioners(g *depgraph.Graph,
 	return nil
 }
 
+// grpahRemoveInvalidDeps goes through the graph and removes dependencies
+// that no longer exist.
+func graphRemoveInvalidDeps(g *depgraph.Graph) {
+	check := make(map[*depgraph.Noun]struct{})
+	for _, n := range g.Nouns {
+		check[n] = struct{}{}
+	}
+	for _, n := range g.Nouns {
+		deps := n.Deps
+		num := len(deps)
+		for i := 0; i < num; i++ {
+			if _, ok := check[deps[i].Target]; !ok {
+				deps[i], deps[num-1] = deps[num-1], nil
+				i--
+				num--
+			}
+		}
+		n.Deps = deps[:num]
+	}
+}
+
 // MergeConfig merges all the configurations in the proper order
 // to result in the final configuration to use to configure this
 // provider.
 func (p *graphSharedProvider) MergeConfig(
 	raw bool, override map[string]interface{}) *ResourceConfig {
 	var rawMap map[string]interface{}
-	if override != nil {
-		rawMap = override
-	} else if p.Config != nil {
-		rawMap = p.Config.RawConfig.Raw
+	if p.Config != nil {
+		rawMap = p.Config.RawConfig.Config()
 	}
 	if rawMap == nil {
 		rawMap = make(map[string]interface{})
+	}
+	for k, v := range override {
+		rawMap[k] = v
 	}
 
 	// Merge in all the parent configurations
@@ -1594,7 +1743,7 @@ func (p *graphSharedProvider) MergeConfig(
 }
 
 // Expand will expand this node into a subgraph if Expand is set.
-func (n *GraphNodeResource) Expand() ([]*depgraph.Noun, error) {
+func (n *GraphNodeResource) Expand() (*depgraph.Graph, error) {
 	// Expand the count out, which should be interpolated at this point.
 	count, err := n.Config.Count()
 	if err != nil {
@@ -1608,36 +1757,30 @@ func (n *GraphNodeResource) Expand() ([]*depgraph.Noun, error) {
 		ModulePath: n.Resource.Info.ModulePath,
 	}
 
-	// Determine the nodes to create. If we're just looking for the
-	// nodes to create, return that.
-	n.expand(g, count)
+	// Do the initial expansion of the nodes, attaching diffs if
+	// applicable
+	n.expand(g, count, n.Diff)
 
-	// Add in the diff if we have it
-	if n.Diff != nil {
-		if err := graphAddDiff(g, n.Diff); err != nil {
-			return nil, err
-		}
+	// Add all the variable dependencies
+	graphAddVariableDeps(g)
+
+	// Filter the nodes depending on the expansion type
+	switch n.ExpandMode {
+	case ResourceExpandApply:
+		n.filterResources(g, false)
+	case ResourceExpandDestroy:
+		n.filterResources(g, true)
+	default:
+		panic(fmt.Sprintf("Unhandled expansion mode %d", n.ExpandMode))
 	}
 
-	// If we're just expanding the apply, then filter those out and
-	// return them now.
-	if n.ExpandMode == ResourceExpandApply {
-		return n.finalizeNouns(g, false), nil
-	}
-
-	if n.State != nil {
-		// TODO: orphans
-
-		// Add the tainted resources
-		graphAddTainted(g, n.State)
-	}
-
-	return n.finalizeNouns(g, true), nil
+	// Return the finalized graph
+	return g, n.finalizeGraph(g)
 }
 
 // expand expands this resource and adds the resources to the graph. It
 // adds both create and destroy resources.
-func (n *GraphNodeResource) expand(g *depgraph.Graph, count int) {
+func (n *GraphNodeResource) expand(g *depgraph.Graph, count int, diff *ModuleDiff) {
 	// Create the list of nouns
 	result := make([]*depgraph.Noun, 0, count)
 
@@ -1691,13 +1834,70 @@ func (n *GraphNodeResource) expand(g *depgraph.Graph, count int) {
 			}
 		}
 
+		// Add in the diff if we have it
+		var inDiff *InstanceDiff
+		if diff != nil {
+			// Looup the instance diff
+			if d, ok := diff.Resources[name]; ok {
+				inDiff = d
+			}
+
+			if inDiff == nil {
+				if count == 1 {
+					// If the count is one, check the state for ".0"
+					// appended, which might exist if we go from
+					// count > 1 to count == 1.
+					k := r.Id() + ".0"
+					inDiff = diff.Resources[k]
+				} else if i == 0 {
+					// If count is greater than one, check for state
+					// with just the ID, which might exist if we go
+					// from count == 1 to count > 1
+					inDiff = diff.Resources[r.Id()]
+				}
+			}
+		}
+
+		// Initialize a default state if not available
 		if state == nil {
 			state = &ResourceState{
 				Type: r.Type,
 			}
 		}
 
-		flags := FlagPrimary
+		// Prepare the diff if it exists
+		if inDiff != nil {
+			switch n.ExpandMode {
+			case ResourceExpandApply:
+				// Disable Destroy if we aren't doing a destroy expansion.
+				// There is a seperate expansion for the destruction action.
+				d := new(InstanceDiff)
+				*d = *inDiff
+				inDiff = d
+				inDiff.Destroy = false
+
+				// If we require a new resource, there is a seperate delete
+				// phase, so the create phase must not have access to the ID.
+				if inDiff.RequiresNew() {
+					s := new(ResourceState)
+					*s = *state
+					state = s
+					state.Primary = nil
+				}
+
+			case ResourceExpandDestroy:
+				// If we are doing a destroy, make sure it is exclusively
+				// a destroy, since there is a seperate expansion for the apply
+				inDiff = new(InstanceDiff)
+				inDiff.Destroy = true
+
+			default:
+				panic(fmt.Sprintf("Unhandled expansion mode %d", n.ExpandMode))
+			}
+		}
+
+		// Inherit the existing flags!
+		flags := n.Resource.Flags
 		if len(state.Tainted) > 0 {
 			flags |= FlagHasTainted
 		}
@@ -1707,6 +1907,7 @@ func (n *GraphNodeResource) expand(g *depgraph.Graph, count int) {
 		resource.CountIndex = i
 		resource.State = state.Primary
 		resource.Flags = flags
+		resource.Diff = inDiff
 
 		// Add the result
 		result = append(result, &depgraph.Noun{
@@ -1727,6 +1928,7 @@ func (n *GraphNodeResource) expand(g *depgraph.Graph, count int) {
 		resource.Config = NewResourceConfig(nil)
 		resource.State = rs.Primary
 		resource.Flags = FlagOrphan
+		resource.Diff = &InstanceDiff{Destroy: true}
 
 		noun := &depgraph.Noun{
 			Name: k,
@@ -1750,11 +1952,15 @@ func (n *GraphNodeResource) copyResource(id string) *Resource {
 	resource.Id = id
 	resource.Info = &info
 	resource.Config = NewResourceConfig(n.Config.RawConfig)
+	resource.Diff = nil
 	return &resource
 }
 
-func (n *GraphNodeResource) finalizeNouns(
-	g *depgraph.Graph, destroy bool) []*depgraph.Noun {
+// filterResources is used to remove resources from the sub-graph based
+// on the ExpandMode. This is because there is a Destroy sub-graph, and
+// Apply sub-graph, and we cannot includes the same instances in both
+// sub-graphs.
+func (n *GraphNodeResource) filterResources(g *depgraph.Graph, destroy bool) {
 	result := make([]*depgraph.Noun, 0, len(g.Nouns))
 	for _, n := range g.Nouns {
 		rn, ok := n.Meta.(*GraphNodeResource)
@@ -1762,41 +1968,34 @@ func (n *GraphNodeResource) finalizeNouns(
 			continue
 		}
 
-		// If the diff is nil, then we're not destroying, so append only
-		// in that case.
-		if rn.Resource.Diff == nil {
-			if !destroy {
+		if destroy {
+			if rn.Resource.Diff != nil && rn.Resource.Diff.Destroy {
 				result = append(result, n)
 			}
-
 			continue
 		}
 
-		// If we are destroying, append it only if we care about destroys
-		if rn.Resource.Diff.Destroy {
-			if destroy {
-				result = append(result, n)
-			}
-
-			continue
-		}
-
-		// If this is an oprhan, we only care about it if we're destroying.
-		if rn.Resource.Flags&FlagOrphan != 0 {
-			if destroy {
-				result = append(result, n)
-			}
-
-			continue
-		}
-
-		// If we're not destroying, then add it only if we don't
-		// care about deploys.
-		if !destroy {
+		if rn.Resource.Flags&FlagOrphan != 0 ||
+			rn.Resource.Diff == nil || !rn.Resource.Diff.Destroy {
 			result = append(result, n)
 		}
 	}
-	return result
+	g.Nouns = result
+}
+
+// finalizeGraph is used to ensure the generated graph is valid
+func (n *GraphNodeResource) finalizeGraph(g *depgraph.Graph) error {
+	// Remove the dependencies that don't exist
+	graphRemoveInvalidDeps(g)
+
+	// Build the root so that we have a single valid root
+	graphAddRoot(g)
+
+	// Validate
+	if err := g.Validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // matchingPrefixes takes a resource type and a set of resource

@@ -1,6 +1,7 @@
 package terraform
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -96,7 +97,7 @@ func TestModuleDiff_ChangeType(t *testing.T) {
 	for i, tc := range cases {
 		actual := tc.Diff.ChangeType()
 		if actual != tc.Result {
-			t.Fatalf("%d: %s", i, actual)
+			t.Fatalf("%d: %#v", i, actual)
 		}
 	}
 }
@@ -231,7 +232,7 @@ func TestInstanceDiff_ChangeType(t *testing.T) {
 	for i, tc := range cases {
 		actual := tc.Diff.ChangeType()
 		if actual != tc.Result {
-			t.Fatalf("%d: %s", i, actual)
+			t.Fatalf("%d: %#v", i, actual)
 		}
 	}
 }
@@ -265,6 +266,68 @@ func TestInstanceDiff_Empty(t *testing.T) {
 
 	if rd.Empty() {
 		t.Fatal("should not be empty")
+	}
+}
+
+func TestModuleDiff_Instances(t *testing.T) {
+	yesDiff := &InstanceDiff{Destroy: true}
+	noDiff := &InstanceDiff{Destroy: true, DestroyTainted: true}
+
+	cases := []struct {
+		Diff   *ModuleDiff
+		Id     string
+		Result []*InstanceDiff
+	}{
+		{
+			&ModuleDiff{
+				Resources: map[string]*InstanceDiff{
+					"foo": yesDiff,
+					"bar": noDiff,
+				},
+			},
+			"foo",
+			[]*InstanceDiff{
+				yesDiff,
+			},
+		},
+
+		{
+			&ModuleDiff{
+				Resources: map[string]*InstanceDiff{
+					"foo":   yesDiff,
+					"foo.0": yesDiff,
+					"bar":   noDiff,
+				},
+			},
+			"foo",
+			[]*InstanceDiff{
+				yesDiff,
+				yesDiff,
+			},
+		},
+
+		{
+			&ModuleDiff{
+				Resources: map[string]*InstanceDiff{
+					"foo":     yesDiff,
+					"foo.0":   yesDiff,
+					"foo_bar": noDiff,
+					"bar":     noDiff,
+				},
+			},
+			"foo",
+			[]*InstanceDiff{
+				yesDiff,
+				yesDiff,
+			},
+		},
+	}
+
+	for i, tc := range cases {
+		actual := tc.Diff.Instances(tc.Id)
+		if !reflect.DeepEqual(actual, tc.Result) {
+			t.Fatalf("%d: %#v", i, actual)
+		}
 	}
 }
 
@@ -351,6 +414,22 @@ func TestInstanceDiffSame(t *testing.T) {
 			false,
 		},
 
+		// Extra attributes
+		{
+			&InstanceDiff{
+				Attributes: map[string]*ResourceAttrDiff{
+					"foo": &ResourceAttrDiff{},
+				},
+			},
+			&InstanceDiff{
+				Attributes: map[string]*ResourceAttrDiff{
+					"foo": &ResourceAttrDiff{},
+					"bar": &ResourceAttrDiff{},
+				},
+			},
+			false,
+		},
+
 		{
 			&InstanceDiff{
 				Attributes: map[string]*ResourceAttrDiff{
@@ -364,12 +443,33 @@ func TestInstanceDiffSame(t *testing.T) {
 			},
 			false,
 		},
+
+		{
+			&InstanceDiff{
+				Attributes: map[string]*ResourceAttrDiff{
+					"foo.#": &ResourceAttrDiff{NewComputed: true},
+				},
+			},
+			&InstanceDiff{
+				Attributes: map[string]*ResourceAttrDiff{
+					"foo.#": &ResourceAttrDiff{
+						Old: "0",
+						New: "1",
+					},
+					"foo.0": &ResourceAttrDiff{
+						Old: "",
+						New: "12",
+					},
+				},
+			},
+			true,
+		},
 	}
 
 	for i, tc := range cases {
 		actual := tc.One.Same(tc.Two)
 		if actual != tc.Same {
-			t.Fatalf("Fail %d", i)
+			t.Fatalf("%d:\n\n%#v\n\n%#v", i, tc.One, tc.Two)
 		}
 	}
 }

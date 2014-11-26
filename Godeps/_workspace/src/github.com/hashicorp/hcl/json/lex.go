@@ -74,23 +74,70 @@ func (x *jsonLex) Lex(yylval *jsonSymType) int {
 		case '"':
 			return x.lexString(yylval)
 		default:
-			x.createErr(fmt.Sprintf("unexpected character: %c", c))
-			return lexEOF
+			x.backup()
+			return x.lexId(yylval)
 		}
 	}
 }
 
-// lexNumber lexes out a number
-func (x *jsonLex) lexNumber(yylval *jsonSymType) int {
+// lexId lexes an identifier
+func (x *jsonLex) lexId(yylval *jsonSymType) int {
 	var b bytes.Buffer
+	first := true
 	for {
 		c := x.next()
 		if c == lexEOF {
 			break
 		}
 
-		// No more numeric characters
-		if c < '0' || c > '9' {
+		if !unicode.IsDigit(c) && !unicode.IsLetter(c) && c != '_' && c != '-' {
+			x.backup()
+
+			if first {
+				x.createErr("Invalid identifier")
+				return lexEOF
+			}
+
+			break
+		}
+
+		first = false
+		if _, err := b.WriteRune(c); err != nil {
+			return lexEOF
+		}
+	}
+
+	switch v := b.String(); v {
+	case "true":
+		return TRUE
+	case "false":
+		return FALSE
+	case "null":
+		return NULL
+	default:
+		x.createErr(fmt.Sprintf("Invalid identifier: %s", v))
+		return lexEOF
+	}
+}
+
+// lexNumber lexes out a number
+func (x *jsonLex) lexNumber(yylval *jsonSymType) int {
+	var b bytes.Buffer
+	gotPeriod := false
+	for {
+		c := x.next()
+		if c == lexEOF {
+			break
+		}
+
+		if c == '.' {
+			if gotPeriod {
+				x.backup()
+				break
+			}
+
+			gotPeriod = true
+		} else if c < '0' || c > '9' {
 			x.backup()
 			break
 		}
@@ -101,14 +148,25 @@ func (x *jsonLex) lexNumber(yylval *jsonSymType) int {
 		}
 	}
 
-	v, err := strconv.ParseInt(b.String(), 0, 0)
+	if !gotPeriod {
+		v, err := strconv.ParseInt(b.String(), 0, 0)
+		if err != nil {
+			x.createErr(fmt.Sprintf("Expected number: %s", err))
+			return lexEOF
+		}
+
+		yylval.num = int(v)
+		return NUMBER
+	}
+
+	f, err := strconv.ParseFloat(b.String(), 64)
 	if err != nil {
-		x.createErr(fmt.Sprintf("Expected number: %s", err))
+		x.createErr(fmt.Sprintf("Expected float: %s", err))
 		return lexEOF
 	}
 
-	yylval.num = int(v)
-	return NUMBER
+	yylval.f = float64(f)
+	return FLOAT
 }
 
 // lexString extracts a string from the input
@@ -133,6 +191,8 @@ func (x *jsonLex) lexString(yylval *jsonSymType) int {
 				c = n
 			case 'n':
 				c = '\n'
+			case '\\':
+				c = n
 			default:
 				x.backup()
 			}

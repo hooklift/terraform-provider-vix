@@ -1,11 +1,15 @@
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+// Package unzipit allows you to easily unpack *.tar.gz, *.tar.bzip2, *.zip and *.tar files.
+// There are not CGO involved nor hard dependencies of any type.
 package unzipit
 
 import (
 	"archive/tar"
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"compress/bzip2"
 	"compress/gzip"
@@ -20,22 +24,27 @@ import (
 )
 
 var (
-	magicZIP  []byte = []byte{0x50, 0x4b, 0x03, 0x04}
-	magicGZ   []byte = []byte{0x1f, 0x8b}
-	magicBZIP []byte = []byte{0x42, 0x5a}
-	magicTAR  []byte = []byte{0x75, 0x73, 0x74, 0x61, 0x72} // at offset 257
+	magicZIP  = []byte{0x50, 0x4b, 0x03, 0x04}
+	magicGZ   = []byte{0x1f, 0x8b}
+	magicBZIP = []byte{0x42, 0x5a}
+	magicTAR  = []byte{0x75, 0x73, 0x74, 0x61, 0x72} // at offset 257
 )
 
 // Check whether a file has the magic number for tar, gzip, bzip2 or zip files
+//
+// Note that this function does not advance the Reader.
 //
 // 50 4b 03 04 for pkzip format
 // 1f 8b for .gz
 // 42 5a for bzip
 // 75 73 74 61 72 at offset 257 for tar files
-func magicNumber(reader io.ReaderAt, offset int64) (string, error) {
-	magic := make([]byte, 5, 5)
+func magicNumber(reader *bufio.Reader, offset int) (string, error) {
+	headerBytes, err := reader.Peek(offset + 5)
+	if err != nil {
+		return "", err
+	}
 
-	reader.ReadAt(magic, offset)
+	magic := headerBytes[offset : offset+5]
 
 	if bytes.Equal(magicTAR, magic) {
 		return "tar", nil
@@ -54,7 +63,7 @@ func magicNumber(reader io.ReaderAt, offset int64) (string, error) {
 	return "", nil
 }
 
-// Unpacks a compressed and archived file and places result output in destination
+// Unpack unpacks a compressed and archived file and places result output in destination
 // path.
 //
 // File formats supported are:
@@ -81,46 +90,50 @@ func Unpack(file *os.File, destPath string) (string, error) {
 	// Makes sure despPath exists
 	os.MkdirAll(destPath, 0740)
 
-	// Makes sure file cursor is at index 0
-	_, err = file.Seek(0, 0)
+	r := bufio.NewReader(file)
+	return UnpackStream(r, destPath)
+}
+
+// UnpackStream unpacks a compressed stream. Note that if the stream is a using ZIP
+// compression (but only ZIP compression), it's going to get buffered in its entirety
+// to memory prior to decompression.
+func UnpackStream(reader io.Reader, destPath string) (string, error) {
+	r := bufio.NewReader(reader)
+
+	// Reads magic number from the stream so we can better determine how to proceed
+	ftype, err := magicNumber(r, 0)
 	if err != nil {
 		return "", err
 	}
 
-	// Reads magic number from file so we can better determine how to proceed
-	ftype, err := magicNumber(file, 0)
-	if err != nil {
-		return "", err
-	}
-
-	data := bytes.NewBuffer(nil)
+	var decompressingReader *bufio.Reader
 	switch ftype {
 	case "gzip":
-		data, err = Gunzip(file)
+		decompressingReader, err = GunzipStream(r)
 		if err != nil {
 			return "", err
 		}
 	case "bzip":
-		data, err = Bunzip2(file)
+		decompressingReader, err = Bunzip2Stream(r)
 		if err != nil {
 			return "", err
 		}
 	case "zip":
 		// Like TAR, ZIP is also an archiving format, therefore we can just return
 		// after it finishes
-		return Unzip(file, destPath)
+		return UnzipStream(r, destPath)
 	default:
-		io.Copy(data, file)
+		decompressingReader = r
 	}
 
 	// Check magic number in offset 257 too see if this is also a TAR file
-	ftype, err = magicNumber(bytes.NewReader(data.Bytes()), 257)
+	ftype, err = magicNumber(decompressingReader, 257)
 	if ftype == "tar" {
-		return Untar(data, destPath)
+		return Untar(decompressingReader, destPath)
 	}
 
 	// If it's not a TAR archive then save it to disk as is.
-	destRawFile := filepath.Join(destPath, sanitize(path.Base(file.Name())))
+	destRawFile := filepath.Join(destPath, sanitize(path.Base("tarstream")))
 
 	// Creates destination file
 	destFile, err := os.Create(destRawFile)
@@ -130,55 +143,106 @@ func Unpack(file *os.File, destPath string) (string, error) {
 	defer destFile.Close()
 
 	// Copies data to destination file
-	if _, err := io.Copy(destFile, data); err != nil {
+	if _, err := io.Copy(destFile, decompressingReader); err != nil {
 		return "", err
 	}
 
 	return destPath, nil
 }
 
-// Decompresses a bzip2 data stream and returns the decompressed stream
-func Bunzip2(file *os.File) (*bytes.Buffer, error) {
-	data := bzip2.NewReader(file)
-
-	buffer := bytes.NewBuffer(nil)
-	io.Copy(buffer, data)
-
-	return buffer, nil
-}
-
-// Decompresses a gzip data stream and returns the decompressed stream
-func Gunzip(file *os.File) (*bytes.Buffer, error) {
-	data, err := gzip.NewReader(file)
-	if err != nil && err != io.EOF {
+// Bunzip2 decompresses a bzip2 file and returns the decompressed stream
+func Bunzip2(file *os.File) (*bufio.Reader, error) {
+	freader := bufio.NewReader(file)
+	bzip2Reader, err := Bunzip2Stream(freader)
+	if err != nil {
 		return nil, err
 	}
 
-	buffer := bytes.NewBuffer(nil)
-	io.Copy(buffer, data)
-
-	return buffer, nil
+	return bufio.NewReader(bzip2Reader), nil
 }
 
-// Decompresses and unarchives a ZIP archive, returning the final path or an error
+// Bunzip2Stream unpacks a bzip2 stream
+func Bunzip2Stream(reader io.Reader) (*bufio.Reader, error) {
+	return bufio.NewReader(bzip2.NewReader(reader)), nil
+}
+
+// Gunzip decompresses a gzip file and returns the decompressed stream
+func Gunzip(file *os.File) (*bufio.Reader, error) {
+	freader := bufio.NewReader(file)
+	gunzipReader, err := GunzipStream(freader)
+	if err != nil {
+		return nil, err
+	}
+
+	return bufio.NewReader(gunzipReader), nil
+}
+
+// GunzipStream unpacks a gzipped stream
+func GunzipStream(reader io.Reader) (*bufio.Reader, error) {
+	var decompressingReader *gzip.Reader
+	var err error
+	if decompressingReader, err = gzip.NewReader(reader); err != nil {
+		return nil, err
+	}
+
+	return bufio.NewReader(decompressingReader), nil
+}
+
+// Unzip decompresses and unarchives a ZIP archive, returning the final path or an error
 func Unzip(file *os.File, destPath string) (string, error) {
-	// Open a zip archive for reading.
-	r, err := zip.OpenReader(file.Name())
+	fstat, err := file.Stat()
 	if err != nil {
 		return "", err
 	}
-	defer r.Close()
 
+	zr, err := zip.NewReader(file, fstat.Size())
+	if err != nil {
+		return "", err
+	}
+
+	return unpackZip(zr, destPath)
+}
+
+// UnzipStream unpacks a ZIP stream. Because of the nature of the ZIP format,
+// the stream is copied to memory before decompression.
+func UnzipStream(r io.Reader, destPath string) (string, error) {
+	memoryBuffer := new(bytes.Buffer)
+	_, err := io.Copy(memoryBuffer, r)
+	if err != nil {
+		return "", err
+	}
+
+	memReader := bytes.NewReader(memoryBuffer.Bytes())
+	zr, err := zip.NewReader(memReader, int64(memoryBuffer.Len()))
+	if err != nil {
+		return "", err
+	}
+
+	return unpackZip(zr, destPath)
+}
+
+func unpackZip(zr *zip.Reader, destPath string) (string, error) {
 	// Iterate through the files in the archive,
 	// printing some of their contents.
-	for _, f := range r.File {
+	pathSeparator := string(os.PathSeparator)
+	for _, f := range zr.File {
 		rc, err := f.Open()
 		if err != nil {
 			return "", err
 		}
 		defer rc.Close()
 
-		file, err := os.Create(filepath.Join(destPath, sanitize(f.Name)))
+		filePath := sanitize(f.Name)
+		sepInd := strings.LastIndex(filePath, pathSeparator)
+
+		// If the file is a subdirectory, it creates it before attempting to
+		// create the actual file
+		if sepInd > -1 {
+			directory := filePath[0:sepInd]
+			os.MkdirAll(filepath.Join(destPath, directory), 0740)
+		}
+
+		file, err := os.Create(filepath.Join(destPath, filePath))
 		if err != nil {
 			return "", err
 		}
@@ -192,7 +256,7 @@ func Unzip(file *os.File, destPath string) (string, error) {
 	return destPath, nil
 }
 
-// Unarchives a TAR archive and returns the final destination path or an error
+// Untar unarchives a TAR archive and returns the final destination path or an error
 func Untar(data io.Reader, destPath string) (string, error) {
 	// Makes sure destPath exists
 	os.MkdirAll(destPath, 0740)
@@ -217,14 +281,23 @@ func Untar(data io.Reader, destPath string) (string, error) {
 			if rootdir == destPath {
 				rootdir = d
 			}
-			os.Mkdir(d, 0740)
+			os.MkdirAll(d, os.FileMode(hdr.Mode))
 			continue
 		}
 
-		file, err := os.Create(filepath.Join(destPath, sanitize(hdr.Name)))
+		path := filepath.Join(destPath, sanitize(hdr.Name))
+		parentDir, _ := filepath.Split(path)
+
+		err = os.MkdirAll(parentDir, 0740)
 		if err != nil {
 			return rootdir, err
 		}
+
+		file, err := os.Create(path)
+		if err != nil {
+			return rootdir, err
+		}
+
 		defer file.Close()
 
 		if _, err := io.Copy(file, tr); err != nil {

@@ -164,6 +164,21 @@ aws_instance.foo:
   type = aws_instance
 `
 
+const testTerraformApplyEmptyModuleStr = `
+<no state>
+Outputs:
+
+end = XXXX
+
+module.child:
+<no state>
+Outputs:
+
+aws_access_key = YYYYY
+aws_route53_zone_id = XXXX
+aws_secret_key = ZZZZ
+`
+
 const testTerraformApplyDependsCreateBeforeStr = `
 aws_instance.lb:
   ID = foo
@@ -203,6 +218,39 @@ aws_instance.foo:
   ID = foo
   dynamical = computed_dynamical
   num = 2
+  type = aws_instance
+`
+
+const testTerraformApplyCountDecStr = `
+aws_instance.foo.0:
+  ID = bar
+  foo = foo
+  type = aws_instance
+aws_instance.foo.1:
+  ID = bar
+  foo = foo
+  type = aws_instance
+`
+
+const testTerraformApplyCountDecToOneStr = `
+aws_instance.foo.0:
+  ID = bar
+  foo = foo
+  type = aws_instance
+`
+
+const testTerraformApplyCountTaintedStr = `
+<no state>
+`
+
+const testTerraformApplyCountVariableStr = `
+aws_instance.foo.0:
+  ID = foo
+  foo = foo
+  type = aws_instance
+aws_instance.foo.1:
+  ID = foo
+  foo = foo
   type = aws_instance
 `
 
@@ -251,6 +299,16 @@ aws_instance.foo:
   ID = foo
   num = 2
   type = aws_instance
+`
+
+const testTerraformApplyProvisionerFailCreateStr = `
+aws_instance.bar: (1 tainted)
+  ID = <not created>
+  Tainted ID 1 = foo
+`
+
+const testTerraformApplyProvisionerFailCreateNoIdStr = `
+<no state>
 `
 
 const testTerraformApplyProvisionerFailCreateBeforeDestroyStr = `
@@ -332,6 +390,29 @@ aws_instance.foo:
 Outputs:
 
 foo_num = 2
+`
+
+const testTerraformApplyOutputListStr = `
+aws_instance.bar.0:
+  ID = foo
+  foo = bar
+  type = aws_instance
+aws_instance.bar.1:
+  ID = foo
+  foo = bar
+  type = aws_instance
+aws_instance.bar.2:
+  ID = foo
+  foo = bar
+  type = aws_instance
+aws_instance.foo:
+  ID = foo
+  num = 2
+  type = aws_instance
+
+Outputs:
+
+foo_num = bar,bar,bar
 `
 
 const testTerraformApplyOutputMultiStr = `
@@ -696,6 +777,7 @@ DIFF:
 DESTROY: aws_instance.foo
 
 module.child:
+  DESTROY MODULE
   DESTROY: aws_instance.foo
 
 STATE:
@@ -903,4 +985,3 @@ STATE:
 
 <no state>
 `
-

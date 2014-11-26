@@ -98,7 +98,7 @@ func TestConfigValidate_countUserVar(t *testing.T) {
 func TestConfigValidate_countVar(t *testing.T) {
 	c := testConfig(t, "validate-count-var")
 	if err := c.Validate(); err != nil {
-		t.Fatal("err: %s", err)
+		t.Fatalf("err: %s", err)
 	}
 }
 
@@ -154,7 +154,7 @@ func TestConfigValidate_outputBadField(t *testing.T) {
 func TestConfigValidate_pathVar(t *testing.T) {
 	c := testConfig(t, "validate-path-var")
 	if err := c.Validate(); err != nil {
-		t.Fatal("err: %s", err)
+		t.Fatalf("err: %s", err)
 	}
 }
 
@@ -221,6 +221,20 @@ func TestConfigValidate_varDefaultInterpolate(t *testing.T) {
 	}
 }
 
+func TestConfigValidate_varMultiExactNonSlice(t *testing.T) {
+	c := testConfig(t, "validate-var-multi-exact-non-slice")
+	if err := c.Validate(); err != nil {
+		t.Fatalf("should be valid: %s", err)
+	}
+}
+
+func TestConfigValidate_varMultiNonSlice(t *testing.T) {
+	c := testConfig(t, "validate-var-multi-non-slice")
+	if err := c.Validate(); err == nil {
+		t.Fatal("should not be valid")
+	}
+}
+
 func TestConfigValidate_varModule(t *testing.T) {
 	c := testConfig(t, "validate-var-module")
 	if err := c.Validate(); err != nil {
@@ -236,7 +250,7 @@ func TestConfigValidate_varModuleInvalid(t *testing.T) {
 }
 
 func TestNameRegexp(t *testing.T) {
-	cases := []struct{
+	cases := []struct {
 		Input string
 		Match bool
 	}{

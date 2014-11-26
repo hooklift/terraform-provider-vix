@@ -67,6 +67,7 @@ func (s *State) AddModule(path []string) *ModuleState {
 	m := &ModuleState{Path: path}
 	m.init()
 	s.Modules = append(s.Modules, m)
+	s.sort()
 	return m
 }
 
@@ -135,6 +136,11 @@ func (s *State) prune() {
 	}
 }
 
+// sort sorts the modules
+func (s *State) sort() {
+	sort.Sort(moduleStateSort(s.Modules))
+}
+
 func (s *State) GoString() string {
 	return fmt.Sprintf("*%#v", *s)
 }
@@ -179,6 +185,20 @@ type ModuleState struct {
 	// N instances underneath, although a user only needs to think
 	// about the 1:1 case.
 	Resources map[string]*ResourceState `json:"resources"`
+
+	// Dependencies are a list of things that this module relies on
+	// existing to remain intact. For example: an module may depend
+	// on a VPC ID given by an aws_vpc resource.
+	//
+	// Terraform uses this information to build valid destruction
+	// orders and to warn the user if they're destroying a module that
+	// another resource depends on.
+	//
+	// Things can be put into this list that may not be managed by
+	// Terraform. If Terraform doesn't find a matching ID in the
+	// overall state, then it assumes it isn't managed and doesn't
+	// worry about it.
+	Dependencies []string `json:"depends_on,omitempty"`
 }
 
 // IsRoot says whether or not this module diff is for the root module.
@@ -274,11 +294,11 @@ func (m *ModuleState) GoString() string {
 }
 
 func (m *ModuleState) String() string {
-	if len(m.Resources) == 0 {
-		return "<no state>"
-	}
-
 	var buf bytes.Buffer
+
+	if len(m.Resources) == 0 {
+		buf.WriteString("<no state>")
+	}
 
 	names := make([]string, 0, len(m.Resources))
 	for name, _ := range m.Resources {
@@ -619,21 +639,38 @@ func ReadState(src io.Reader) (*State, error) {
 		return nil, fmt.Errorf("State version %d not supported, please update.",
 			state.Version)
 	}
+
+	// Sort it
+	state.sort()
+
 	return state, nil
 }
 
 // WriteState writes a state somewhere in a binary format.
 func WriteState(d *State, dst io.Writer) error {
+	// Make sure it is sorted
+	d.sort()
+
 	// Ensure the version is set
 	d.Version = textStateVersion
 
 	// Always increment the serial number
 	d.Serial++
 
-	enc := json.NewEncoder(dst)
-	if err := enc.Encode(d); err != nil {
+	// Encode the data in a human-friendly way
+	data, err := json.MarshalIndent(d, "", "    ")
+	if err != nil {
+		return fmt.Errorf("Failed to encode state: %s", err)
+	}
+
+	// We append a newline to the data because MarshalIndent doesn't
+	data = append(data, '\n')
+
+	// Write the data out to the dst
+	if _, err := io.Copy(dst, bytes.NewReader(data)); err != nil {
 		return fmt.Errorf("Failed to write state: %v", err)
 	}
+
 	return nil
 }
 
@@ -681,4 +718,29 @@ func upgradeV1State(old *StateV1) (*State, error) {
 		}
 	}
 	return s, nil
+}
+
+// moduleStateSort implements sort.Interface to sort module states
+type moduleStateSort []*ModuleState
+
+func (s moduleStateSort) Len() int {
+	return len(s)
+}
+
+func (s moduleStateSort) Less(i, j int) bool {
+	a := s[i]
+	b := s[j]
+
+	// If the lengths are different, then the shorter one always wins
+	if len(a.Path) != len(b.Path) {
+		return len(a.Path) < len(b.Path)
+	}
+
+	// Otherwise, compare by last path element
+	idx := len(a.Path) - 1
+	return a.Path[idx] < b.Path[idx]
+}
+
+func (s moduleStateSort) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
 }

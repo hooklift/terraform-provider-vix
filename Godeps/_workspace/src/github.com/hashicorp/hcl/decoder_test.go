@@ -44,6 +44,20 @@ func TestDecode_interface(t *testing.T) {
 			},
 		},
 		{
+			"escape.hcl",
+			false,
+			map[string]interface{}{
+				"foo": "bar\"baz\\n",
+			},
+		},
+		{
+			"float.hcl",
+			false,
+			map[string]interface{}{
+				"a": 1.02,
+			},
+		},
+		{
 			"multiline_bad.hcl",
 			false,
 			map[string]interface{}{"foo": "bar\nbaz\n"},
@@ -189,7 +203,7 @@ func TestDecode_interface(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(out, tc.Out) {
-			t.Fatalf("Input: %s\n\n%#v\n\n%#v", tc.File, out, tc.Out)
+			t.Fatalf("Input: %s\n\nActual: %#v\n\nExpected: %#v", tc.File, out, tc.Out)
 		}
 	}
 }
@@ -201,6 +215,10 @@ func TestDecode_equal(t *testing.T) {
 		{
 			"basic.hcl",
 			"basic.json",
+		},
+		{
+			"float.hcl",
+			"float.json",
 		},
 		/*
 			{
@@ -422,6 +440,14 @@ func TestDecode_structureMap(t *testing.T) {
 		if !reflect.DeepEqual(actual, expected) {
 			t.Fatalf("Input: %s\n\nActual: %#v\n\nExpected: %#v", f, actual, expected)
 		}
+	}
+}
+
+func TestDecode_interfaceNonPointer(t *testing.T) {
+	var value interface{}
+	err := Decode(value, testReadFile(t, "basic_int_string.hcl"))
+	if err == nil {
+		t.Fatal("should error")
 	}
 }
 

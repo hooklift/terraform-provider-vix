@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -91,6 +92,55 @@ func TestInterpolateFuncFile(t *testing.T) {
 	}
 }
 
+func TestInterpolateFuncJoin(t *testing.T) {
+	cases := []struct {
+		Args   []string
+		Result string
+		Error  bool
+	}{
+		{
+			[]string{","},
+			"",
+			true,
+		},
+
+		{
+			[]string{",", "foo"},
+			"foo",
+			false,
+		},
+
+		{
+			[]string{",", "foo", "bar"},
+			"foo,bar",
+			false,
+		},
+
+		{
+			[]string{
+				".",
+				fmt.Sprintf(
+					"foo%sbar%sbaz",
+					InterpSplitDelim,
+					InterpSplitDelim),
+			},
+			"foo.bar.baz",
+			false,
+		},
+	}
+
+	for i, tc := range cases {
+		actual, err := interpolationFuncJoin(nil, tc.Args...)
+		if (err != nil) != tc.Error {
+			t.Fatalf("%d: err: %s", i, err)
+		}
+
+		if actual != tc.Result {
+			t.Fatalf("%d: bad: %#v", i, actual)
+		}
+	}
+}
+
 func TestInterpolateFuncLookup(t *testing.T) {
 	cases := []struct {
 		M      map[string]string
@@ -130,6 +180,51 @@ func TestInterpolateFuncLookup(t *testing.T) {
 
 	for i, tc := range cases {
 		actual, err := interpolationFuncLookup(tc.M, tc.Args...)
+		if (err != nil) != tc.Error {
+			t.Fatalf("%d: err: %s", i, err)
+		}
+
+		if actual != tc.Result {
+			t.Fatalf("%d: bad: %#v", i, actual)
+		}
+	}
+}
+
+func TestInterpolateFuncElement(t *testing.T) {
+	cases := []struct {
+		Args   []string
+		Result string
+		Error  bool
+	}{
+		{
+			[]string{"foo" + InterpSplitDelim + "baz", "1"},
+			"baz",
+			false,
+		},
+
+		{
+			[]string{"foo", "0"},
+			"foo",
+			false,
+		},
+
+		// Invalid index should wrap vs. out-of-bounds
+		{
+			[]string{"foo" + InterpSplitDelim + "baz", "2"},
+			"foo",
+			false,
+		},
+
+		// Too many args
+		{
+			[]string{"foo" + InterpSplitDelim + "baz", "0", "1"},
+			"",
+			true,
+		},
+	}
+
+	for i, tc := range cases {
+		actual, err := interpolationFuncElement(nil, tc.Args...)
 		if (err != nil) != tc.Error {
 			t.Fatalf("%d: err: %s", i, err)
 		}

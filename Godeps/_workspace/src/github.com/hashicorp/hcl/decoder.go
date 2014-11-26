@@ -1,6 +1,7 @@
 package hcl
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -27,8 +28,13 @@ func Decode(out interface{}, in string) error {
 // DecodeObject is a lower-level version of Decode. It decodes a
 // raw Object into the given output.
 func DecodeObject(out interface{}, n *hcl.Object) error {
+	val := reflect.ValueOf(out)
+	if val.Kind() != reflect.Ptr {
+		return errors.New("result must be a pointer")
+	}
+
 	var d decoder
-	return d.decode("root", n, reflect.ValueOf(out).Elem())
+	return d.decode("root", n, val.Elem())
 }
 
 type decoder struct {
@@ -90,7 +96,7 @@ func (d *decoder) decodeBool(name string, o *hcl.Object, result reflect.Value) e
 	case hcl.ValueTypeBool:
 		result.Set(reflect.ValueOf(o.Value.(bool)))
 	default:
-		return fmt.Errorf("%s: unknown type %s", name, o.Type)
+		return fmt.Errorf("%s: unknown type %v", name, o.Type)
 	}
 
 	return nil
@@ -101,7 +107,7 @@ func (d *decoder) decodeFloat(name string, o *hcl.Object, result reflect.Value) 
 	case hcl.ValueTypeFloat:
 		result.Set(reflect.ValueOf(o.Value.(float64)))
 	default:
-		return fmt.Errorf("%s: unknown type %s", name, o.Type)
+		return fmt.Errorf("%s: unknown type %v", name, o.Type)
 	}
 
 	return nil
@@ -119,7 +125,7 @@ func (d *decoder) decodeInt(name string, o *hcl.Object, result reflect.Value) er
 
 		result.SetInt(int64(v))
 	default:
-		return fmt.Errorf("%s: unknown type %s", name, o.Type)
+		return fmt.Errorf("%s: unknown type %v", name, o.Type)
 	}
 
 	return nil
@@ -190,7 +196,7 @@ func (d *decoder) decodeInterface(name string, o *hcl.Object, result reflect.Val
 
 func (d *decoder) decodeMap(name string, o *hcl.Object, result reflect.Value) error {
 	if o.Type != hcl.ValueTypeObject {
-		return fmt.Errorf("%s: not an object type for map (%s)", name, o.Type)
+		return fmt.Errorf("%s: not an object type for map (%v)", name, o.Type)
 	}
 
 	// If we have an interface, then we can address the interface,
@@ -318,7 +324,7 @@ func (d *decoder) decodeString(name string, o *hcl.Object, result reflect.Value)
 	case hcl.ValueTypeString:
 		result.Set(reflect.ValueOf(o.Value.(string)).Convert(result.Type()))
 	default:
-		return fmt.Errorf("%s: unknown type to string: %s", name, o.Type)
+		return fmt.Errorf("%s: unknown type to string: %v", name, o.Type)
 	}
 
 	return nil
@@ -326,8 +332,7 @@ func (d *decoder) decodeString(name string, o *hcl.Object, result reflect.Value)
 
 func (d *decoder) decodeStruct(name string, o *hcl.Object, result reflect.Value) error {
 	if o.Type != hcl.ValueTypeObject {
-		return fmt.Errorf(
-			"%s: not an object type for struct (%s)", name, o.Type)
+		return fmt.Errorf("%s: not an object type for struct (%v)", name, o.Type)
 	}
 
 	// This slice will keep track of all the structs we'll be decoding.

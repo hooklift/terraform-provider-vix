@@ -43,6 +43,38 @@ func TestGraph_count(t *testing.T) {
 	}
 }
 
+func TestGraph_countTainted(t *testing.T) {
+	m := testModule(t, "graph-count")
+	state := &State{
+		Modules: []*ModuleState{
+			&ModuleState{
+				Path: []string{"root"},
+				Resources: map[string]*ResourceState{
+					"aws_instance.web.0": &ResourceState{
+						Type: "aws_instance",
+						Tainted: []*InstanceState{
+							&InstanceState{
+								ID: "foo",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	g, err := Graph(&GraphOpts{Module: m, State: state})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	actual := strings.TrimSpace(g.String())
+	expected := strings.TrimSpace(testTerraformGraphCountTaintedStr)
+	if actual != expected {
+		t.Fatalf("bad:\n\n%s", actual)
+	}
+}
+
 func TestGraph_varResource(t *testing.T) {
 	m := testModule(t, "graph-count-var-resource")
 
@@ -92,6 +124,37 @@ func TestGraph_dependsOnCount(t *testing.T) {
 
 	actual := strings.TrimSpace(g.String())
 	expected := strings.TrimSpace(testTerraformGraphDependsCountStr)
+	if actual != expected {
+		t.Fatalf("bad:\n\n%s", actual)
+	}
+}
+
+func TestGraph_dependsOnWithOrphan(t *testing.T) {
+	m := testModule(t, "graph-depends-on")
+
+	state := &State{
+		Modules: []*ModuleState{
+			&ModuleState{
+				Path: []string{"root"},
+				Resources: map[string]*ResourceState{
+					"aws_instance.old": &ResourceState{
+						Type: "aws_instance",
+						Primary: &InstanceState{
+							ID: "foo",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	g, err := Graph(&GraphOpts{Module: m, State: state})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	actual := strings.TrimSpace(g.String())
+	expected := strings.TrimSpace(testTerraformGraphDependsOrphanStr)
 	if actual != expected {
 		t.Fatalf("bad:\n\n%s", actual)
 	}
@@ -463,16 +526,16 @@ func TestGraphAddDiff(t *testing.T) {
 	}
 
 	/*
-	TODO: test this somewhere
-	// Verify that the state has been added
-	n := g.Noun("aws_instance.foo")
-	rn := n.Meta.(*GraphNodeResource)
+		TODO: test this somewhere
+		// Verify that the state has been added
+		n := g.Noun("aws_instance.foo")
+		rn := n.Meta.(*GraphNodeResource)
 
-	expected2 := diff.RootModule().Resources["aws_instance.foo"]
-	actual2 := rn.Resource.Diff
-	if !reflect.DeepEqual(actual2, expected2) {
-		t.Fatalf("bad: %#v", actual2)
-	}
+		expected2 := diff.RootModule().Resources["aws_instance.foo"]
+		actual2 := rn.Resource.Diff
+		if !reflect.DeepEqual(actual2, expected2) {
+			t.Fatalf("bad: %#v", actual2)
+		}
 	*/
 }
 
@@ -668,6 +731,61 @@ func TestGraphAddDiff_module(t *testing.T) {
 	}
 }
 
+func TestGraphAddDiff_module_depends(t *testing.T) {
+	m := testModule(t, "graph-diff-module-dep")
+	diff := &Diff{
+		Modules: []*ModuleDiff{
+			&ModuleDiff{
+				Path: rootModulePath,
+				Resources: map[string]*InstanceDiff{
+					"aws_instance.foo": &InstanceDiff{
+						Destroy: true,
+					},
+				},
+			},
+			&ModuleDiff{
+				Path:    []string{"root", "child"},
+				Destroy: true,
+				Resources: map[string]*InstanceDiff{
+					"aws_instance.foo": &InstanceDiff{
+						Destroy: true,
+					},
+				},
+			},
+		},
+	}
+	state := &State{
+		Modules: []*ModuleState{
+			&ModuleState{
+				Path: []string{"root", "orphan"},
+				Resources: map[string]*ResourceState{
+					"aws_instance.dead": &ResourceState{
+						Type: "aws_instance",
+						Primary: &InstanceState{
+							ID: "dead",
+						},
+					},
+				},
+				Dependencies: []string{
+					"aws_instance.foo",
+					"module.child",
+				},
+			},
+		},
+	}
+
+	g, err := Graph(&GraphOpts{Module: m, Diff: diff, State: state})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	actual := strings.TrimSpace(g.String())
+	expected := strings.TrimSpace(testTerraformGraphDiffModuleDependsStr)
+	if actual != expected {
+		t.Fatalf("bad:\n\n%s", actual)
+	}
+}
+
 func TestGraphAddDiff_createBeforeDestroy(t *testing.T) {
 	m := testModule(t, "graph-diff-create-before")
 	diff := &Diff{
@@ -846,7 +964,7 @@ func TestGraphEncodeDependencies_count(t *testing.T) {
 func TestGraphEncodeDependencies_module(t *testing.T) {
 	m := testModule(t, "graph-modules")
 
-	g, err := Graph(&GraphOpts{Module: m})
+	g, err := Graph(&GraphOpts{Module: m, State: &State{}})
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -864,6 +982,15 @@ func TestGraphEncodeDependencies_module(t *testing.T) {
 	}
 	if web.Dependencies[1] != "module.consul" {
 		t.Fatalf("bad: %#v", web)
+	}
+
+	mod := g.Noun("module.consul").Meta.(*GraphNodeModule)
+	deps := mod.State.Dependencies
+	if len(deps) != 1 {
+		t.Fatalf("Bad: %#v", deps)
+	}
+	if deps[0] != "aws_security_group.firewall" {
+		t.Fatalf("Bad: %#v", deps)
 	}
 }
 
@@ -949,6 +1076,116 @@ func TestGraph_orphanDependenciesModules(t *testing.T) {
 	}
 }
 
+func TestGraph_orphanModules_Dependencies(t *testing.T) {
+	m := testModule(t, "graph-modules")
+	state := &State{
+		Modules: []*ModuleState{
+			&ModuleState{
+				Path: rootModulePath,
+
+				Resources: map[string]*ResourceState{
+					"aws_instance.foo": &ResourceState{
+						Type: "aws_instance",
+						Primary: &InstanceState{
+							ID: "foo",
+						},
+						Dependencies: []string{
+							"module.consul",
+						},
+					},
+				},
+			},
+
+			// Add an orphan module
+			&ModuleState{
+				Path: []string{"root", "orphan"},
+				Resources: map[string]*ResourceState{
+					"aws_instance.bar": &ResourceState{
+						Type: "aws_instance",
+						Primary: &InstanceState{
+							ID: "bar",
+						},
+					},
+				},
+				Dependencies: []string{
+					"aws_instance.foo",
+					"aws_instance.web",
+				},
+			},
+		},
+	}
+
+	g, err := Graph(&GraphOpts{Module: m, State: state})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	actual := strings.TrimSpace(g.String())
+	expected := strings.TrimSpace(testTerraformGraphOrphanedModuleDepsStr)
+	if actual != expected {
+		t.Fatalf("bad:\n\nactual:\n%s\n\nexpected:\n%s", actual, expected)
+	}
+}
+
+func TestGraphNodeResourceExpand(t *testing.T) {
+	m := testModule(t, "graph-resource-expand")
+
+	g, err := Graph(&GraphOpts{Module: m})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Get the resource we care about expanding
+	n := g.Noun("aws_instance.web")
+	if n == nil {
+		t.Fatal("could not find")
+	}
+	rn := n.Meta.(*GraphNodeResource)
+
+	g, err = rn.Expand()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	actual := strings.TrimSpace(g.String())
+	expected := strings.TrimSpace(testTerraformGraphResourceExpandStr)
+	if actual != expected {
+		t.Fatalf("bad:\n\nactual:\n%s\n\nexpected:\n%s", actual, expected)
+	}
+}
+
+func TestGraphNodeResourceExpand_provDeps(t *testing.T) {
+	m := testModule(t, "graph-resource-expand-prov-deps")
+	provs := map[string]ResourceProvisionerFactory{
+		"remote-exec": func() (ResourceProvisioner, error) {
+			return new(MockResourceProvisioner), nil
+		},
+	}
+
+	g, err := Graph(&GraphOpts{Module: m, Provisioners: provs})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Get the resource we care about expanding
+	n := g.Noun("aws_instance.web")
+	if n == nil {
+		t.Fatal("could not find")
+	}
+	rn := n.Meta.(*GraphNodeResource)
+
+	g, err = rn.Expand()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	actual := strings.TrimSpace(g.String())
+	expected := strings.TrimSpace(testTerraformGraphResourceExpandProvDepsStr)
+	if actual != expected {
+		t.Fatalf("bad:\n\nactual:\n%s\n\nexpected:\n%s", actual, expected)
+	}
+}
+
 const testTerraformGraphStr = `
 root: root
 aws_instance.web
@@ -976,6 +1213,19 @@ aws_load_balancer.weblb
   aws_load_balancer.weblb -> aws_instance.web
 root
   root -> aws_instance.web
+  root -> aws_load_balancer.weblb
+`
+
+const testTerraformGraphCountTaintedStr = `
+root: root
+aws_instance.web
+  aws_instance.web -> aws_instance.web.0 (tainted #1)
+aws_instance.web.0 (tainted #1)
+aws_load_balancer.weblb
+  aws_load_balancer.weblb -> aws_instance.web
+root
+  root -> aws_instance.web
+  root -> aws_instance.web.0 (tainted #1)
   root -> aws_load_balancer.weblb
 `
 
@@ -1009,6 +1259,18 @@ aws_instance.db
 aws_instance.web
 root
   root -> aws_instance.db
+  root -> aws_instance.web
+`
+
+const testTerraformGraphDependsOrphanStr = `
+root: root
+aws_instance.db
+  aws_instance.db -> aws_instance.web
+aws_instance.old
+aws_instance.web
+root
+  root -> aws_instance.db
+  root -> aws_instance.old
   root -> aws_instance.web
 `
 
@@ -1065,6 +1327,22 @@ module.child
 root
   root -> aws_instance.foo
   root -> module.child
+`
+
+const testTerraformGraphDiffModuleDependsStr = `
+root: root
+aws_instance.foo
+  aws_instance.foo -> aws_instance.foo (destroy)
+aws_instance.foo (destroy)
+  aws_instance.foo (destroy) -> module.child
+  aws_instance.foo (destroy) -> module.orphan
+module.child
+  module.child -> module.orphan
+module.orphan
+root
+  root -> aws_instance.foo
+  root -> module.child
+  root -> module.orphan
 `
 
 const testTerraformGraphModulesStr = `
@@ -1233,4 +1511,55 @@ root
   root -> aws_instance.web
   root -> aws_security_group.firewall
   root -> module.consul
+`
+
+const testTerraformGraphOrphanedModuleDepsStr = `
+root: root
+aws_instance.foo
+  aws_instance.foo -> module.consul
+  aws_instance.foo -> provider.aws
+aws_instance.web
+  aws_instance.web -> aws_security_group.firewall
+  aws_instance.web -> module.consul
+  aws_instance.web -> provider.aws
+aws_security_group.firewall
+  aws_security_group.firewall -> provider.aws
+module.consul
+  module.consul -> aws_security_group.firewall
+  module.consul -> provider.aws
+module.orphan
+  module.orphan -> aws_instance.foo
+  module.orphan -> aws_instance.web
+  module.orphan -> provider.aws
+provider.aws
+root
+  root -> aws_instance.foo
+  root -> aws_instance.web
+  root -> aws_security_group.firewall
+  root -> module.consul
+  root -> module.orphan
+`
+
+const testTerraformGraphResourceExpandStr = `
+root: root
+aws_instance.web.0
+aws_instance.web.1
+aws_instance.web.2
+root
+  root -> aws_instance.web.0
+  root -> aws_instance.web.1
+  root -> aws_instance.web.2
+`
+
+const testTerraformGraphResourceExpandProvDepsStr = `
+root: root
+aws_instance.web.0
+aws_instance.web.1
+  aws_instance.web.1 -> aws_instance.web.0
+aws_instance.web.2
+  aws_instance.web.2 -> aws_instance.web.0
+root
+  root -> aws_instance.web.0
+  root -> aws_instance.web.1
+  root -> aws_instance.web.2
 `
