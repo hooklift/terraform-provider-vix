@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -132,9 +133,17 @@ func (v *VM) Create() (string, error) {
 		}
 		defer image.file.Close()
 
+		// Makes sure file cursor is in the right position.
+		_, err := image.file.Seek(0, 0)
+		if err != nil {
+			return "", err
+		}
+
 		log.Printf("[DEBUG] Unpacking Gold virtual machine into %s\n", goldPath)
 		_, err = unzipit.Unpack(image.file, goldPath)
 		if err != nil {
+			debug.PrintStack()
+			log.Printf("[ERROR] Unpacking Gold image %s\n", image.file.Name())
 			return "", err
 		}
 	}
