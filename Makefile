@@ -7,11 +7,11 @@ LD_LIBRARY_PATH:=$(CURDIR)/vendor/libvix
 
 export CGO_CFLAGS CGO_LDFLAGS DYLD_LIBRARY_PATH LD_LIBRARY_PATH
 
-install:
-	go install -v
-
 build:
 	go build
+
+install:
+	go install -v
 
 deps:
 	go get -u github.com/dustin/go-humanize
