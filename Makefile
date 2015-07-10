@@ -10,14 +10,15 @@ export CGO_CFLAGS CGO_LDFLAGS DYLD_LIBRARY_PATH LD_LIBRARY_PATH
 install:
 	go install -v
 
-rebuild:
-	godep go build -a
-
 build:
-	godep go build
+	go build
+
+deps:
+	go get -u github.com/dustin/go-humanize
+	go get -u github.com/hooklift/govix
 
 test:
-	godep go test ./...
+	go test ./...
 
 clean:
 	go clean ./...
