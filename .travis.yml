@@ -15,7 +15,7 @@ before_install:
   - go get github.com/mitchellh/gox
   - mkdir -p $HOME/gopath/src/github.com/hashicorp/terraform; git clone https://github.com/hashicorp/terraform.git $HOME/gopath/src/github.com/hashicorp/terraform
   - export PATH="$HOME/gopath/bin:$PATH"
-  - pushd $HOME/gopath/src/github.com/hashicorp/terraform; make dev; popd
+  - pushd $HOME/gopath/src/github.com/hashicorp/terraform; make updatedeps; make dev; popd
 
 install: make build
 
