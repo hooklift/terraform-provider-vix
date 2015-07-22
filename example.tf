@@ -29,7 +29,7 @@ resource "vix_vm" "core01" {
     * otherwise the provider will be considerably limited for what it can do.
     */
     image {
-        url = "https://github.com/c4milo/dobby-boxes/releases/download/stable/coreos-stable-vmware.box"
+        url = "https://github.com/hooklift/boxes/releases/download/stable/coreos-stable-vmware.box"
         checksum = "5b20ba225b5d4e1a3c01e071f8c9f607ed6c6e1d88e6ed5a66387aaf75b9ee2b"
         checksum_type = "sha256"
 
