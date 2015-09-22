@@ -6,7 +6,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/cloudescape/govix"
+	"github.com/hooklift/govix"
 )
 
 func main() {

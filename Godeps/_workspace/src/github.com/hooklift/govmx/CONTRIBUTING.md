@@ -35,9 +35,9 @@ Go is unlike any other language in that it forces a specific development workflo
 * Unlike other projects, we are not going to nitpick your contributions. If your pull request is correct, we are going to merge and address the small details by ourselves. There is no point on delaying contributions due to little and unimportant details.
 
 ### Workflow for third-party code contributions
-* In Github, fork `https://github.com/cloudescape/govmx` to your own account
-* Get the package using "go get": `go get github.com/cloudescape/govmx`
-* Move to where the package was cloned: `cd $GOPATH/src/github.com/cloudescape/govmx/`
+* In Github, fork `https://github.com/hooklift/govmx` to your own account
+* Get the package using "go get": `go get github.com/hooklift/govmx`
+* Move to where the package was cloned: `cd $GOPATH/src/github.com/hooklift/govmx/`
 * Add a git remote pointing to your own fork: `git remote add downstream git@github.com:<your_account>/govmx.git`
 * Create a branch for making your changes, then commit them.
 * Push changes to downstream repository, this is your own fork: `git push <mybranch> downstream`
@@ -48,7 +48,7 @@ Go is unlike any other language in that it forces a specific development workflo
 ### Workflow for core developers
 Since core developers usually have access to the upstream repository, there is no need for having a workflow like the one for thid-party contributors.
 
-* Get the package using "go get": `go get github.com/cloudescape/govmx`
+* Get the package using "go get": `go get github.com/hooklift/govmx`
 * Create a branch for making your changes, then commit them.
 * Push changes to the repository: `git push origin <mybranch>`
 * In Github, create the Pull Request from your branch to master.

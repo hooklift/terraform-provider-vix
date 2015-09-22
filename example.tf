@@ -82,7 +82,7 @@ resource "vix_vm" "core01" {
 
     cdrom {
         bus_type = "scsi"
-        image = "/Users/camilo/Dropbox/Development/cloudescape/hooklift-boxes/cfgdrv.iso"
+        image = "/Users/camilo/Dropbox/Development/hooklift/boxes/cfgdrv.iso"
     }
 
     // Adds an IDE device by default and autodetects the host's CDROM
@@ -100,4 +100,3 @@ resource "vix_vm" "core01" {
 output "IP address" {
     value = "${vix_vm.core01.ip_address}"
 }
-
