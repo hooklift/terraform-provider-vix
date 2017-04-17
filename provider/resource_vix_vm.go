@@ -14,7 +14,7 @@ import (
 	"github.com/hooklift/govmx"
 	"github.com/hooklift/terraform-provider-vix/provider/vix"
 
-	"github.com/hashicorp/terraform/helper/multierror"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 

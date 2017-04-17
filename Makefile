@@ -16,6 +16,7 @@ install:
 deps:
 	go get -u github.com/dustin/go-humanize
 	go get -u github.com/hooklift/govix
+	go get -u github.com/hashicorp/go-multierror
 
 test:
 	go test ./...
