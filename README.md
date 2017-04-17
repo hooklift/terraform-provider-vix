@@ -1,13 +1,16 @@
 # VMware VIX provider for Terraform
-[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/hooklift/terraform-provider-vix?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/hooklift/terraform-provider-vix?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/hooklift/terraform-provider-vix.svg?branch=master)](https://travis-ci.org/hooklift/terraform-provider-vix)
 
 Allows you to define infrastructure for VMware Fusion, Workstation, Server and Player.
 
 ## Mailing list
+
 **Google groups:** https://groups.google.com/group/terraform-provider-vix
 
 ## Requirements
+
 * VMware Fusion or Workstation installed
 * **Govix:** The library used to interface with VMware
 * **Godep:** Dependency manager
@@ -17,15 +20,17 @@ The exact list of dependencies can be found in the `Godeps` file. To install dep
 
 
 ## Development workflow
+
 Make sure you exported `DYLD_LIBRARY_PATH` or `LD_LIBRARY_PATH` with a path pointing to `vendor/libvix`
 
 1. Make changes in your local fork of terraform-provider-vix
-3. Test your changes running `TF_LOG=1 terraform plan` or `TF_LOG=1 terraform apply` inside a directory that contains *.tf files declaring VIX resources.
+2. Test your changes running `TF_LOG=1 terraform plan` or `TF_LOG=1 terraform apply` inside a directory that contains *.tf files declaring VIX resources.
 
 ## Provider configurations
 
 ### Minimal configuration
-```
+
+```hcl
 resource "vix_vm" "core02" {
 	name = "core02"
 	gui = true
@@ -38,7 +43,8 @@ resource "vix_vm" "core02" {
 ```
 
 ### A more advanced configuration
-```
+
+```hcl
 variable "password" {
      default: ""
 }
@@ -66,9 +72,9 @@ resource "vix_vm" "core01" {
     name = "core01"
     description = "Terraform VMWARE VIX test"
 
-	# The provider will download, verify, decompress and untar the image. 
-	# Ideally you will provide images that have VMware Tools installed already,
-	# otherwise the provider will be considerably limited for what it can do.
+    # The provider will download, verify, decompress and untar the image. 
+    # Ideally you will provide images that have VMware Tools installed already,
+    # otherwise the provider will be considerably limited for what it can do.
     image {
         url = "https://github.com/c4milo/dobby-boxes/releases/download/stable/coreos-stable-vmware.box"
         checksum = "545fec52ef3f35eee6e906fae8665abbad62d2007c7655ffa2ff4133ea3038b8"
@@ -134,6 +140,7 @@ resource "vix_vm" "core01" {
 
 
 ## Known issues
+
 * When launching multiple VM resources, make sure all of them have the same GUI setting, otherwise a race condition will kick in and `terraform apply` will fail. This issue is being tracked here https://github.com/c4milo/terraform-provider-vix/issues/10
 
 * Terraform `count` attribute does not work with `vix_vm` resources as Terraform does not provide a way to get the resource index, causing the provider to fail. This issue is being tracked here https://github.com/hashicorp/terraform/issues/141
