@@ -4,6 +4,7 @@ language: go
 go:
   - 1.4
   - 1.5
+  - 1.8
   - tip
 
 before_install:
@@ -15,7 +16,7 @@ before_install:
   - go get github.com/mitchellh/gox
   - mkdir -p $HOME/gopath/src/github.com/hashicorp/terraform; git clone https://github.com/hashicorp/terraform.git $HOME/gopath/src/github.com/hashicorp/terraform
   - export PATH="$HOME/gopath/bin:$PATH"
-  - pushd $HOME/gopath/src/github.com/hashicorp/terraform; make updatedeps; make dev; popd
+  - pushd $HOME/gopath/src/github.com/hashicorp/terraform; make; popd
 
 install: make build
 
