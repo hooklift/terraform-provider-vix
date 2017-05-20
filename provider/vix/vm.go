@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/c4milo/unzipit"
+	"github.com/c4milo/unpackit"
 	"github.com/dustin/go-humanize"
 	govix "github.com/hooklift/govix"
 )
@@ -140,7 +140,7 @@ func (v *VM) Create() (string, error) {
 		}
 
 		log.Printf("[DEBUG] Unpacking Gold virtual machine into %s\n", goldPath)
-		_, err = unzipit.Unpack(image.file, goldPath)
+		_, err = unpackit.Unpack(image.file, goldPath)
 		if err != nil {
 			debug.PrintStack()
 			log.Printf("[ERROR] Unpacking Gold image %s\n", image.file.Name())
