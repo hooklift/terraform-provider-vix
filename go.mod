@@ -3,32 +3,48 @@ module github.com/hooklift/terraform-provider-vix
 go 1.13
 
 require (
-	github.com/apparentlymart/go-cidr v1.0.1 // indirect
-	github.com/c4milo/unpackit v0.0.0-20170519011857-5d74667c62cf
-	github.com/dsnet/compress v0.0.0-20160704023633-b9aab3c6a04e
-	github.com/dustin/go-humanize v0.0.0-20140715063009-cb7b800be3f0
-	github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce
-	github.com/hashicorp/go-getter v1.4.1 // indirect
-	github.com/hashicorp/go-multierror v0.0.0-20161216184304-ed905158d874
+	cloud.google.com/go/storage v1.8.0 // indirect
+	github.com/agext/levenshtein v1.2.3 // indirect
+	github.com/aws/aws-sdk-go v1.31.1 // indirect
+	github.com/bmatcuk/doublestar v1.3.0 // indirect
+	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8 // indirect
+	github.com/c4milo/unpackit v0.0.0-20170704181138-4ed373e9ef1c
+	github.com/dsnet/compress v0.0.1 // indirect
+	github.com/dustin/go-humanize v1.0.0
+	github.com/fatih/color v1.9.0 // indirect
+	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/google/go-cmp v0.4.1 // indirect
+	github.com/hashicorp/go-hclog v0.13.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hashicorp/go-plugin v1.2.2 // indirect
+	github.com/hashicorp/go-retryablehttp v0.6.6 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
-	github.com/hashicorp/go-version v1.2.0 // indirect
-	github.com/hashicorp/hcl v1.0.0
+	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/hashicorp/hcl/v2 v2.5.1 // indirect
 	github.com/hashicorp/hil v0.0.0-20200423225030-a18a1cd20038 // indirect
-	github.com/hashicorp/terraform v0.9.5
-	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb
-	github.com/hooklift/govix v0.0.0-20141119223229-4bb856ca002a
-	github.com/hooklift/govmx v0.0.0-20141119161544-9a0f42270603
-	github.com/klauspost/compress v1.2.2-0.20170402140618-e80ca55b53e5
-	github.com/klauspost/cpuid v0.0.0-20160302075316-09cded8978dc
-	github.com/klauspost/crc32 v0.0.0-20170210140523-1bab8b35b6bb
-	github.com/klauspost/pgzip v1.0.2-0.20170402124221-0bf5dcad4ada
-	github.com/mitchellh/copystructure v0.0.0-20140612212533-d8968bce41ab
-	github.com/mitchellh/go-homedir v1.1.0 // indirect
-	github.com/mitchellh/hashstructure v1.0.0 // indirect
-	github.com/mitchellh/mapstructure v1.1.2
-	github.com/mitchellh/reflectwalk v1.0.0
-	github.com/pkg/errors v0.8.1-0.20170505043639-c605e284fe17
-	github.com/satori/go.uuid v1.2.0 // indirect
-	github.com/ulikunitz/xz v0.5.5
+	github.com/hashicorp/terraform v0.12.25
+	github.com/hashicorp/terraform-svchost v0.0.0-20191119180714-d2e4933b9136 // indirect
+	github.com/hashicorp/yamux v0.0.0-20190923154419-df201c70410d // indirect
+	github.com/hooklift/assert v0.0.0-20170704181755-9d1defd6d214 // indirect
+	github.com/hooklift/govix v0.0.0-20170704181839-063702285520
+	github.com/hooklift/govmx v0.0.0-20170704182012-983fd9388b8a
+	github.com/klauspost/compress v1.10.5 // indirect
+	github.com/klauspost/pgzip v1.2.4 // indirect
+	github.com/mattn/go-colorable v0.1.6 // indirect
+	github.com/mitchellh/cli v1.1.1 // indirect
+	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
+	github.com/mitchellh/mapstructure v1.3.0 // indirect
+	github.com/mitchellh/reflectwalk v1.0.1 // indirect
+	github.com/oklog/run v1.1.0 // indirect
+	github.com/posener/complete v1.2.3 // indirect
+	github.com/spf13/afero v1.2.2 // indirect
+	github.com/ulikunitz/xz v0.5.7 // indirect
+	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
+	github.com/zclconf/go-cty v1.4.1 // indirect
+	golang.org/x/mod v0.3.0 // indirect
+	golang.org/x/net v0.0.0-20200519113804-d87ec0cfa476 // indirect
+	golang.org/x/sys v0.0.0-20200519105757-fe76b779f299 // indirect
+	golang.org/x/tools v0.0.0-20200519175826-7521f6f42533 // indirect
+	google.golang.org/genproto v0.0.0-20200519141106-08726f379972 // indirect
+	honnef.co/go/tools v0.0.1-2020.1.4 // indirect
 )
